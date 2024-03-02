@@ -11,21 +11,32 @@
  * @desc {ru} Коллекция базовых инструментов aReS
  * @desc {ja} aReSフレームワークの基本ユーティリティ
  */
+
+import * as arrays from "./arrays.js";
+import * as crypto from "./crypto.js";
+import * as dataDescriptor from "./data-descriptor.js";
+import * as files from "./files.js";
+import * as localAi from "./localAI.js";
+import * as objects from "./objects.js";
+import * as permissions from "./permissions.js";
+import * as strings from "./strings.js";
+import * as scripts from "./scripts.js";
+import * as prototype from "./prototype.js";
+
 export default aReS = (() => {
-  const { initPrototypes } = require("./prototype");
   // init the prototypes by all functions in this module
-  initPrototypes();
+  prototype.initPrototypes();
   return {
-    arrays: require("./arrays"),
-    crypto: require("./crypto"),
-    "data-descriptor": require("./data-descriptor"),
-    "deepl-translator": require("./deepl-translator"),
-    files: require("./files"),
-    localAi: require("./localAI"),
-    objects: require("./objects"),
-    permissions: require("./permissions"),
-    strings: require("./strings"),
-    scripts: require("./scripts"),
-    prototype: require("./prototype"),
+    arrays:arrays,
+    crypto: crypto,
+    dataDescriptor: dataDescriptor,
+    deeplTranslator: deeplTranslator,
+    files: files,
+    localAi: localAi,
+    objects: objects,
+    permissions: permissions,
+    strings: strings,
+    scripts: scripts,
+    prototype: prototype,
   };
 })();
