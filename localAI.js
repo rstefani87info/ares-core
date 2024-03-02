@@ -24,15 +24,15 @@ function install(express){
 }
 
 const port=8081;
-const host='http://localhost';
-const version='v1';
+export const host='http://localhost';
+export const version='v1';
 
 
 const apiUrl=host+':'+port+'/'+version+'/';
-const axios=require('axios');
-async function getModels(callback){
+import { post } from 'axios';
+export async function getModels(callback){
 	try {
-    const response = await axios.post(apiUrl+'models',  {
+    const response = await post(apiUrl+'models',  {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -48,7 +48,7 @@ async function getModels(callback){
 /**
  * @prototype {string}
  */
-async function sendMessage(this_message, temperature ,callback) {
+export async function sendMessage(this_message, temperature ,callback) {
   const requestData = {
     model: 'ggml-koala-7b-model-q4_0-r2.bin',
     messages: [
@@ -61,7 +61,7 @@ async function sendMessage(this_message, temperature ,callback) {
   };
 
   try {
-    const response = await axios.post(apiUrl+'chat/completions', requestData, {
+    const response = await post(apiUrl+'chat/completions', requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -77,7 +77,7 @@ async function sendMessage(this_message, temperature ,callback) {
 /**
  * @prototype {string}
  */
-async function rephrase(this_message, temperature ,callback) {
+export async function rephrase(this_message, temperature ,callback) {
   const requestData = {
     model: 'ggml-koala-7b-model-q4_0-r2.bin',
     instruction: "rephrase",
@@ -86,7 +86,7 @@ async function rephrase(this_message, temperature ,callback) {
   };
 
   try {
-    const response = await axios.post(apiUrl+'edits', requestData, {
+    const response = await post(apiUrl+'edits', requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -102,7 +102,7 @@ async function rephrase(this_message, temperature ,callback) {
 /**
  * @prototype {string}
  */
-async function prompt(this_message, temperature ,callback) {
+export async function prompt(this_message, temperature ,callback) {
   const requestData = {
     model: 'ggml-koala-7b-model-q4_0-r2.bin',
     prompt:this_message,
@@ -110,7 +110,7 @@ async function prompt(this_message, temperature ,callback) {
   };
 
   try {
-    const response = await axios.post(apiUrl+'completions', requestData, {
+    const response = await post(apiUrl+'completions', requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -123,4 +123,4 @@ async function prompt(this_message, temperature ,callback) {
   }
 }
 
-module.exports={getModels:getModels,sendMessage:sendMessage,rephrase:rephrase,prompt:prompt,install:install};
+ 
