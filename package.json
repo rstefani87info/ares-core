@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/rstefani87info/ares-core#readme",
   "dependencies": {
+    "deepl-node": "^1.12.0",
     "fs": "^0.0.1-security",
     "path": "^0.12.7"
   }

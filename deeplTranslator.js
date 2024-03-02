@@ -1,6 +1,5 @@
-import { deeplConnectionData } from "third-party-api";
-const filesUtility = require("./files");
-const deepl = require("./deepl-translator");
+import { DeepL } from "../../../3dParty.js";
+const filesUtility = require("./files.js");
 
 /**
  * @desc {en} Class for translation of application string collection
@@ -61,7 +60,7 @@ class Dictionary {
  * @desc {ja} コールバックで文字列を翻訳
  */
 function translateByCallback(this_string, languageCode, callback) {
-  require("deepl")
+  new require("deepl-node").Translator(authKey)
     .translate(this_string, languageCode.toUpperCase(), deeplConnectionData)
     .then((result) => {
       callback(null, result);
