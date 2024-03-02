@@ -11,6 +11,6 @@
  * @desc {ru} Коллекция базовых инструментов aReS
  * @desc {ja} aReSフレームワークの基本ユーティリティ
  */
-import { initPrototypes } from './prototype';
+const { initPrototypes } = require('./prototype') ;
 // init the prototypes by all functions in this module
 initPrototypes();
