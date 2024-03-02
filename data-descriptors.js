@@ -1,7 +1,14 @@
 /**
  * @desc {en} a mapping of the most common data descriptors useful for validation and formatting
+ * @desc {it} una mappa di descrittori di dati comuni di utilità per la validazione e formattazione
+ * @desc {es} un mapeo de datos comunes de uso comu
+ * @desc {pt} um mapeamento de dados comuns de uso comum
+ * @desc {fr} une carte descripteurs de données les plus courants utiles pour la validation et le formatage
+ * @desc {de} eine Karte der besonders genutzten Datenbeschreibungen für die Validierung und Formatierung
+ * @desc {ja} 一般的なデータ記述子
+ * @desc {zh} 常用数据描述符
+ * @desc {ru} карта наиболее часто используемых данных
  */
-
 const objectDescriptorDefinitions = {
 
 	"text": {
@@ -49,12 +56,14 @@ const objectDescriptorDefinitions = {
  */
 function format(this_object, descriptor) {
 	const ret = {};
-	for (const k in this_object) {
+	for (const k in descriptor.params) {
 		ret[k] = this_object[k];
 		const objectDescriptorDefinitionKey = descriptor[k]?.type || null;
 		const objectDescriptorDefinition = findPropValueByAlias(objectDescriptorDefinitions, objectDescriptorDefinitionKey);
-		if (descriptor.normalization) ret[k] = descriptor.normalization(ret[k]);
-		if (!(objectDescriptorDefinition?.minValue(ret[k], descriptor[k].minValue) || null)) {
+		
+    if (descriptor.normalization) ret[k] = descriptor.normalization(ret[k]);
+		
+    if (!(objectDescriptorDefinition?.minValue(ret[k], descriptor[k].minValue) || null)) {
 			if (!ret['€rror']) ret['€rror'] = {};
 			ret['€rror'][k]['minValue'] = true;
 		}

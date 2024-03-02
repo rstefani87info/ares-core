@@ -63,10 +63,29 @@ export function setupPropertyAlias(this_object, alias) {
 			get: function() {
 				return findPropValueByAlias(this, alias);
 			},
-			set: function(valore) {
-				this[findPropKeyByAlias(this, alias)] = valore;
+			set: function(value) {
+				this[findPropKeyByAlias(this, alias)] = value;
 			}
 		});
 	}
 
+}
+
+/**
+ * @prototype {string}
+ * @param {string} this_file
+ * 
+ * @desc {en} Parse file content as object
+ * @desc {it} Parsa il contenuto del file come oggetto
+ * @desc {es} Parse el contenido del archivo como objeto
+ * @desc {pt} Parse o conteúdo do arquivo como objeto
+ * @desc {fr} Parse le contenu du fichier comme objet
+ * @desc {de} Parsen der Dateiinhalt als Objekt
+ * @desc {ja} ファイルの内容をオブジェクトとして解析
+ * @desc {zh} 解析文件内容
+ * @desc {ru} Разбор содержимого файла как объект
+ * 
+ */
+export function requireData(this_file) {
+	return JSON.parse(require('./files').getFileContent(file));
 }

@@ -32,7 +32,7 @@ function getFilesRecursively(
  * @param {string} this_string
  * @param {string} pattern
  * @param {boolean} onlyFiles
- * @param {boolean} recoursively
+ * @param {boolean} recursively
  * @param {array} fileArray
  *
  * @desc {en} Get all files in the directory
@@ -49,7 +49,7 @@ function getFiles(
   this_string,
   pattern,
   onlyFiles = false,
-  recoursively = false,
+  recursively = false,
   fileArray = []
 ) {
   const files = fs.readdirSync(this_string);
@@ -63,14 +63,14 @@ function getFiles(
     ) {
       fileArray.push(filePath);
     }
-    if (fileStat.isDirectory() && recoursively) {
+    if (fileStat.isDirectory() && recursively) {
       fileArray = [
         ...fileArray,
         ...getFiles(
           filePath,
           pattern,
           onlyFiles,
-          typeof recoursively == "int" ? recoursively - 1 : recoursively
+          typeof recursively == "int" ? recursively - 1 : recursively
         ),
       ];
     }
