@@ -1,7 +1,19 @@
-import { deeplConnectionData } from 'third-party-api';
-const filesUtility = require('./files');
-const deepl = require('./deepl-translator');
+import { deeplConnectionData } from "third-party-api";
+const filesUtility = require("./files");
+const deepl = require("./deepl-translator");
 
+/**
+ * @desc {en} Class for translation o application string collection
+ * @desc {it} Classe per la traduzione della  collezione di stringhe dell'applicazione
+ * @desc {es} Clase para traducción de la colección de strings de la aplicación
+ * @desc {fr} Classe pour la traduction de la collection de chaines d'application
+ * @desc {de} Klasse für die Umschreibung der Application String Collection
+ * @desc {pt} Classe para tradução da coleção de strings da aplicação
+ * @desc {zh} 用于应用程序字符串集的翻译
+ * @desc {ru} Класс для перевода коллекции строк приложения
+ * @desc {ja} アプリケーション文字列コレクションの翻訳
+ *
+ */
 class Dictionary {
   constructor(directory) {
     this.languages = {};
@@ -18,7 +30,7 @@ class Dictionary {
   async installLanguage(languageCode, fromLanguage) {
     const languageOut = filesUtility.getFile(
       this.directory,
-      languageCode.toLowerCase() + '.json',
+      languageCode.toLowerCase() + ".json"
     );
     const translation = {};
     const newLang = fromLanguage.toLowerCase();
@@ -26,43 +38,69 @@ class Dictionary {
     for (const key in src) {
       translation[key] = await deepl.translate(
         src[key],
-        languageCode.toUpperCase(),
+        languageCode.toUpperCase()
       );
     }
     filesUtility.setFileContent(newLang, JSON.stringify(languageOut));
   }
 }
 
-module.exports = { Dictionary };
 /**
  * @prototype {string}
+ * @param {string} this_string
+ * @param {string} languageCode
+ * @param {function} callback
+ * @desc {en} Translate a string by callback
+ * @desc {it} Traduci una stringa tramite callback
+ * @desc {es} Traducir una cadena por callback
+ * @desc {fr} Traduire une chaîne par rappel
+ * @desc {de} Umschreiben einer Zeichenkette mit Callback
+ * @desc {pt} Traduzir uma string por callback
+ * @desc {zh} 通过回调翻译字符串
+ * @desc {ru} Переводить строку по колбеку
+ * @desc {ja} コールバックで文字列を翻訳
  */
-function translateByCallback(
-	this_string,
-	languageCode,
-	callback,
-) {
-	require('deepl')
-		.translate(this_string, languageCode.toUpperCase(), deeplConnectionData)
-		.then((result) => {
-			callback(null, result);
-		})
-		.catch((error) => {
-			console.error(error, '');
-		});
+function translateByCallback(this_string, languageCode, callback) {
+  require("deepl")
+    .translate(this_string, languageCode.toUpperCase(), deeplConnectionData)
+    .then((result) => {
+      callback(null, result);
+    })
+    .catch((error) => {
+      console.error(error, "");
+    });
 }
 
 /**
  * @prototype {string}
+ * @param {string} this_string
+ * @param {string} languageCode
+ * @desc {en} Translate a string
+ * @desc {it} Traduci una stringa
+ * @desc {es} Traducir una cadena
+ * @desc {fr} Traduire une chaîne
+ * @desc {de} Umschreiben einer Zeichenkette
+ * @desc {pt} Traduzir uma string
+ * @desc {zh} 翻译字符串
+ * @desc {ru} Переводить строку
+ * @desc {ja} 文字列を翻訳
+ *
  */
-async function translate(this_string,languageCode) {
+async function translate(this_string, languageCode) {
   try {
-     
-    let result = await deepl.translate(this_string, languageCode.toUpperCase(), apiKey);
-    return result;  
+    let result = await deepl.translate(
+      this_string,
+      languageCode.toUpperCase(),
+      apiKey
+    );
+    return result;
   } catch (error) {
-    console.error('Deepl Error: '+error);
+    console.error("DeepL Error: " + error);
   }
 }
 
-module.exports = { translate:translate,translateByCallback:translateByCallback , Dictionary:Dictionary};
+module.exports = {
+  translate: translate,
+  translateByCallback: translateByCallback,
+  Dictionary: Dictionary,
+};
