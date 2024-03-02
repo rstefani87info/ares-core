@@ -17,7 +17,7 @@
  * @param  {...string} paths 
  */
 export function initPrototypes (...paths) {
-	const filesUtility = require('./files');
+	const filesUtility = require('./files.js');
 	console.log('init prototype: {');
 	for (const path of paths) {
 		const files = filesUtility.getFilesRecoursively(path, /^.*\.(js|ts|jsx|tsx)$/i);
@@ -45,7 +45,7 @@ export function initPrototypes (...paths) {
  * @param  {string} filePath 
  */
 export function addFileFunctionsToPrototype (filePath)  {
-	const scriptsUtility = require('./scripts');
+	const scriptsUtility = require('./scripts.js');
 	const functions = scriptsUtility.getFunctionsFromFile(filePath);
 	for (const f of functions) {
 		console.log(' - - init prototype for function ' + scriptsUtility.getFunctionName(f) + ' ;');

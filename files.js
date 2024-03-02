@@ -1,5 +1,5 @@
-const fs = require("fs");
-const path = require("path");
+import { readdirSync, statSync, readFileSync, writeFile } from "fs";
+import { join, resolve, extname, basename, dirname, normalize, relative } from "path";
 
 /**
  * @prototype {string}
@@ -52,11 +52,11 @@ function getFiles(
   recursively = false,
   fileArray = []
 ) {
-  const files = fs.readdirSync(this_string);
+  const files = readdirSync(this_string);
 
   files.forEach((file) => {
-    const filePath = path.join(this_string, file);
-    const fileStat = fs.statSync(filePath);
+    const filePath = join(this_string, file);
+    const fileStat = statSync(filePath);
     if (
       filePath.match(pattern) &&
       (onlyFiles ? !fileStat.isDirectory() : true)
@@ -93,7 +93,7 @@ function getFiles(
  * @desc {ja} パスがディレクトリですか
  */
 function isDirectory(this_string) {
-  return fs.statSync(this_string).isDirectory();
+  return statSync(this_string).isDirectory();
 }
 /**
  * @prototype {string}
@@ -110,7 +110,7 @@ function isDirectory(this_string) {
  * @desc {ja} パスがファイルですか
  */
 function isFile(this_string) {
-  return !fs.statSync(this_string).isDirectory() && fileExists(this_string);
+  return !statSync(this_string).isDirectory() && fileExists(this_string);
 }
 /**
  * @prototype {string}
@@ -130,8 +130,8 @@ function isFile(this_string) {
  */
 function getFileContent(this_string, encoding = "utf-8") {
   try {
-    const absolutePath = path.resolve(this_string);
-    const content = fs.readFileSync(absolutePath, encoding);
+    const absolutePath = resolve(this_string);
+    const content = readFileSync(absolutePath, encoding);
     return content;
   } catch (error) {
     console.error(`Error reading file ${this_string}:`, error.message);
@@ -157,7 +157,7 @@ function getFileContent(this_string, encoding = "utf-8") {
  */
 async function setFileContent(filePath, content, encoding = "utf-8") {
   try {
-    await fs.writeFile(filePath, content, { encoding });
+    await writeFile(filePath, content, { encoding });
   } catch (error) {
     console.error(`Error writing to file ${filePath}:`, error.message);
     throw error;
@@ -180,7 +180,7 @@ async function setFileContent(filePath, content, encoding = "utf-8") {
  *
  */
 function getFile(this_path, file) {
-  return path.join(this_path, file);
+  return join(this_path, file);
 }
 /**
  * @prototype {string}
@@ -198,7 +198,7 @@ function getFile(this_path, file) {
  *
  */
 function getFileExtension(this_string) {
-  return path.extname(this_string);
+  return extname(this_string);
 }
 /**
  * @prototype {string}
@@ -229,7 +229,7 @@ function getFileName(this_string) {
  * 	@desc {es} Obtener el nombre del archivo
  */
 function getBaseName(this_string) {
-  return path.basename(this_string);
+  return basename(this_string);
 }
 /**
  * @prototype {string}
@@ -246,8 +246,8 @@ function getBaseName(this_string) {
  * @desc {ja} 親ディレクトリを取得
  */
 function getParent(this_string) {
-  const parentDir = path.dirname(this_string);
-  return path.normalize(parentDir);
+  const parentDir = dirname(this_string);
+  return normalize(parentDir);
 }
 
 /**
@@ -267,7 +267,7 @@ function getParent(this_string) {
  * 
  */
 function getRelativePathFrom(this_string, referenceDir) {
-  return path.normalize(path.relative(referenceDir, this_string));
+  return normalize(relative(referenceDir, this_string));
 }
 
 /**
@@ -286,25 +286,23 @@ function getRelativePathFrom(this_string, referenceDir) {
  */
 function fileExists(this_string) {
   try {
-    const fileStat = fs.statSync(path.normalize(this_string));
+    const fileStat = statSync(normalize(this_string));
     return fileStat.ctime != null;
   } catch (e) {
     return false;
   }
 }
 
-module.exports = {
-  setFileContent: setFileContent,
-  getFile: getFile,
-  isDirectory: isDirectory,
-  isFile: isFile,
-  getFiles: getFiles,
-  getFilesRecoursively: getFilesRecoursively,
-  getFileContent: getFileContent,
-  getFileExtension: getFileExtension,
-  getFileName: getFileName,
-  getBaseName: getBaseName,
-  getParent: getParent,
-  getRelativePathFrom: getRelativePathFrom,
-  fileExists: fileExists,
-};
+export const setFileContent = setFileContent;
+export const getFile = getFile;
+export const isDirectory = isDirectory;
+export const isFile = isFile;
+export const getFiles = getFiles;
+export const getFilesRecoursively = getFilesRecoursively;
+export const getFileContent = getFileContent;
+export const getFileExtension = getFileExtension;
+export const getFileName = getFileName;
+export const getBaseName = getBaseName;
+export const getParent = getParent;
+export const getRelativePathFrom = getRelativePathFrom;
+export const fileExists = fileExists;
