@@ -16,7 +16,7 @@
  * @desc {ja} 指定されたパスのすべてのファイルのすべての関数の prototype を初期化
  * @param  {...string} paths 
  */
-function initPrototypes (...paths) {
+export function initPrototypes (...paths) {
 	const filesUtility = require('./files');
 	console.log('init prototype: {');
 	for (const path of paths) {
@@ -44,7 +44,7 @@ function initPrototypes (...paths) {
  * @desc {ru} Инициализирует прототипы для всех типов, объявленных в аннотациях docklet в указанном файле.
  * @param  {string} filePath 
  */
-function addFileFunctionsToPrototype (filePath)  {
+export function addFileFunctionsToPrototype (filePath)  {
 	const scriptsUtility = require('./scripts');
 	const functions = scriptsUtility.getFunctionsFromFile(filePath);
 	for (const f of functions) {
@@ -56,4 +56,3 @@ function addFileFunctionsToPrototype (filePath)  {
 
 	}
 };
-module.exports = {paths:paths, initPrototypes:initPrototypes, addFileFunctionsToPrototype:addFileFunctionsToPrototype};
