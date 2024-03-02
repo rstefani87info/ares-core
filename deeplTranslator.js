@@ -1,4 +1,4 @@
-import { DeepL } from "../../../3dParty.js";
+import { DeepL } from "../../../3rdParty.js";
 const filesUtility = require("./files.js");
 
 /**
