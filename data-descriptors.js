@@ -53,6 +53,18 @@ const objectDescriptorDefinitions = {
 
 /**
  * @prototype {Object}  
+ * @param {Object} this_object
+ * @param {Object} descriptor
+ * 
+ * @desc {en} Format an object according to the descriptor
+ * @desc {it} Formatta un oggetto in base al descrittore
+ * @desc {es} Formate un objeto de acuerdo con el descritor
+ * @desc {pt} Formata um objeto de acordo com o descritor
+ * @desc {fr} Format un objet selon le descriteur
+ * @desc {de} Formatiert ein Objekt entsprechend dem Descriptor
+ * @desc {ja} 指定されたディレクトリのすべてのファイル
+ * @desc {zh} 格式化对象
+ * @desc {ru} Форматирует объект в соответствии с дескриптором
  */
 function format(this_object, descriptor) {
 	const ret = {};
@@ -96,6 +108,17 @@ function format(this_object, descriptor) {
 	return ret;
 }
 
+/**
+ * @desc {en} Data descriptors
+ * @desc {it} Descrittore di dati
+ * @desc {es} Descriptores de datos
+ * @desc {pt} Descriptores de dados
+ * @desc {fr} Descripteurs de données
+ * @desc {de} Datendescriptoren
+ * @desc {ja} データ記述子
+ * @desc {zh} 数据描述符
+ * @desc {ru} Дескрипторы данных
+ */
 const dataDescriptors = {
   "common[\\s-_]name": {
     type: "text",
@@ -319,7 +342,7 @@ const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "tiktok[\\s-_]*(id){0,1}": {
+  "ticktock[\\s-_]*(id){0,1}": {
     type: "text",
     pattern: /^[a-zA-Z0-9_]+$/,
     maxLength: 100,

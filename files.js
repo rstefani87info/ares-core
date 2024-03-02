@@ -236,14 +236,14 @@ function getBaseName(this_string) {
  * @param {string} this_string
  *
  * @desc {en} Get parent directory
- * 	@desc {it} Ottieni la directory genitore
- * 	@desc {es} Obtener el directorio padre
- * 	@desc {fr} Obtenez le dossier parent
- * 	@desc {de} Liefert den Ordner
- * 	@desc {pt} Obtenha o diretório pai
- * 	@desc {zh} 获取父目录
- * 	@desc {ru} Возвращает родительский каталог
- * 	@desc {ja} 親ディレクトリを取得
+ * @desc {it} Ottieni la directory genitore
+ * @desc {es} Obtener el directorio padre
+ * @desc {fr} Obtenez le dossier parent
+ * @desc {de} Liefert den Ordner
+ * @desc {pt} Obtenha o diretório pai
+ * @desc {zh} 获取父目录
+ * @desc {ru} Возвращает родительский каталог
+ * @desc {ja} 親ディレクトリを取得
  */
 function getParent(this_string) {
   const parentDir = path.dirname(this_string);
