@@ -19,7 +19,7 @@ import { join, resolve, extname, basename, dirname, normalize, relative } from "
  * @desc {ru} Возвращает все файлы в директории, если требуется
  * @desc {ja} 指定されたディレクトリのすべてのファイル
  */
-function getFilesRecursively(
+export function getFilesRecursively(
   this_string,
   pattern,
   onlyFiles = false,
@@ -45,7 +45,7 @@ function getFilesRecursively(
  * @desc {ru} Возвращает все файлы в директории
  * @desc {ja} 指定されたディレクトリのすべてのファイル
  */
-function getFiles(
+export function getFiles(
   this_string,
   pattern,
   onlyFiles = false,
@@ -92,7 +92,7 @@ function getFiles(
  * @desc {ru} Проверяет, является ли путь директорией
  * @desc {ja} パスがディレクトリですか
  */
-function isDirectory(this_string) {
+export function isDirectory(this_string) {
   return statSync(this_string).isDirectory();
 }
 /**
@@ -109,7 +109,7 @@ function isDirectory(this_string) {
  * @desc {ru} Проверяет, является ли путь файлом
  * @desc {ja} パスがファイルですか
  */
-function isFile(this_string) {
+export function isFile(this_string) {
   return !statSync(this_string).isDirectory() && fileExists(this_string);
 }
 /**
@@ -128,7 +128,7 @@ function isFile(this_string) {
  * @desc {ja} ファイルの内容を読み取
  *
  */
-function getFileContent(this_string, encoding = "utf-8") {
+export function getFileContent(this_string, encoding = "utf-8") {
   try {
     const absolutePath = resolve(this_string);
     const content = readFileSync(absolutePath, encoding);
@@ -155,7 +155,7 @@ function getFileContent(this_string, encoding = "utf-8") {
  * @desc {ja} ファイルの内容を書き込み
  *
  */
-async function setFileContent(filePath, content, encoding = "utf-8") {
+export async function setFileContent(filePath, content, encoding = "utf-8") {
   try {
     await writeFile(filePath, content, { encoding });
   } catch (error) {
@@ -179,7 +179,7 @@ async function setFileContent(filePath, content, encoding = "utf-8") {
  * @desc {ja} ディレクトリのパスに基いてファイルのパスを取得
  *
  */
-function getFile(this_path, file) {
+export function getFile(this_path, file) {
   return join(this_path, file);
 }
 /**
@@ -197,7 +197,7 @@ function getFile(this_path, file) {
  * 	@desc {ja} ファイルの拡張子を取得
  *
  */
-function getFileExtension(this_string) {
+export function getFileExtension(this_string) {
   return extname(this_string);
 }
 /**
@@ -214,7 +214,7 @@ function getFileExtension(this_string) {
  * 	@desc {ru} Возвращает имя файл без расширения
  * 	@desc {ja} ファイル名（拡張子なし）を取得
  */
-function getFileName(this_string) {
+export function getFileName(this_string) {
   return getBaseName(this_string).replace(
     new RegExp("\\." + getFileExtension(this_string) + "$", "i"),
     ""
@@ -228,7 +228,7 @@ function getFileName(this_string) {
  * 	@desc {it} Ottieni il nome del file
  * 	@desc {es} Obtener el nombre del archivo
  */
-function getBaseName(this_string) {
+export function getBaseName(this_string) {
   return basename(this_string);
 }
 /**
@@ -245,7 +245,7 @@ function getBaseName(this_string) {
  * @desc {ru} Возвращает родительский каталог
  * @desc {ja} 親ディレクトリを取得
  */
-function getParent(this_string) {
+export function getParent(this_string) {
   const parentDir = dirname(this_string);
   return normalize(parentDir);
 }
@@ -266,7 +266,7 @@ function getParent(this_string) {
  * @desc {ja} 親ディレクトリを取得
  * 
  */
-function getRelativePathFrom(this_string, referenceDir) {
+export function getRelativePathFrom(this_string, referenceDir) {
   return normalize(relative(referenceDir, this_string));
 }
 
@@ -284,7 +284,7 @@ function getRelativePathFrom(this_string, referenceDir) {
  * @desc {ru} Проверяет, существует ли файл
  * @desc {ja} ファイルが存在するか
  */
-function fileExists(this_string) {
+export function fileExists(this_string) {
   try {
     const fileStat = statSync(normalize(this_string));
     return fileStat.ctime != null;
@@ -293,16 +293,4 @@ function fileExists(this_string) {
   }
 }
 
-export const setFileContent = setFileContent;
-export const getFile = getFile;
-export const isDirectory = isDirectory;
-export const isFile = isFile;
-export const getFiles = getFiles;
-export const getFilesRecoursively = getFilesRecoursively;
-export const getFileContent = getFileContent;
-export const getFileExtension = getFileExtension;
-export const getFileName = getFileName;
-export const getBaseName = getBaseName;
-export const getParent = getParent;
-export const getRelativePathFrom = getRelativePathFrom;
-export const fileExists = fileExists;
+ 
