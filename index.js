@@ -20,7 +20,6 @@ import * as files from "./files.js";
 import * as localAi from "./localAI.js";
 import * as objects from "./objects.js";
 import * as permissions from "./permissions.js";
-import * as strings from "./strings.js";
 import * as scripts from "./scripts.js";
 import * as prototype from "./prototype.js";
 
@@ -36,7 +35,6 @@ export default aReS = (() => {
     localAi: localAi,
     objects: objects,
     permissions: permissions,
-    strings: strings,
     scripts: scripts,
     prototype: prototype,
   };
