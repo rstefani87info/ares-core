@@ -11,7 +11,7 @@ function install(express){
 							 rephrase(req.params['input'], req.params['temperature']?parseFloat(req.params['temperature']):0.7 ,(data,error,params)=>error?res.send(error):res.json(data));
 						}
 					);
-	express.get( '/localAI/prompth',
+	express.get( '/localAI/prompt',
 						(req, res) => {
 							 prompt(req.params['input'], req.params['temperature']?parseFloat(req.params['temperature']):0.7 ,(data,error,params)=>error?res.send(error):res.json(data));
 						}

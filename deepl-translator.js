@@ -3,8 +3,8 @@ const filesUtility = require("./files");
 const deepl = require("./deepl-translator");
 
 /**
- * @desc {en} Class for translation o application string collection
- * @desc {it} Classe per la traduzione della  collezione di stringhe dell'applicazione
+ * @desc {en} Class for translation of application string collection
+ * @desc {it} Classe per la traduzione della collezione di stringhe dell'applicazione
  * @desc {es} Clase para traducción de la colección de strings de la aplicación
  * @desc {fr} Classe pour la traduction de la collection de chaines d'application
  * @desc {de} Klasse für die Umschreibung der Application String Collection
