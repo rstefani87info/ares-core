@@ -1,5 +1,5 @@
+import * as filesUtility from "./files.js";
 import { DeepL } from "../../../3rdParty.js";
-const filesUtility = require("./files.js");
 
 /**
  * @desc {en} Class for translation of application string collection
