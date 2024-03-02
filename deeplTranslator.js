@@ -13,7 +13,7 @@ import { DeepL } from "../../../3rdParty.js";
  * @desc {ja} アプリケーション文字列コレクションの翻訳
  *
  */
-class Dictionary {
+export class Dictionary {
   constructor(directory) {
     this.languages = {};
     this.directory = directory;
@@ -59,7 +59,7 @@ class Dictionary {
  * @desc {ru} Переводить строку по колбеку
  * @desc {ja} コールバックで文字列を翻訳
  */
-function translateByCallback(this_string, languageCode, callback) {
+export function translateByCallback(this_string, languageCode, callback) {
   new require("deepl-node").Translator(authKey)
     .translate(this_string, languageCode.toUpperCase(), deeplConnectionData)
     .then((result) => {
@@ -85,7 +85,7 @@ function translateByCallback(this_string, languageCode, callback) {
  * @desc {ja} 文字列を翻訳
  *
  */
-async function translate(this_string, languageCode) {
+export async function translate(this_string, languageCode) {
   try {
     let result = await deepl.translate(
       this_string,
@@ -97,9 +97,4 @@ async function translate(this_string, languageCode) {
     console.error("DeepL Error: " + error);
   }
 }
-
-module.exports = {
-  translate: translate,
-  translateByCallback: translateByCallback,
-  Dictionary: Dictionary,
-};
+ 
