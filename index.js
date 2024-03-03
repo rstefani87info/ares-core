@@ -23,7 +23,7 @@ import * as permissions from "./permissions.js";
 import * as scripts from "./scripts.js";
 import * as prototype from "./prototype.js";
 
-export const aReS = (() => {
+const aReS = (() => {
   // init the prototypes by all functions in this module
   prototype.initPrototypes();
   return {
@@ -39,3 +39,5 @@ export const aReS = (() => {
     prototype: prototype,
   };
 })();
+
+export default aReS;
