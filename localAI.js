@@ -29,10 +29,10 @@ export const version='v1';
 
 
 const apiUrl=host+':'+port+'/'+version+'/';
-import { post } from 'axios';
+import axios from 'axios';
 export async function getModels(callback){
 	try {
-    const response = await post(apiUrl+'models',  {
+    const response = await axios.post(apiUrl+'models',  {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -61,7 +61,7 @@ export async function sendMessage(this_message, temperature ,callback) {
   };
 
   try {
-    const response = await post(apiUrl+'chat/completions', requestData, {
+    const response = await axios.post(apiUrl+'chat/completions', requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -86,7 +86,7 @@ export async function rephrase(this_message, temperature ,callback) {
   };
 
   try {
-    const response = await post(apiUrl+'edits', requestData, {
+    const response = await axios.post(apiUrl+'edits', requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
@@ -110,7 +110,7 @@ export async function prompt(this_message, temperature ,callback) {
   };
 
   try {
-    const response = await post(apiUrl+'completions', requestData, {
+    const response = await axios.post(apiUrl+'completions', requestData, {
       headers: {
         'Content-Type': 'application/json',
       },
