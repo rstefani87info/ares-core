@@ -1,5 +1,22 @@
-import { readdirSync, statSync, readFileSync, writeFile } from "fs";
+import { readdirSync, statSync, readFileSync, writeFile, absolutePath } from "fs";
 import { join, resolve, extname, basename, dirname, normalize, relative } from "path";
+
+/**
+ * @prototype {string}
+ * @param {string} this_file
+ * @returns {string}
+ * 
+ * @desc {en} Get absolute path
+ * @desc {it} Ottieni il percorso assoluto
+ * @desc {es} Obtiene la ruta absoluta
+ * @desc {fr} Obtenez le chemin absolu
+ * @desc {de} Erhalte den absoluten Pfad
+ * @desc {pt} Obtenha o caminho absoluto
+ * @desc {zh} 获取绝对路径
+ * @desc {ru} Возвращает абсолютный путь
+ * @desc {ja} 絶対パスを取得
+ */
+function getAbsolutePath(this_file) { return resolve(this_file); } 
 
 /**
  * @prototype {string}

@@ -26,7 +26,7 @@ export function initPrototypes (...paths) {
 		console.log(' - found files ' + files.join(',') + ';');
 		for (const file of files) {
 			console.log(' - init prototype for file ' + file + ': {');
-			addFileFunctionsToPrototype(file);
+			addFileFunctionsToPrototype(filesUtility.getAbsolutePath(file));
 			console.log(' - }');
 		}
 	}

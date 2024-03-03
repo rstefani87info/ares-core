@@ -4,7 +4,7 @@ import * as filesUtility from "./files.js";
  */
 export function getFunctionsFromFile(this_string) {
   const script = import(
-    "../" + this_string.replace(filesUtility.getFileExtension(this_string), "")
+    this_string
   );
   return Object.getOwnPropertyNames(script)
     .map((n) => script[n])
