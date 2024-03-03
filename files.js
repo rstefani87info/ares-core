@@ -16,7 +16,7 @@ import { join, resolve, extname, basename, dirname, normalize, relative } from "
  * @desc {ru} Возвращает абсолютный путь
  * @desc {ja} 絶対パスを取得
  */
-function getAbsolutePath(this_file) { return resolve(this_file); } 
+export function getAbsolutePath(this_file) { return resolve(this_file); } 
 
 /**
  * @prototype {string}
