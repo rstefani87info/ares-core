@@ -66,7 +66,7 @@ const objectDescriptorDefinitions = {
  * @desc {zh} 格式化对象
  * @desc {ru} Форматирует объект в соответствии с дескриптором
  */
-function format(this_object, descriptor) {
+export function format(this_object, descriptor) {
 	const ret = {};
 	for (const k in descriptor.params) {
 		ret[k] = this_object[k];
