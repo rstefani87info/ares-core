@@ -9,7 +9,7 @@
  * @desc {zh} 常用数据描述符
  * @desc {ru} карта наиболее часто используемых данных
  */
-const objectDescriptorDefinitions = {
+export const objectDescriptorDefinitions = {
 
 	"text": {
 		parse: (s) => s + '',
@@ -119,7 +119,7 @@ export function format(this_object, descriptor) {
  * @desc {zh} 数据描述符
  * @desc {ru} Дескрипторы данных
  */
-const dataDescriptors = {
+export const dataDescriptors = {
   "common[\\s-_]name": {
     type: "text",
     normalization: (s) => s.trim(),
