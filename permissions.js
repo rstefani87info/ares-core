@@ -1,4 +1,4 @@
- import permissions from "./permissionData.json";
+ import permissions from "../../../permissionData.json";
 
 /**
  * @desc {en} Check if the resource is allowed based on the provided parameters.
