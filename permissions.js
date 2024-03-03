@@ -1,4 +1,4 @@
-import permissions, { filter } from "./permissionData.json";
+ import permissions from "./permissionData.json";
 
 /**
  * @desc {en} Check if the resource is allowed based on the provided parameters.
@@ -20,7 +20,7 @@ import permissions, { filter } from "./permissionData.json";
  * 
  * @prototype {string}
  */
-function isResourceAllowed(
+export function isResourceAllowed(
   id,
   host = null,
   userId = null,
@@ -58,10 +58,10 @@ function isResourceAllowed(
  * @param {string} userAgent - The user agent for which permissions are being filtered
  * @return {array} The filtered permissions based on the provided parameters
  */
-function getPermission(host = null, userId = null, userAgent = null) {
+export function getPermission(host = null, userId = null, userAgent = null) {
   userId = (userId ?? "").match(/^\w+$/g) ? userId : "*";
   userAgent = userAgent ? userAgent : "*";
-  let filteredPermissions = filter(
+  let filteredPermissions = permissions.filter(
     (x) =>
       (x.hosts && x.hosts.length > 0
         ? x.hosts.indexOf(host + "") >= 0
@@ -79,6 +79,4 @@ function getPermission(host = null, userId = null, userAgent = null) {
   return filteredPermissions;
 }
 
-export const permissions = permissions;
-export const isResourceAllowed = isResourceAllowed;
-export const getPermission = getPermission;
+
