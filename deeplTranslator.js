@@ -1,5 +1,6 @@
 import * as filesUtility from "./files.js";
 import { DeepL } from "../../../3rdParty.js";
+import deepl from 'deepl-node';
 
 /**
  * @desc {en} Class for translation of application string collection
@@ -35,7 +36,8 @@ export class Dictionary {
     const newLang = fromLanguage.toLowerCase();
     const src = this.languages[fromLanguage.toLowerCase()];
     for (const key in src) {
-      translation[key] = await deepl.translate(
+      translation[key] = await  deepl.Translator(authKey)
+      .translateText(
         src[key],
         languageCode.toUpperCase()
       );
@@ -43,6 +45,7 @@ export class Dictionary {
     filesUtility.setFileContent(newLang, JSON.stringify(languageOut));
   }
 }
+
 
 /**
  * @prototype {string}
@@ -60,8 +63,8 @@ export class Dictionary {
  * @desc {ja} コールバックで文字列を翻訳
  */
 export function translateByCallback(this_string, languageCode, callback) {
-  new require("deepl-node").Translator(authKey)
-    .translate(this_string, languageCode.toUpperCase(), deeplConnectionData)
+  deepl.Translator(authKey)
+    .translateText(this_string, languageCode.toUpperCase(), deeplConnectionData)
     .then((result) => {
       callback(null, result);
     })
@@ -87,7 +90,8 @@ export function translateByCallback(this_string, languageCode, callback) {
  */
 export async function translate(this_string, languageCode) {
   try {
-    let result = await deepl.translate(
+    let result = await  deepl.Translator(authKey)
+    .translateText(
       this_string,
       languageCode.toUpperCase(),
       apiKey

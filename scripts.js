@@ -1,8 +1,8 @@
+import * as filesUtility from './files';
 /**
  * @prototype {string} 
  */
 export function getFunctionsFromFile(this_string) {
-	const filesUtility = require('./files');
 	const script = require('../' + this_string.replace(filesUtility.getFileExtension(this_string), ''));
 	return Object.getOwnPropertyNames(script).map(n => script[n]).filter(x => typeof x == 'function');
 }

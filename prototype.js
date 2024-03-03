@@ -3,6 +3,9 @@
  * @author Roberto Stefani
  */
 
+
+import * as filesUtility from './files.js';
+import * as scriptsUtility from './scripts.js';
 /**
  * @prototype {string}
  * @desc {en} Initializes prototypes for all types declared on function docklet annotations in files of the given paths recoursively.
@@ -17,7 +20,6 @@
  * @param  {...string} paths 
  */
 export function initPrototypes (...paths) {
-	const filesUtility = require('./files.js');
 	console.log('init prototype: {');
 	for (const path of paths) {
 		const files = filesUtility.getFilesRecoursively(path, /^.*\.(js|ts|jsx|tsx)$/i);
@@ -45,7 +47,6 @@ export function initPrototypes (...paths) {
  * @param  {string} filePath 
  */
 export function addFileFunctionsToPrototype (filePath)  {
-	const scriptsUtility = require('./scripts.js');
 	const functions = scriptsUtility.getFunctionsFromFile(filePath);
 	for (const f of functions) {
 		console.log(' - - init prototype for function ' + scriptsUtility.getFunctionName(f) + ' ;');

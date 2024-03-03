@@ -1,4 +1,5 @@
 import moment from 'moment';
+import * as fileUtility from './files.js';
 //TODO: import numeral from 'numeral';
 
 /**
@@ -87,5 +88,5 @@ export function setupPropertyAlias(this_object, alias) {
  * 
  */
 export function requireData(this_file) {
-	return JSON.parse(require('./files').getFileContent(file));
+	return JSON.parse(fileUtility.getFileContent(file));
 }
