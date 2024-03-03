@@ -26,7 +26,11 @@ export function initPrototypes (...paths) {
 		console.log(' - found files ' + files.join(',') + ';');
 		for (const file of files) {
 			console.log(' - init prototype for file ' + file + ': {');
-			addFileFunctionsToPrototype(filesUtility.getAbsolutePath(file));
+			let absolutePat = filesUtility.getAbsolutePath(file);
+			if (!absolutePat.startsWith('http://') && !absolutePat.startsWith('https://') && !absolutePat.startsWith('file://')) {
+				absolutePat = 'file://' + absolutePat;
+			}
+			addFileFunctionsToPrototype(absolutePat);
 			console.log(' - }');
 		}
 	}
