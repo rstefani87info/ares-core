@@ -20,6 +20,7 @@
  * 
  * @prototype {string}
  */
+
 export function isResourceAllowed(
   id,
   host = null,
@@ -79,4 +80,4 @@ export function getPermission(host = null, userId = null, userAgent = null) {
   return filteredPermissions;
 }
 
-
+export default permissions;
