@@ -23,7 +23,7 @@ export function getAbsolutePath(this_file) { return resolve(this_file); }
  * @param {string} this_string
  * @param {string} pattern
  * @param {boolean} onlyFiles
- * @param {boolean} recoursively
+ * @param {boolean} recursively
  * @param {array} fileArray
  *
  * @desc {en} Get all files in the directory recursively if required
