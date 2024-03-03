@@ -1,4 +1,4 @@
-import * as filesUtility from './files';
+import * as filesUtility from './files.js';
 /**
  * @prototype {string} 
  */
