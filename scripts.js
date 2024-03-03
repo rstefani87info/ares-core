@@ -1,7 +1,7 @@
 /**
  * @prototype {string} 
  */
-function getFunctionsFromFile(this_string) {
+export function getFunctionsFromFile(this_string) {
 	const filesUtility = require('./files');
 	const script = require('../' + this_string.replace(filesUtility.getFileExtension(this_string), ''));
 	return Object.getOwnPropertyNames(script).map(n => script[n]).filter(x => typeof x == 'function');
@@ -9,10 +9,10 @@ function getFunctionsFromFile(this_string) {
 /**
  * @prototype {function} 
  */
-function getDocklet(this_function) {
-	const funzioneString = this_function.toString();
-	const commentiRegex = /\/\*\*([\s\S]*?)\*\//;
-	const match = funzioneString.match(commentiRegex);
+export function getDocklet(this_function) {
+	const fnString = this_function.toString();
+	const commentRegex = /\/\*\*([\s\S]*?)\*\//;
+	const match = fnString.match(commentRegex);
 
 	if (match && match[1]) {
 		return match[1].trim();
@@ -24,7 +24,7 @@ function getDocklet(this_function) {
 /**
  * @prototype {function} 
  */
-function getDockletAnnotations(this_function) {
+export function getDockletAnnotations(this_function) {
 	const s = getDocklet(this_function) ?? '';
 	if (s) {
 		const annotations = [];
@@ -51,7 +51,7 @@ function getDockletAnnotations(this_function) {
 /**
  * @prototype {function} getParameters
  */
-function getFunctionParameters(this_function) {
+export function getFunctionParameters(this_function) {
 	const parameters = [];
 	const s = f.toString();
 	const { params } = s.match(/^\s*function\s*\w+\s*\((?<params>.*)\)\s*\{.*$/gm).groups;
@@ -64,7 +64,7 @@ function getFunctionParameters(this_function) {
 /**
  * @prototype {function}
  */
-function facade(this_function, alias = null) {
+export function facade(this_function, alias = null) {
 	const functionName = getFunctionName(this_function);
 	if (functionName) {
 		const params = getFunctionParameters(this_function);
@@ -80,13 +80,13 @@ function facade(this_function, alias = null) {
 /**
  * @prototype {function}
  */
-function facadeOnPrototype(this_function, type, alias = null) {
+export function facadeOnPrototype(this_function, type, alias = null) {
 	facadeOnObject(this_function, scriptsUtility.getTypeByName(pa.type).prototype, alias);
 }
 /**
  * @prototype {function}
  */
-function facadeOnObject(this_function, object, alias = null) {
+export function facadeOnObject(this_function, object, alias = null) {
 	const functionName = getFunctionName(this_function);
 	if(functionName){
 		const name = alias ? alias : functionName;
@@ -96,21 +96,13 @@ function facadeOnObject(this_function, object, alias = null) {
 /**
  * @prototype {string} reflect
  */
-function getTypeByName(this_string) {
+export function getTypeByName(this_string) {
 	return global[this_string] || window[this_string];
 }
 /**
  * @prototype {function} getName
  */
-function getFunctionName(this_function) {
+export function getFunctionName(this_function) {
 	const f = this_function.toString().match(/^function\s*([^\s(]+)/);
 	return f && f.length > 0 ? f[1] : null;
 }
-
-
-module.exports = {
-	getFunctionsFromFile: getFunctionsFromFile, getDocklet: getDocklet,
-	getDockletAnnotations: getDockletAnnotations, getFunctionParameters: getFunctionParameters,
-	facade: facade, facadeOnPrototype: facadeOnPrototype, facadeOnObject: facadeOnObject,
-	getTypeByName: getTypeByName, getFunctionName: getFunctionName
-};
