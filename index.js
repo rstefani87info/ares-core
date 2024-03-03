@@ -25,7 +25,7 @@ import * as prototype from "./prototype.js";
 
 const aReS = (() => {
   // init the prototypes by all functions in this module
-  prototype.initPrototypes();
+  prototype.initPrototypes('./');
   return {
     arrays:arrays,
     crypto: crypto,

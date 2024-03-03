@@ -22,7 +22,7 @@ import * as scriptsUtility from './scripts.js';
 export function initPrototypes (...paths) {
 	console.log('init prototype: {');
 	for (const path of paths) {
-		const files = filesUtility.getFilesRecoursively(path, /^.*\.(js|ts|jsx|tsx)$/i);
+		const files = filesUtility.getFilesRecursively(path, /^.*\.(js|ts|jsx|tsx)$/i);
 		console.log(' - found files ' + files.join(',') + ';');
 		for (const file of files) {
 			console.log(' - init prototype for file ' + file + ': {');
