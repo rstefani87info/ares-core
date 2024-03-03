@@ -1,4 +1,4 @@
-import { readdirSync, statSync, readFileSync, writeFile, absolutePath } from "fs";
+import { readdirSync, statSync, readFileSync, writeFile } from "fs";
 import { join, resolve, extname, basename, dirname, normalize, relative } from "path";
 
 /**
