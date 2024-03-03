@@ -1,4 +1,4 @@
-const permissions = require("./permissionData.json");
+import permissions, { filter } from "./permissionData.json";
 
 /**
  * @desc {en} Check if the resource is allowed based on the provided parameters.
@@ -61,7 +61,7 @@ function isResourceAllowed(
 function getPermission(host = null, userId = null, userAgent = null) {
   userId = (userId ?? "").match(/^\w+$/g) ? userId : "*";
   userAgent = userAgent ? userAgent : "*";
-  let filteredPermissions = permissions.filter(
+  let filteredPermissions = filter(
     (x) =>
       (x.hosts && x.hosts.length > 0
         ? x.hosts.indexOf(host + "") >= 0
@@ -79,8 +79,6 @@ function getPermission(host = null, userId = null, userAgent = null) {
   return filteredPermissions;
 }
 
-module.exports = {
-  permissions: permissions,
-  isResourceAllowed: isResourceAllowed,
-  getPermission: getPermission,
-};
+export const permissions = permissions;
+export const isResourceAllowed = isResourceAllowed;
+export const getPermission = getPermission;
