@@ -3,7 +3,7 @@ import * as filesUtility from './files.js';
  * @prototype {string} 
  */
 export function getFunctionsFromFile(this_string) {
-	const script = require('../' + this_string.replace(filesUtility.getFileExtension(this_string), ''));
+	const script = import('../' + this_string.replace(filesUtility.getFileExtension(this_string), ''));
 	return Object.getOwnPropertyNames(script).map(n => script[n]).filter(x => typeof x == 'function');
 }
 /**
