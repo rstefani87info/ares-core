@@ -25,7 +25,7 @@ import * as prototype from "./prototype.js";
 export function getApplicationRoot() {
   const fileUrl = import.meta.url;
   const filePath = new URL(fileUrl);
-  const directoryPath = files.getParent(filePath);
+  const directoryPath = files.getParent(filePath.pathname);
   return directoryPath;
 }
 
