@@ -30,8 +30,7 @@ export function getApplicationRoot() {
 }
 
 const aReS = (() => {
-  // init the prototypes by all functions in this module
-  prototype.initPrototypes(getApplicationRoot());
+  prototype.initPrototypes(files.getParent(getApplicationRoot()));
   return {
     arrays: arrays,
     crypto: crypto,
