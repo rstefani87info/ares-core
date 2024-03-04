@@ -25,12 +25,12 @@ import * as prototype from "./prototype.js";
 export function getApplicationRoot() {
   const fileUrl = import.meta.url;
   const filePath = new URL(fileUrl);
-  const directoryPath = files.dirname(filePath);
+  const directoryPath = files.getParent(filePath);
   return directoryPath;
 }
 
 const aReS = (() => {
-  prototype.initPrototypes(files.getParent(getApplicationRoot()));
+  prototype.initPrototypes(getApplicationRoot());
   return {
     arrays: arrays,
     crypto: crypto,
