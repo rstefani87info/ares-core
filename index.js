@@ -22,12 +22,18 @@ import * as objects from "./objects.js";
 import * as permissions from "./permissions.js";
 import * as scripts from "./scripts.js";
 import * as prototype from "./prototype.js";
+export function getApplicationRoot() {
+  const fileUrl = import.meta.url;
+  const filePath = new URL(fileUrl);
+  const directoryPath = dirname(filePath);
+  return directoryPath;
+}
 
 const aReS = (() => {
   // init the prototypes by all functions in this module
-  prototype.initPrototypes('./');
+  prototype.initPrototypes("@ares/");
   return {
-    arrays:arrays,
+    arrays: arrays,
     crypto: crypto,
     dataDescriptor: dataDescriptor,
     deeplTranslator: deeplTranslator,
