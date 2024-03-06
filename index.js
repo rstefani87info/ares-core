@@ -49,3 +49,8 @@ const aReS = (() => {
 })();
 
 export default aReS;
+
+export async function importModule(file) {
+  const module = await import(file).default;
+  return module;
+}
