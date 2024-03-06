@@ -69,6 +69,7 @@ export function getFiles(
   recursively = false,
   fileArray = []
 ) {
+  console.log(`reading files from ${this_string}`);
   const files = readdirSync(this_string);
 
   files.forEach((file) => {

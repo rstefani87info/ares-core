@@ -11,7 +11,8 @@
  * @desc {ru} Коллекция базовых инструментов aReS
  * @desc {ja} aReSフレームワークの基本ユーティリティ
  */
-
+import { trimInitialRegexp } from "./text.js";
+import * as text from "./text.js";
 import * as arrays from "./arrays.js";
 import * as crypto from "./crypto.js";
 import * as dataDescriptor from "./dataDescriptors.js";
@@ -23,9 +24,10 @@ import * as permissions from "./permissions.js";
 import * as scripts from "./scripts.js";
 import * as prototype from "./prototype.js";
 export function getApplicationRoot() {
-  const fileUrl = import.meta.url;
+  const fileUrl =  import.meta.url;
   const filePath = new URL(fileUrl);
-  const directoryPath = files.getParent(filePath.pathname);
+  console.log(trimInitialRegexp(filePath.pathname,'/'));
+  const directoryPath = files.getParent(trimInitialRegexp(filePath.pathname,'/') );
   return directoryPath;
 }
 
@@ -42,6 +44,7 @@ const aReS = (() => {
     permissions: permissions,
     scripts: scripts,
     prototype: prototype,
+    text: text
   };
 })();
 

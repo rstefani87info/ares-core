@@ -17,5 +17,5 @@ import {createHash} from 'crypto';
 export function getMD5Hash(this_string){
 	const md5Hash = createHash('md5');
 	md5Hash.update(this_string);
-	return md5Value = md5Hash.digest('hex');
+	return   md5Hash.digest('hex');
 }
