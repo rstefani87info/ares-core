@@ -39,6 +39,7 @@ export function findPropKeyByAlias(this_object, alias) {
  */
 export function findPropValueByAlias(this_object, alias) {
 	for (const k in this_object) {
+		if(typeof k)
 		if (alias.match(k)) return this_object[k];
 	}
 }
@@ -90,3 +91,33 @@ export function setupPropertyAlias(this_object, alias) {
 export function requireData(this_file) {
 	return JSON.parse(fileUtility.getFileContent(file));
 }
+
+
+/**
+ * @desc {en} Creates a deep clone of an object, including all its methods.
+ * @desc {it} Crea una copia approfondita di un oggetto, inclusi tutti i suoi metodi.
+ * @desc {es} Crea una copia profunda de un objeto, incluyendo todos sus métodos.
+ * @desc {pt} Cria uma cópia profunda de um objeto, incluindo todos os seus métodos.
+ * @desc {fr} Creer une copie profonde d'un objet, y inclure tous ses methodes.
+ * @desc {de} Erstellt eine tiefe Kopie eines Objekts, einschließlich aller Methoden.
+ * @desc {ja} オブジェクトのクローンを作成します
+ * @desc {zh} 创建对象的深拷贝
+ * @desc {ru} Создает глубокую копию объекта, включая все его методы
+ *
+ * @param {Object} obj - The object to clone.
+ * @return {Object} The cloned object.
+ * @prototype {Object}
+ */
+export function cloneWithMethods(obj) {
+	const newObj = Object.create(Object.getPrototypeOf(obj));
+	for (const key in obj) {
+	  if (Object.prototype.hasOwnProperty.call(obj, key)) {
+		if (typeof obj[key] === 'function') {
+		  newObj[key] = obj[key].bind(newObj); 
+		} else {
+		  newObj[key] = obj[key];
+		}
+	  }
+	}
+	return newObj;
+  }

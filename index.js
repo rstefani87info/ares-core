@@ -11,7 +11,7 @@
  * @desc {ru} Коллекция базовых инструментов aReS
  * @desc {ja} aReSフレームワークの基本ユーティリティ
  */
-import { trimInitialRegexp } from "./text.js";
+import appSetup from "./../../../app.js";
 import * as text from "./text.js";
 import * as arrays from "./arrays.js";
 import * as crypto from "./crypto.js";
@@ -24,33 +24,23 @@ import * as permissions from "./permissions.js";
 import * as scripts from "./scripts.js";
 import * as prototype from "./prototype.js";
 export function getApplicationRoot() {
-  const fileUrl =  import.meta.url;
-  const filePath = new URL(fileUrl);
-  console.log(trimInitialRegexp(filePath.pathname,'/'));
-  const directoryPath = files.getParent(trimInitialRegexp(filePath.pathname,'/') );
-  return directoryPath;
+  return files.getAbsolutePath('./');
 }
+const core=files.getParent(files.getParent(text.trimInitialRegexp(new URL(import.meta.url).pathname, '/')));
+prototype.initPrototypes(core);
 
-const aReS = (() => {
-  prototype.initPrototypes(getApplicationRoot());
-  return {
-    arrays: arrays,
-    crypto: crypto,
-    dataDescriptor: dataDescriptor,
-    deeplTranslator: deeplTranslator,
-    files: files,
-    localAi: localAi,
-    objects: objects,
-    permissions: permissions,
-    scripts: scripts,
-    prototype: prototype,
-    text: text
-  };
-})();
+const aReS =  {
+  arrays: arrays,
+  crypto: crypto,
+  dataDescriptor: dataDescriptor,
+  deeplTranslator: deeplTranslator,
+  files: files,
+  localAi: localAi,
+  objects: objects,
+  permissions: permissions,
+  scripts: scripts,
+  prototype: prototype,
+  text: text,
+};
 
 export default aReS;
-
-export async function importModule(file) {
-  const module = await import(file).default;
-  return module;
-}

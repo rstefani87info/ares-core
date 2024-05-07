@@ -1,3 +1,8 @@
+/**
+ * @author Roberto Stefani
+ * @license MIT
+ */
+
 import {createHash} from 'crypto';
 /**
  * @prototype {string}

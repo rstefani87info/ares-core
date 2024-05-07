@@ -1,3 +1,5 @@
+import {findPropValueByAlias} from './objects.js';
+
 /**
  * @desc {en} a mapping of the most common data descriptors useful for validation and formatting
  * @desc {it} una mappa di descrittori di dati comuni di utilità per la validazione e formattazione
@@ -37,7 +39,7 @@ export const objectDescriptorDefinitions = {
 		}
 	},
  
-	"date([\\s-_]*time)?|time": {
+	"date([\\s\\-_]*time)?|time": {
 		parse: (s, f) => f ? moment(v, f) : moment(v),
 		minValue: (v, m, f) => m ? f ? moment(v, f) : moment(v).toDate() >= f ? moment(m, f).toDate() : moment(m).toDate() : true,
 		maxValue: (v, m, f) => m ? f ? moment(v, f) : moment(v).toDate() <= f ? moment(m, f).toDate() : moment(m).toDate() : true,
@@ -68,44 +70,73 @@ export const objectDescriptorDefinitions = {
  */
 export function format(this_object, descriptor) {
 	const ret = {};
-	for (const k in descriptor.params) {
+	for (const k in descriptor) {
+    console.log(' - formatting: '+ k);
 		ret[k] = this_object[k];
 		const objectDescriptorDefinitionKey = descriptor[k]?.type || null;
 		const objectDescriptorDefinition = findPropValueByAlias(objectDescriptorDefinitions, objectDescriptorDefinitionKey);
-		
-    if (descriptor.normalization) ret[k] = descriptor.normalization(ret[k]);
-		
-    if (!(objectDescriptorDefinition?.minValue(ret[k], descriptor[k].minValue) || null)) {
-			if (!ret['€rror']) ret['€rror'] = {};
-			ret['€rror'][k]['minValue'] = true;
+    if (descriptor.normalization) {
+      ret[k] = descriptor.normalization(ret[k]);
+    }
+    if(descriptor.defaultValue  && !ret[k]) {
+      ret[k] = descriptor.defaultValue;
+      if(ret[k] instanceof Object || Array.isArray(ret[k])) {
+        ret[k] = JSON.parse(JSON.stringify(ret[k]));
+      }
+    }
+    if(descriptor[k].required && !ret[k]) {
+      setRequestError(ret,k,'required');
+    }
+    if (descriptor[k].minValue && !(objectDescriptorDefinition?.minValue(ret[k], descriptor[k].minValue) || null)) {
+      setRequestError(ret,k,'minValue');
 		}
-		if (!(objectDescriptorDefinition?.maxValue(ret[k], descriptor[k].maxValue) || null)) {
-			if (!ret['€rror']) ret['€rror'] = {};
-			ret['€rror'][k]['maxValue'] = true;
+		if (descriptor[k].maxValue && !(objectDescriptorDefinition?.maxValue(ret[k], descriptor[k].maxValue) || null)) {
+      setRequestError(ret,k,'maxValue');
 		}
-		if (!(objectDescriptorDefinition?.minLength(ret[k], descriptor[k].minLength) || null)) {
-			if (!ret['€rror']) ret['€rror'] = {};
-			ret['€rror'][k]['minLength'] = true;
+		if (descriptor[k].minLength && !(objectDescriptorDefinition?.minLength(ret[k], descriptor[k].minLength) || null)) {
+      setRequestError(ret,k,'minLength');
 		}
-		if (!(objectDescriptorDefinition?.maxLength(ret[k], descriptor[k].maxLength) || null)) {
-			if (!ret['€rror']) ret['€rror'] = {};
-			ret['€rror'][k]['maxLength'] = true;
+		if (descriptor[k].maxLength && !(objectDescriptorDefinition?.maxLength(ret[k], descriptor[k].maxLength) || null)) {
+      setRequestError(ret,k,'maxLength');
 		}
-		if (!(objectDescriptorDefinition?.minDecimalLength(ret[k], descriptor[k].minDecimalLength) || null)) {
-			if (!ret['€rror']) ret['€rror'] = {};
-			ret['€rror'][k]['minDecimalLength'] = true;
+		if (descriptor[k].minDecimalLength && !(objectDescriptorDefinition?.minDecimalLength(ret[k], descriptor[k].minDecimalLength) || null)) {
+      setRequestError(ret,k,'minDecimalLength');
 		}
-		if (!(objectDescriptorDefinition?.maxDecimalLength(ret[k], descriptor[k].maxDecimalLength) || null)) {
-			if (!ret['€rror']) ret['€rror'] = {};
-			ret['€rror'][k]['maxDecimalLength'] = true;
+		if (descriptor[k].maxDecimalLength && !(objectDescriptorDefinition?.maxDecimalLength(ret[k], descriptor[k].maxDecimalLength) || null)) {
+      setRequestError(ret,k,'maxDecimalLength');
 		}
-		if (!(objectDescriptorDefinition?.pattern(ret[k], descriptor[k].pattern) || null)) {
-			if (!ret['€rror']) ret['€rror'] = {};
-			ret['€rror'][k]['pattern'] = true;
+		if (descriptor[k].pattern && !(objectDescriptorDefinition?.pattern(ret[k], descriptor[k].pattern) || null)) {
+      setRequestError(ret,k,'pattern');
 		}
+    if(descriptor[k].format && !(objectDescriptorDefinition?.format(ret[k], descriptor[k].format) || null)) {
+      setRequestError(ret,k,'format');
+    }
+    if (descriptor[k].transform && typeof descriptor[k].transform === 'function') {
+      ret[k] = descriptor[k].transform(ret[k]);
+    }
+    if(descriptor[k].exists){
+      if(
+        (typeof descriptor[k].exists === 'function' && !descriptor[k].exists(ret[k])) ||
+        (Array.isArray(descriptor[k].exists) && !descriptor[k].exists.includes(ret[k]))
+      ) {
+        setRequestError(ret,k,'exists');
+      }
+    }
+    if(descriptor[k].notExists && 
+      (typeof descriptor[k].notExists === 'function' && !descriptor[k].notExists(ret[k])) ||
+      (Array.isArray(descriptor[k].notExists) && !descriptor[k].notExists.includes(ret[k]))
+    ) {
+      setRequestError(ret,k,'notExists');
+    }
 
 	}
 	return ret;
+}
+
+function setRequestError(requestParams,property,cause){
+  if (!requestParams['€rror']) requestParams['€rror'] = {};
+  if (!requestParams['€rror'] [property]) requestParams['€rror'][property] = [];
+  requestParams['€rror'][property] = [...requestParams['€rror'][property],cause];
 }
 
 /**
@@ -120,27 +151,66 @@ export function format(this_object, descriptor) {
  * @desc {ru} Дескрипторы данных
  */
 export const dataDescriptors = {
-  "common[\\s-_]name": {
+  "(person(al){0,1}[\\s\\-_]*|sur|first[\\s\\-_]*|last[\\s\\-_]*)name": {
+    type: "text",
+    normalization: (s) => s.split(/[^a-zA-Z]+/).map((x) => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase()).join(" "),
+    pattern: /^\s*[a-z]{3,}(\s[a-z]{3,})*\s*$/i,
+    minLength: 3,
+  },
+  "date": {
+    type: "date",
+    normalization: (s) => s.trim(),
+    format: "YYYY-MM-DD",
+    maxLength: 10,
+    minLength: 10,
+  },
+  "date([\\s\\-_]){0,1}time": {
+    type: "date",
+    normalization: (s) => s.trim(),
+    format: "YYYY-MM-DD\\THH:mm:ss",
+    minLength: 10,
+  },
+  "sql([\\s\\-_]){0,1}date([\\s\\-_]){0,1}time": {
+    type: "date",
+    normalization: (s) => s.trim(),
+    format: "YYYY-MM-DD HH:mm:ss.sssZ",
+    maxLength: 19,
+    minLength: 10,
+  },
+  "date([\\s\\-_]){0,1}time([+]|[+\\s\\-_]offset){0,1}": {
+    type: "date",
+    normalization: (s) => s.trim(),
+    format: "YYYY-MM-DD\\THH:mmZ",
+    minLength: 10,
+  },
+  "time": {
+    type: "date",
+    normalization: (s) => s.trim(),
+    format: "HH:mm:ssZ",
+    maxLength: 10,
+    minLength: 10,
+  },
+  "common[\\s\\-_]name": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern: /^[\w]+[ \w]*$/,
     maxLength: 100,
     minLength: 5,
   },
-  "(tele){0,1}phone[\\s-_](number|#){0,1}": {
+  "((tele){0,1}phone|tel)([\\s\\-_](number|#)){0,1}": {
     type: "text",
     normalization: (s) => s.trim().replaceAll(/[.-\s\/\\]+/, ""),
     pattern: /^(\+?\d{2,3})?[.-\s\/\\0-9]{10,}$/,
     minLength: 10,
   },
-  "(@|email)[\\s-_](address){0,1}": {
+  "(@|email)[\\s\\-_](address){0,1}": {
     type: "text",
     normalization: (s) => s.trim().toLowerCase(),
     pattern: /^[\w-]+@[\w-]+\.[\w-]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "ip([\\s-_]*v4)?([\\s-_]*address){0,1}": {
+  "ip([\\s\\-_]*v4)?([\\s\\-_]*address){0,1}": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -148,14 +218,14 @@ export const dataDescriptors = {
     maxLength: 15,
     minLength: 5,
   },
-  "ip([\\s-_]*v6){1}([\\s-_]*address){0,1}": {
+  "ip([\\s\\-_]*v6){1}([\\s\\-_]*address){0,1}": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern: /^(?:[a-f0-9]{1,4}:){7}[a-f0-9]{1,4}$/,
     maxLength: 39,
     minLength: 5,
   },
-  "http[s]?([\\s-_]*url)?": {
+  "http[s]?([\\s\\-_]*url)?": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -163,7 +233,7 @@ export const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "ftp[s]?([\\s-_]*url)?": {
+  "ftp[s]?([\\s\\-_]*url)?": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -171,7 +241,7 @@ export const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "ssh[s]?([\\s-_]*url)?": {
+  "ssh[s]?([\\s\\-_]*url)?": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -179,7 +249,7 @@ export const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "smtp[s]?([\\s-_]*url)?": {
+  "smtp[s]?([\\s\\-_]*url)?": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -187,7 +257,7 @@ export const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "pop3[s]?([\\s-_]*url)?": {
+  "pop3[s]?([\\s\\-_]*url)?": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -195,7 +265,7 @@ export const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "blob[s]?([\\s-_]*url)?": {
+  "blob[s]?([\\s\\-_]*url)?": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -203,7 +273,7 @@ export const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "file[s]?([\\s-_]*url)?": {
+  "file[s]?([\\s\\-_]*url)?": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -211,35 +281,35 @@ export const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "hash[\\s-_]*md5": {
+  "hash[\\s\\-_]*md5": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern: /^[a-f0-9]{32}$/,
     maxLength: 32,
     minLength: 32,
   },
-  "crc([\\s-_]*32)?[\\s-_](hash){0,1}": {
+  "crc([\\s\\-_]*32)?[\\s\\-_](hash){0,1}": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern: /^[a-f0-9]{8}$/,
     maxLength: 8,
     minLength: 8,
   },
-  "crc[\\s-_]*64?[\\s-_](hash){0,1}": {
+  "crc[\\s\\-_]*64?[\\s\\-_](hash){0,1}": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern: /^[a-f0-9]{16}$/,
     maxLength: 16,
     minLength: 16,
   },
-  "user([\\s-_]*(name)){0,1}": {
+  "user([\\s\\-_]*(name)){0,1}": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern: /^[a-zA-Z0-9]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "password": {
+  "password|pwd": {
     type: "text",
     normalization: (s) => s.trim(),
     pattern:
@@ -247,143 +317,143 @@ export const dataDescriptors = {
     maxLength: 100,
     minLength: 5,
   },
-  "zip[\\s-_]?(code){0,1}": {
+  "zip[\\s\\-_]?(code){0,1}": {
     type: "text",
     pattern: /^\d{5}$/,
     maxLength: 5,
     minLength: 5,
   },
-  "country[\\s-_]*(code){0,1}": {
+  "country[\\s\\-_]*(code){0,1}": {
     type: "text",
     pattern: /^[A-Z]{2}$/,
     maxLength: 2,
     minLength: 2,
   },
-  "language[\\s-_]*(code){0,1}": {
+  "language[\\s\\-_]*(code){0,1}": {
     type: "text",
     pattern: /^[A-Z]{2}([-_][A-Z]{2}){0,1}$/,
     maxLength: 2,
     minLength: 2,
   },
-  "province|city[\\s-_]*(code){0,1}": {
+  "province|city[\\s\\-_]*(code){0,1}": {
     type: "text",
     pattern: /^[A-Z]{2}$/,
     maxLength: 2,
     minLength: 2,
   },
-  "bool(ean)?|y(es)([\\s-_]*or)([\\s-_]*n(o(t)?)?)|binary[\\s-_]*digit|true([\\s-_]*or)([\\s-_]*false))":
+  "bool(ean)?|y(es)([\\s\\-_]*or)([\\s\\-_]*n(o(t)?)?)|binary[\\s\\-_]*digit|true([\\s\\-_]*or)([\\s\\-_]*false)":
     { type: "boolean" },
-  "(real|float|double|decimal|numeric|r)?[\\s-_]*(n(umber)?|°|#)?": {
+  "(real|float|double|decimal|numeric|r)?[\\s\\-_]*(n(umber)?|°|#)?": {
     type: "number",
     pattern: /^[+-]?[0-9]+([.,]{0,1}[0-9])?$/,
   },
-  "(positive|+)[\\s-_]*(real|float|double|decimal|numeric|r)[\\s-_]*(n(umber)?|°|#)?":
+  "(positive|+)[\\s\\-_]*(real|float|double|decimal|numeric|r)[\\s\\-_]*(n(umber)?|°|#)?":
     {
       type: "number",
       pattern: /^(\+)?[1-9]+([.,]{0,1}[0-9])?$/,
       normalization: (s) => s.trim(),
     },
-  "(negative|-)[\\s-_]*(real|float|double|decimal|numeric|r)[\\s-_]*(n(umber)?|°|#)?":
+  "(negative|-)[\\s\\-_]*(real|float|double|decimal|numeric|r)[\\s\\-_]*(n(umber)?|°|#)?":
     {
       type: "number",
       pattern: /^-[1-9]+([.,]{0,1}[0-9])?$/,
       normalization: (s) => s.trim(),
     },
-  "integer[\\s-_]*(n(umber)?|°|#)?": {
+  "integer[\\s\\-_]*(n(umber)?|°|#)?": {
     type: "number",
     pattern: /^[+-]?[0-9]+$/,
     normalization: (s) => s.trim(),
   },
-  "((positive|+)[\\s-_]*integer|natural|n)[\\s-_]*(n(umber)?|°|#)?": {
+  "((positive|+)[\\s\\-_]*integer|natural|n)[\\s\\-_]*(n(umber)?|°|#)?": {
     type: "number",
     pattern: /^(\+)?[1-9]+$/,
     normalization: (s) => s.trim(),
   },
-  "(negative|-)[\\s-_]*integer[\\s-_]*(n(umber)?|°|#)?": {
+  "(negative|-)[\\s\\-_]*integer[\\s\\-_]*(n(umber)?|°|#)?": {
     type: "number",
     pattern: /^-[1-9]+$/,
     normalization: (s) => s.trim(),
   },
-  "(geographical)[\\s-_]*coordinate": {
+  "(geographical)[\\s\\-_]*coordinate": {
     type: "number",
     pattern: /^[+-]?[0-9]+(\.[0-9]+)?$/,
     normalization: (s) => s.trim(),
   },
-  "(geographical)[\\s-_]*coordinates": {
+  "(geographical)[\\s\\-_]*coordinates": {
     type: "array",
-    pattern: /^[+-]?[0-9]+(\.[0-9]+)?([\s,][+-]?[0-9]+(\.[0-9]+)?)?$/,
+    pattern: /^[+\\-]?[0-9]+(\.[0-9]+)?([\s,][+\\-]?[0-9]+(\.[0-9]+)?)?$/,
     normalization: (s) => s.trim().split(/[\s,]/),
   },
   "hashtag": {
     type: "text",
     pattern: /^#[a-zA-Z0-9_]+$/,
   },
-  "facebook[\\s-_]*(id){0,1}": {
+  "facebook[\\s\\-_]*(id){0,1}": {
     type: "text",
     pattern: /^[0-9]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "instagram[\\s-_]*(id){0,1}": {
+  "instagram[\\s\\-_]*(id){0,1}": {
     type: "text",
     pattern: /^[0-9]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "(x|twitter)[\\s-_]*(id){0,1}": {
+  "(x|twitter)[\\s\\-_]*(id){0,1}": {
     type: "text",
     pattern: /^[0-9]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "youtube[\\s-_]*(id){0,1}": {
+  "youtube[\\s\\-_]*(id){0,1}": {
     type: "text",
     pattern: /^[a-zA-Z0-9_]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "ticktock[\\s-_]*(id){0,1}": {
+  "ticktock[\\s\\-_]*(id){0,1}": {
     type: "text",
     pattern: /^[a-zA-Z0-9_]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "file[\\s-_]*(ext(ension)){0,1}": {
+  "file[\\s\\-_]*(ext(ension)){0,1}": {
     type: "text",
     pattern: /^[a-zA-Z0-9_]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "mime[\\s-_]*(type){0,1}": {
+  "mime[\\s\\-_]*(type){0,1}": {
     type: "text",
     pattern: /^[a-zA-Z0-9_]+\/[a-zA-Z0-9_+-. ]+$/,
     maxLength: 100,
     minLength: 5,
   },
-  "image[\\s-_]*file[\\s-_]*(ext(ension)){0,1}": {
+  "image[\\s\\-_]*file[\\s\\-_]*(ext(ension)){0,1}": {
     type: "text",
     pattern: /^jpg|jpeg|png|gif|webp|svg|tiff|avif|apng|jfif|bmp$/,
   },
-  "video[\\s-_]*file[\\s-_]*(ext(ension)){0,1}": {
+  "video[\\s\\-_]*file[\\s\\-_]*(ext(ension)){0,1}": {
     type: "text",
     pattern:
       /^mp4|mkv|webm|mov|avi|3gp|flv|wmv|mpeg|mpg|m4v|ogv|ogm|mk3d|gifv|3gpp|3g2|3gpp2|hevc|heic|av1|h264|h265|avchd|heif$/,
   },
-  "audio[\\s-_]*file[\\s-_]*(ext(ension)){0,1}": {
+  "audio[\\s\\-_]*file[\\s\\-_]*(ext(ension)){0,1}": {
     type: "text",
     pattern:
       /^mp3|wav|ogg|flac|aac|wma|webm|m4a|aiff|amr|opus|vorbis|3gpp|3g2|3gpp2|amr|aac|m4a$/,
   },
-  "document[\\s-_]*file[\\s-_]*(ext(ension)){0,1}": {
+  "document[\\s\\-_]*file[\\s\\-_]*(ext(ension)){0,1}": {
     type: "text",
     pattern: /^pdf|doc|docx|odt|rtf|txt|wps$/,
   },
-  "text[\\s-_]*file[\\s-_]*(ext(ension)){0,1}": {
+  "text[\\s\\-_]*file[\\s\\-_]*(ext(ension)){0,1}": {
     type: "text",
     pattern:
       /^txt|wps|vb|vbs|php|js|css|html|xml|xsl(t)?|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|ts|tsx|vue|jsx$/,
   },
-  "programming[\\s-_]*lang(uage)[\\s-_]*file[\\s-_]*(ext(ension)){0,1}": {
+  "programming[\\s\\-_]*lang(uage)[\\s\\-_]*file[\\s\\-_]*(ext(ension)){0,1}": {
     type: "text",
     pattern:
       /^vb|vbs|php|js|css|html|xml|xsl(t)?|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|ts|tsx|vue|jsx$/,

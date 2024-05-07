@@ -3,7 +3,7 @@
  * @author Roberto Stefani
  */
 
-
+import {asyncConsole}  from '@ares/core/console.js';
 import * as filesUtility from './files.js';
 import * as scriptsUtility from './scripts.js';
 /**
@@ -19,22 +19,18 @@ import * as scriptsUtility from './scripts.js';
  * @desc {ja} 指定されたパスのすべてのファイルのすべての関数の prototype を初期化
  * @param  {...string} paths 
  */
-export function initPrototypes (...paths) {
-	console.log('init prototype: {');
+export async function initPrototypes (...paths) {
+	asyncConsole.log('prototype','init prototype: {');
 	for (const path of paths) {
 		const files = filesUtility.getFilesRecursively(path, /^.*\.(js|ts|jsx|tsx)$/i);
-		console.log(' - found files ' + files.join(',') + ';');
 		for (const file of files) {
-			console.log(' - init prototype for file ' + file + ': {');
-			let absolutePat = filesUtility.getAbsolutePath(file);
-			if (!absolutePat.startsWith('http://') && !absolutePat.startsWith('https://') && !absolutePat.startsWith('file://')) {
-				absolutePat = 'file://' + absolutePat;
-			}
-			addFileFunctionsToPrototype(absolutePat);
-			console.log(' - }');
+			asyncConsole.log('prototype',' - init prototype for file ' + file + ': {');
+			 await addFileFunctionsToPrototype(file);
+			asyncConsole.log('prototype',' - }');
 		}
 	}
-	console.log('}');
+	asyncConsole.log('prototype','}');
+	// asyncConsole.output('prototype');
 };
 
 /**
@@ -50,14 +46,16 @@ export function initPrototypes (...paths) {
  * @desc {ru} Инициализирует прототипы для всех типов, объявленных в аннотациях docklet в указанном файле.
  * @param  {string} filePath 
  */
-export function addFileFunctionsToPrototype (filePath)  {
-	const functions = scriptsUtility.getFunctionsFromFile(filePath);
-	for (const f of functions) {
-		console.log(' - - init prototype for function ' + scriptsUtility.getFunctionName(f) + ' ;');
+export async  function addFileFunctionsToPrototype (filePath)  {
+	const functions = await scriptsUtility.getFunctionsFromFile(filePath);
+	asyncConsole.log('prototype','- - functions: '+ functions.map(x=> scriptsUtility.getFunctionName(x)) );
+	for (const f of functions.filter(x=> x!=null && typeof x === 'function')) {
+		asyncConsole.log('prototype',' - - init prototype for function ' + scriptsUtility.getFunctionName(f) + ' ;');
 		var pa = scriptsUtility.getDockletAnnotations(f).filter(x => x.annotation == 'prototype')[0] ?? null;
 		if (pa) {
 			scriptsUtility.facadeOnPrototype(f, pa.type, pa.name);
 		}
 
 	}
+	return true;
 };

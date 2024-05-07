@@ -12,10 +12,7 @@
  * @desc {ja} 指定されたパラメータを基にリソースを許可するかを確認
  *
  * @param {string} id - The ID of the resource
- * @param {string} [host=null] - The host of the resource (optional)
  * @param {string} [userId=null] - The user ID (optional)
- * @param {string} [userAgent=null] - The user agent (optional)
- * @param {string} [method='ALL'] - The method for resource access (optional, default is 'ALL')
  * @return {boolean} Whether the resource is allowed
  * 
  * @prototype {string}
@@ -23,53 +20,36 @@
 
 export function isResourceAllowed(
   id,
-  host = null,
-  userId = null,
-  userAgent = null,
-  method = "ALL"
+  {userId = null}, stopMode = 0
 ) {
-  method = method ? method.toUpperCase() : "ALL";
   id = id.toLowerCase();
-  let filteredPermissions = getPermission(host, userId, userAgent).filter(
-    (x) =>
-      x.allowedResource.indexOf(id) >= 0 &&
-      (x.hosts && x.hosts.length > 0
-        ? x.hosts.indexOf(host + "") >= 0
-        : true) &&
-      (x.methods && x.methods.length > 0 && method != "OPERATION"
-        ? x.methods.indexOf(host + "") >= 0
-        : true)
+  let filteredPermissions = getPermission(userId).filter(
+    (x) =>  x.allowedResource.indexOf(id) >= 0  
   );
+  if(stopMode===0 ) return filteredPermissions.length > 0;
+  if(stopMode===1 && filteredPermissions.length === 0) throw new Error("Permission denied");
   return filteredPermissions.length > 0;
 }
 
 /**
- * @desc {en} Function to get filtered permissions based on host, userId, and userAgent.
- * @desc {it} Funzione per ottenere le autorizzazioni filtrate in base al host, l'ID utente e l'user agent.
- * @desc {es} Función para obtener las autorizaciones filtradas en base al host, el ID de usuario y el agente de usuario.
- * @desc {fr} Fonction pour obtenir les autorisations filtrées en fonction de l'host, de l'ID d'utilisateur et de l'user agent.
- * @desc {de} Funktion für die gefilterten Berechtigungen basierend auf host, userId und userAgent.
- * @desc {pt} Função para obter as permissoes filtradas baseado em host, userId e userAgent.
- * @desc {zh} 获取基于host，userId和userAgent的过滤权限
- * @desc {ru} Функция для получения отфильтрованных разрешений на основе host, userId и userAgent
- * @desc {ja} host、userIdとuserAgentに基づくフィルタリングされた許可を取得
+ * @desc {en} Function to get filtered permissions based on userId.
+ * @desc {it} Funzione per ottenere le autorizzazioni filtrate in base all'ID dell'utente.
+ * @desc {es} Función para obtener las autorizaciones filtradas en base al ID de usuario.
+ * @desc {fr} Fonction pour obtenir les autorisations filtrées en fonction de l'ID de l'utilisateur.
+ * @desc {de} Funktion für die gefilterten Berechtigungen basierend auf UserId.
+ * @desc {pt} Função para obter as permissoes filtradas baseado no ID do usuário.
+ * @desc {zh} 获取指定用户 ID 的过滤后的权限
+ * @desc {ru} Функция для получения отфильтрованных разрешений, основываясь на ID пользователя
+ * @desc {ja} ユーザーIDを基にフィルタリングされた権限を取得
  * 
- * @param {string} host - The host for which permissions are being filtered
+ * 
  * @param {string} userId - The user ID for which permissions are being filtered
- * @param {string} userAgent - The user agent for which permissions are being filtered
  * @return {array} The filtered permissions based on the provided parameters
  */
-export function getPermission(host = null, userId = null, userAgent = null) {
+export function getPermission(userId = null) {
   userId = (userId ?? "").match(/^\w+$/g) ? userId : "*";
-  userAgent = userAgent ? userAgent : "*";
   let filteredPermissions = permissions.filter(
     (x) =>
-      (x.hosts && x.hosts.length > 0
-        ? x.hosts.indexOf(host + "") >= 0
-        : true) &&
-      (x.userAgents && x.userAgents.length > 0
-        ? x.userAgents.filter((y) => new RegExp(y).test(userAgent)).length >= 0
-        : true) &&
       (x.allowOnlyForUserId && x.allowOnlyForUserId.length > 0
         ? x.allowOnlyForUserId.indexOf(userId + "") >= 0
         : true) &&
@@ -80,4 +60,22 @@ export function getPermission(host = null, userId = null, userAgent = null) {
   return filteredPermissions;
 }
 
+/**
+ * @desc {en} Throws an error indicating that permission has been denied.
+ * @desc {it} Genera un errore che indica che l'autorizzazione è stata negata.
+ * @desc {es} Genera un error que indica que la autorización ha sido denegada.
+ * @desc {fr} Envoie une erreur indiquant que la permission a été dés
+ * @desc {de} Gibt eine Fehlernachricht mit dem Hinweis, dass die Berechtigung abgelehnt wurde.
+ * @desc {pt} Gera um erro que indica que a permissão foi negada.
+ * @desc {zh} 抛出错误表示拒绝访问
+ * @desc {ru} Генерирует ошибку, сообщающую, что разрешение было отклонено
+ * @desc {ja} 権限を拒否するためのエラーを送信
+ *
+ * @param {string} id - The ID of the resource.
+ * @param {object} params - Additional parameters.
+ * @return {undefined} This function does not return a value.
+ */
+export function permissionFail(id,params) {
+  throw new Error("Permission denied");
+}
 export default permissions;

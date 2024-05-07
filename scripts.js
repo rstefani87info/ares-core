@@ -1,11 +1,14 @@
-import * as filesUtility from "./files.js";
+/**
+ * @author Roberto Stefani
+ * @license MIT
+ */
+
 /**
  * @prototype {string}
  */
-export function getFunctionsFromFile(this_string) {
-  const script = import(
-    this_string
-  );
+export async function getFunctionsFromFile(this_string) {
+  const file = this_string;
+  const script = await import('file://'+ import.meta.resolve(file));
   return Object.getOwnPropertyNames(script)
     .map((n) => script[n])
     .filter((x) => typeof x == "function");
@@ -235,6 +238,6 @@ export function getTypeByName(this_string) {
  * 	@desc {ja} 関数名を取得
  */
 export function getFunctionName(this_function) {
-  const f = this_function.toString().match(/^function\s*([^\s(]+)/);
+  const f = this_function.toString().match(/function\s*([^\s(]+)\s*\(/);
   return f && f.length > 0 ? f[1] : null;
 }

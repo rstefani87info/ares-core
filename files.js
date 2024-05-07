@@ -1,4 +1,4 @@
-import { readdirSync, statSync, readFileSync, writeFile } from "fs";
+import { readdirSync, statSync, readFileSync, writeFile, mkdir } from "fs";
 import { join, resolve, extname, basename, dirname, normalize, relative } from "path";
 
 /**
@@ -175,7 +175,9 @@ export function getFileContent(this_string, encoding = "utf-8") {
  */
 export async function setFileContent(filePath, content, encoding = "utf-8") {
   try {
-    await writeFile(filePath, content, { encoding });
+    const parent=getAbsolutePath(getParent(filePath));
+    if(!fileExists(parent))mkdir(parent, [true] );
+    else await writeFile(filePath, content, { encoding });
   } catch (error) {
     console.error(`Error writing to file ${filePath}:`, error.message);
     throw error;
