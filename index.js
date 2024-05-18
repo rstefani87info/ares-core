@@ -11,7 +11,6 @@
  * @desc {ru} Коллекция базовых инструментов aReS
  * @desc {ja} aReSフレームワークの基本ユーティリティ
  */
-import appSetup from "./../../../app.js";
 import * as text from "./text.js";
 import * as arrays from "./arrays.js";
 import * as crypto from "./crypto.js";
@@ -41,6 +40,7 @@ const aReS =  {
   scripts: scripts,
   prototype: prototype,
   text: text,
+
 };
 
 export default aReS;

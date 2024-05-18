@@ -241,3 +241,42 @@ export function getFunctionName(this_function) {
   const f = this_function.toString().match(/function\s*([^\s(]+)\s*\(/);
   return f && f.length > 0 ? f[1] : null;
 }
+
+/**
+ * @desc {en} Wait import promise not asynchronously
+ * @desc {it} Aspetta la promise di importazione non asincronamente
+ * @desc {es} Esperar la promise de importación no asíncronamente
+ * @desc {fr} Attendez la promise d'importation non asynchrone
+ * @desc {de} Warten Sie auf die importierende Promise nicht asynchron
+ * @desc {pt} Espere a promise de importação não assíncrona
+ * @desc {zh} 等待导入Promise不是异步的
+ * @desc {ru} Ожидание промиса импорта не асинхронно
+ * @desc {ja} 非同期のインポートPromiseを待機
+ * 
+ * @prototype {string} waitImportPromise
+ * 
+ * @param {*} modulePath 
+ * @returns {Promise}
+ */
+export function waitImportPromise(modulePath) {
+  let ret = null;
+  const p = new Promise(async (resolve, reject) => {
+    try {
+        const module = await import(modulePath);
+        const expectedImport = module.default;
+        resolve(expectedImport);
+    } catch (error) {
+        reject(error);
+    }
+  }).then((data) => {
+     ret = data
+     return ret;
+  }).catch((error) => {
+    ret=false;
+    throw new Error(error);
+  });
+  while (ret===null) {
+     setTimeout(()=>{}, 100);
+  }
+   return p;
+}
