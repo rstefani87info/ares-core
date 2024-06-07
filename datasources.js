@@ -5,7 +5,7 @@
 import mysql from 'mysql';
 import {asyncConsole}  from '@ares/core/console.js';
 import { format } from '@ares/core/dataDescriptors.js';
-import { isFile,getFilesRecursively,getParent,getFileName,fileExists,getFileContent }  from '@ares/core/files.js';
+import { isFile,getFilesRecursively,getParent,getFileName,fileExists,getFileContent }  from '@ares/files';
 import { cloneWithMethods } from '@ares/core/objects.js';
 import app from '../../../app.js';
 import { waitImportPromise } from '@ares/core/scripts.js';
@@ -22,11 +22,11 @@ const mapRequestOrResult = function (request) { return request; };
  * @desc {it} Inizializza l'oggetto datasource
  * @desc {fr} Initialiser les objets datasource
  * @desc {es} Inicializar los objetos datasource
- * @desc {de} Datenquellenobjekte initialisieren
- * @desc {ru} Инициализировать объекты баз данных
+
+
  * @desc {pt} Inicializar os objetos datasource
- * @desc {zh} 初始化数据源
- * @desc {ja} データソースの初期化
+
+
  * 
  */
 async function loadDatasource(aReS, datasourceName, onMapperLoaded ,force = false) {
@@ -55,11 +55,7 @@ async function loadDatasource(aReS, datasourceName, onMapperLoaded ,force = fals
  * @desc {it} Inizializza l'oggetto db
  * @desc {fr} Initialise l'objet db
  * @desc {es} Inicializa el objeto db
- * @desc {de} Initialisiere das Datenbankobjekt
- * @desc {ru} Инициализирует объект db
  * @desc {pt} Inicializa o objeto db
- * @desc {zh} 初始化 db 对象
- * @desc {ja} db オブジェクトを初期化
  * 
  */
 async function initAllDatasources(aReS,onMapperLoaded = ()=>{},  force = true ) {
@@ -72,6 +68,21 @@ async function initAllDatasources(aReS,onMapperLoaded = ()=>{},  force = true ) 
 	}
 	asyncConsole.output('datasources');
 	return array;
+}
+
+export function exportAsAresMethod(aReS, mapper, datasource) {
+	asyncConsole.log('datasources', ' - open REST: {' + (mapper.name ) + ':  ' +mapper.path);
+	aReS[datasource.name + '_' + mapper.querySetting.name + '_' + mapper.name] = (req, res) => {
+		mapper.execute(
+			req,
+			(queryResponse) => {
+				if (queryResponse.error)
+					throw new Error(queryResponse.error+': '+JSON.stringify([req, res]));
+				else res.json(queryResponse);
+			},
+		);
+	};
+	asyncConsole.log('datasources',' - }');
 }
 
 
@@ -220,97 +231,14 @@ export class Datasource{
  
  }
 
-class SQLDBConnection extends DBConnection { }
-class NoSQLConnection extends DBConnection { }
+ class SQLDBConnection extends DBConnection {
+ }
+class NoSQLConnection extends DBConnection {
+}
+
+
 
 class MariaDB extends SQLDBConnection {
-
-	constructor(connectionParameters,datasource,sessionId,connectionSettingName) {
-		super(connectionParameters,datasource,sessionId,connectionSettingName);
-		const TYPES = {
-			"TINYINT": 1,
-			"SMALLINT": 2,
-			"MEDIUMINT": 3,
-			"INT": 4,
-			"BIGINT": 8,
-			"FLOAT": 5,
-			"DOUBLE": 24,
-			"DECIMAL": 12,
-			"DATE": 10,
-			"TIME": 11,
-			"DATETIME": 12,
-			"TIMESTAMP": 7,
-			"BIT": 16,
-			"BOOL": 16,
-			"YEAR": 13,
-			"CHAR": 255,
-			"VARCHAR": 252,
-			"TEXT": 252,
-			"MEDIUMTEXT": 252,
-			"LONGTEXT": 252,
-			"ENUM": 249,
-			"SET": 249,
-			"GEOMETRY": 255,
-			"POINT": 255,
-			"LINESTRING": 255,
-			"POLYGON": 255,
-			"MULTIPOINT": 255,
-			"MULTILINESTRING": 255,
-			"MULTIPOLYGON": 255,
-			"BLOB": 254,
-			"MEDIUMBLOB": 254,
-			"LONGBLOB": 254,
-			"TINYBLOB": 254,
-			"VARBINARY": 252,
-			"BINARY": 254,
-			"JSON": 255,
-			"UUID": 255
-		  };
-		  const CHARSET = {
-			"utf8": 33,
-			"utf8mb4": 33,
-			"latin1": 8,
-			"latin2": 9,
-			"ascii": 8,
-			"ucs2": 224,
-			"ucs2mb4": 224,
-			"cp850": 208,
-			"cp866": 238,
-			"cp1250": 208,
-			"cp1251": 208,
-			"cp1252": 208,
-			"cp1256": 208,
-			"cp1257": 208,
-			"arm7": 192,
-			"greek": 8,
-			"hebrew": 8,
-			"koi8r": 227,
-			"koi8u": 225,
-			"dec8n": 208,
-			"win1250": 208,
-			"win1251": 208,
-			"win1252": 208,
-			"win1256": 208,
-			"win1257": 208,
-			"gb2312": 231,
-			"gbk": 231,
-			"big5": 231,
-			"eucjpms": 222,
-			"ujis": 222,
-			"sjis": 222,
-			"eucjpkr": 222,
-			"utf7": 63,
-			"utf8_general_ci": 255,
-			"utf8_bin": 255,
-			"utf8_unicode_ci": 255,
-			"utf8_cs_bin": 255,
-			"utf8mb4_general_ci": 255,
-			"utf8mb4_unicode_ci": 255,
-			"utf8mb4_bin": 255,
-			"utf8mb4_cs_bin": 255
-		  };
-	}
-
 	async nativeConnect(callback) {
 		if(!MariaDB.pool) MariaDB.pool = mysql.createPool(this);
 		const dbConn = this;
@@ -380,7 +308,7 @@ class MariaDB extends SQLDBConnection {
 					  return;
 					}
 					connectionHandler.connection.query(command, params, (error, results, fields) => {
-						response.executionTime = new Date().getTime() - response.executionTime;
+						response.executionTime = new Date().getTime()-response.executionTime;
 						response.fields = fields;
 						response.results = results;
 						response.error = error;
@@ -404,10 +332,9 @@ class MariaDB extends SQLDBConnection {
 		const logName ='executeQuerySync_'+response.executionTime;
 		asyncConsole.log(logName , 'Waiting for query results:');
 		let wait = true;
-		const connectionHanler = this;
 		this.connection.query(command,params, (error, results, fields) => {
 			wait=false;
-			response.fields = connectionHanler.normalizeFieldDefinition(fields);
+			response.fields = fields;
 			response.results = results;
 			response.error = error;
 			response.executionTime = new Date().getTime()-response.executionTime;
@@ -415,23 +342,11 @@ class MariaDB extends SQLDBConnection {
 		});
 		while (wait){asyncConsole.log(logName , '.....');setTimeout(()=>{}, 100);}
 		return response;
-	}
 
-// //TODO: 
-// 	normalizeFieldDefinition(fields){
-		
-// 		fields.map((f,i) =>
-// 			{
-// 				return {
-// 					name: f.name,
-// 					type: f.type,
-// 					maxLength: f.length
-					
-// 				}
-// 			}
-// 		)
-// 	}
-} 
+		this.executeNativeQueryAsync(command,params,callback);
+	}
+}
+ 
 const drivers = {
 	mariadb: MariaDB,
 	// mysql: MYSQL,

@@ -6,10 +6,10 @@ import {findPropValueByAlias} from './objects.js';
  * @desc {es} un mapeo de datos comunes de uso comu
  * @desc {pt} um mapeamento de dados comuns de uso comum
  * @desc {fr} une carte descripteurs de données les plus courants utiles pour la validation et le formatage
- * @desc {de} eine Karte der besonders genutzten Datenbeschreibungen für die Validierung und Formatierung
- * @desc {ja} 一般的なデータ記述子
- * @desc {zh} 常用数据描述符
- * @desc {ru} карта наиболее часто используемых данных
+
+
+
+
  */
 export const objectDescriptorDefinitions = {
 
@@ -63,10 +63,10 @@ export const objectDescriptorDefinitions = {
  * @desc {es} Formate un objeto de acuerdo con el descritor
  * @desc {pt} Formata um objeto de acordo com o descritor
  * @desc {fr} Format un objet selon le descriteur
- * @desc {de} Formatiert ein Objekt entsprechend dem Descriptor
- * @desc {ja} 指定されたディレクトリのすべてのファイル
- * @desc {zh} 格式化对象
- * @desc {ru} Форматирует объект в соответствии с дескриптором
+
+
+
+
  */
 export function format(this_object, descriptor) {
 	const ret = {};
@@ -145,10 +145,10 @@ function setRequestError(requestParams,property,cause){
  * @desc {es} Descriptores de datos
  * @desc {pt} Descriptores de dados
  * @desc {fr} Descripteurs de données
- * @desc {de} Datendescriptoren
- * @desc {ja} データ記述子
- * @desc {zh} 数据描述符
- * @desc {ru} Дескрипторы данных
+
+
+
+
  */
 export const dataDescriptors = {
   "(person(al){0,1}[\\s\\-_]*|sur|first[\\s\\-_]*|last[\\s\\-_]*)name": {

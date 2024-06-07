@@ -36,11 +36,11 @@ export function getDocklet(this_function) {
  * @desc {it} Ottieni le annotazioni docklet dal
  * @desc {es} Obtener anotaciones docklet de la
  * @desc {fr} Obtenez les annotations docklet de la
- * @desc {de} Erhalte docklet Annotationen aus der
+
  * @desc {pt} Obtenha as anotações docklet da
- * @desc {zh} 获取函数的 docklet 注释
- * @desc {ru} Получить аннотации docklet из функции
- * @desc {ja} 関数の docklet 注釈を取得
+
+
+
  *
  *
  */
@@ -81,11 +81,11 @@ export function getDockletAnnotations(this_function) {
  * @desc {it} Ottieni i parametri della funzione
  * @desc {es} Obtener los parámetros de la función
  * @desc {fr} Obtenez les paramètres de la fonction
- * @desc {de} Liefert die Funktionsparameter
+
  * @desc {pt} Obtenha os parâmetros da função
- * @desc {zh} 获取函数参数
- * @desc {ru} Получить параметры функции
- * @desc {ja} 関数のパラメータを取得
+
+
+
  *
  */
 export function getFunctionParameters(this_function) {
@@ -118,11 +118,11 @@ export function getFunctionParameters(this_function) {
  * @desc {it} Crea una funzione facade
  * @desc {es} Crear una función de fachada
  * @desc {fr} Creer une fonction de façade
- * @desc {de} Erzeuge eine Facade-Funktion
+
  * @desc {pt} Criar uma função de fachada
- * @desc {zh} 创建函数
- * @desc {ru} Создать функцию фасада
- * 	@desc {ja} 関数のFacadeを作成
+
+
+
  *
  */
 export function facade(this_function, alias = null) {
@@ -163,11 +163,11 @@ export function facade(this_function, alias = null) {
  * @desc {it} Crea una funzione facade nel prototype
  * @desc {es} Crear una función de fachada en el prototype
  * @desc {fr} Creer une fonction de façade dans le prototype
- * @desc {de} Erzeuge eine Facade-Funktion in dem Prototype
+
  * @desc {pt} Criar uma função de fachada no prototype
- * @desc {zh} 创建函数到 prototype
- * @desc {ru} Создать функцию фасада в прототипе
- * 	@desc {ja} 関数のPrototypeにFacadeを作成
+
+
+
  * 
  */
 export function facadeOnPrototype(this_function, type, alias = null) {
@@ -188,11 +188,11 @@ export function facadeOnPrototype(this_function, type, alias = null) {
  * @desc {it} Crea una funzione facade nell'oggetto
  * @desc {es} Crear una función de fachada en el objeto
  * @desc {fr} Creer une fonction de façade dans l'objet
- * @desc {de} Erzeuge eine Facade-Funktion in dem Objekt
+
  * @desc {pt} Criar uma função de fachada no objeto
- * @desc {zh} 创建函数到对象
- * @desc {ru} Создать функцию фасада в объекте
- * 	@desc {ja} 関数のオブジェクトにFacadeを作成
+
+
+
  * 
  */
 export function facadeOnObject(this_function, object, alias = null) {
@@ -212,11 +212,11 @@ export function facadeOnObject(this_function, object, alias = null) {
  * @desc {it} Refletta il tipo js
  * @desc {es} Reflejar el tipo js
  * @desc {fr} Réflechir le type js
- * @desc {de} Reflektiere js-Typ
+
  * @desc {pt} Refletir o tipo js
- * @desc {zh} 反射js类型
- * @desc {ru} Отражение типа js
- * 	@desc {ja} jsの型を反映
+
+
+
  * 
  */
 export function getTypeByName(this_string) {
@@ -231,11 +231,11 @@ export function getTypeByName(this_string) {
  * @desc {it} Ottieni il nome della funzione
  * @desc {es} Obtener el nombre de la función
  * @desc {fr} Obtenez le nom de la fonction
- * @desc {de} Liefert den Namen der Funktion
+
  * @desc {pt} Obtenha o nome da função
- * @desc {zh} 获取函数名
- * @desc {ru} Получить имя функции
- * 	@desc {ja} 関数名を取得
+
+
+
  */
 export function getFunctionName(this_function) {
   const f = this_function.toString().match(/function\s*([^\s(]+)\s*\(/);
@@ -247,11 +247,11 @@ export function getFunctionName(this_function) {
  * @desc {it} Aspetta la promise di importazione non asincronamente
  * @desc {es} Esperar la promise de importación no asíncronamente
  * @desc {fr} Attendez la promise d'importation non asynchrone
- * @desc {de} Warten Sie auf die importierende Promise nicht asynchron
+
  * @desc {pt} Espere a promise de importação não assíncrona
- * @desc {zh} 等待导入Promise不是异步的
- * @desc {ru} Ожидание промиса импорта не асинхронно
- * @desc {ja} 非同期のインポートPromiseを待機
+
+
+
  * 
  * @prototype {string} waitImportPromise
  * 

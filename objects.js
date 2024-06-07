@@ -1,5 +1,5 @@
 import moment from 'moment';
-import * as fileUtility from './files.js';
+import * as fileUtility from '@ares/files';
 //TODO: import numeral from 'numeral';
 
 /**
@@ -12,10 +12,10 @@ import * as fileUtility from './files.js';
  * @desc {es} Encontrar la llave de un objeto
  * @desc {pt} Encontrar la llave de un objeto
  * @desc {fr} Trouver la clef d'un objet
- * @desc {de} Finden der Eigenschaftskey
- * @desc {ja} プロパティキーを検索する
- * @desc {zh} 查找属性
- * @desc {ru} Поиск ключа свойства
+
+
+
+
  */
 export function findPropKeyByAlias(this_object, alias) {
 	for (const k in this_object) {
@@ -32,10 +32,10 @@ export function findPropKeyByAlias(this_object, alias) {
  * @desc {es} Encontrar el valor de una propiedad tramite un alias
  * @desc {pt} Encontrar o valor de uma propriedade por meio de um alias
  * @desc {fr} Trouver la valeur d'un objet par son alias
- * @desc {de} Finden der Eigenschaftswert durch Alias
- * @desc {ja} プロパティ値を検索する 
- * @desc {zh} 查找属性  
- * @desc {ru} Поиск значения свойства по алиасу 
+
+
+
+
  */
 export function findPropValueByAlias(this_object, alias) {
 	for (const k in this_object) {
@@ -54,10 +54,10 @@ export function findPropValueByAlias(this_object, alias) {
  * @desc {es} Configurar un alias para una propiedad del objeto que coincida con la expresión regular
  * @desc {pt} Configurar um alias para uma propriedade do objeto que coincida com uma expressão regular
  * @desc {fr} Configurer un alias pour un objet par son regexp
- * @desc {de} Setzen der Eigenschaftsalias für ein Objektschlüssel, das dem Alias entspricht
- * @desc {ja} プロパティのエイリアスを設定する
- * @desc {zh} 设置属性别名
- * @desc {ru} Настройка алиаса свойства объекта, которое соответствует
+
+
+
+
  */
 export function setupPropertyAlias(this_object, alias) {
 	if (!obj.prototype.hasOwnProperty(alias)) {
@@ -82,10 +82,10 @@ export function setupPropertyAlias(this_object, alias) {
  * @desc {es} Parse el contenido del archivo como objeto
  * @desc {pt} Parse o conteúdo do arquivo como objeto
  * @desc {fr} Parse le contenu du fichier comme objet
- * @desc {de} Parsen der Dateiinhalt als Objekt
- * @desc {ja} ファイルの内容をオブジェクトとして解析
- * @desc {zh} 解析文件内容
- * @desc {ru} Разбор содержимого файла как объект
+
+
+
+
  * 
  */
 export function requireData(this_file) {
@@ -99,10 +99,10 @@ export function requireData(this_file) {
  * @desc {es} Crea una copia profunda de un objeto, incluyendo todos sus métodos.
  * @desc {pt} Cria uma cópia profunda de um objeto, incluindo todos os seus métodos.
  * @desc {fr} Creer une copie profonde d'un objet, y inclure tous ses methodes.
- * @desc {de} Erstellt eine tiefe Kopie eines Objekts, einschließlich aller Methoden.
- * @desc {ja} オブジェクトのクローンを作成します
- * @desc {zh} 创建对象的深拷贝
- * @desc {ru} Создает глубокую копию объекта, включая все его методы
+
+
+
+
  *
  * @param {Object} obj - The object to clone.
  * @return {Object} The cloned object.

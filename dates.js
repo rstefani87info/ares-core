@@ -6,10 +6,10 @@
  * @desc {es} devuelve la fecha actual
  * @desc {pt} retorna a data atual
  * @desc {fr} retourne la date actuelle
- * @desc {de} gibt das aktuelle Datum
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * 
  */
 export function now() {return new Date();}  
@@ -22,10 +22,10 @@ export function now() {return new Date();}
  * @desc {es} devuelve la fecha de ayer
  * @desc {pt} retorna a data de ontem
  * @desc {fr} retourne la date d'hier
- * @desc {de} gibt das Datum gestern
- * @desc {ja} 前日の日付を返します
- * @desc {zh} 返回昨天的日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * 
  * 
  */
@@ -40,10 +40,10 @@ export function yesterday() {return new Date(this_from.getFullYear(),this_from.g
  * @desc {es} devuelve una fecha algunos años antes o después
  * @desc {pt} retorna uma data alguns anos antes ou depois
  * @desc {fr} retourne une date quelques ans avant ou après
- * @desc {de} gibt ein Datum einige Jahre vor oder nach
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * 
  * @prototype {Date}
  * 
@@ -65,10 +65,10 @@ export function someYearsFrom (years, this_from=null){
  * @desc {es} devuelve una fecha algunos meses antes o después
  * @desc {pt} retorna uma data alguns meses antes ou depois
  * @desc {fr} retourne une date quelques mois avant ou après
- * @desc {de} gibt ein Datum einige Monate vor oder nach
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * @prototype {Date}
  * 
  */
@@ -86,10 +86,10 @@ export function someMonthsFrom (months, this_from=null){
  * @desc {es} devuelve una fecha algunos días antes o después
  * @desc {pt} retorna uma data alguns dias antes ou depois
  * @desc {fr} retourne une date quelques jours avant ou après
- * @desc {de} gibt ein Datum einige Tage vor oder nach
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * @prototype {Date}
  */
 export function someDaysFrom (days, this_from=null){
@@ -106,10 +106,10 @@ export function someDaysFrom (days, this_from=null){
  * @desc {es} devuelve una fecha algunos horas antes o después
  * @desc {pt} retorna uma data alguns horas antes ou depois
  * @desc {fr} retourne une date quelques heures avant ou après
- * @desc {de} gibt ein Datum einige Stunden vor oder nach
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * @prototype {Date}
  */
 export function someHoursFrom (hours, this_from=null){
@@ -128,10 +128,10 @@ export function someHoursFrom (hours, this_from=null){
  * @desc {es} devuelve una fecha algunos minutos antes o después
  * @desc {pt} retorna uma data alguns minutos antes ou depois
  * @desc {fr} retourne une date quelques minutes avant ou après
- * @desc {de} gibt ein Datum einige Minuten vor oder nach
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * @prototype {Date}
  */
 export function someMinutesFrom (minutes, this_from=null){
@@ -150,10 +150,10 @@ export function someMinutesFrom (minutes, this_from=null){
  * @desc {es} devuelve una fecha algunos segundos antes o después
  * @desc {pt} retorna uma data alguns segundos antes ou depois
  * @desc {fr} retourne une date quelques secondes avant ou après
- * @desc {de} gibt ein Datum einige Sekunden vor oder nach
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * 
  * @prototype {Date}
  */
@@ -173,10 +173,10 @@ export function someSecondsFrom (seconds, this_from=null){
  * @desc {es} devuelve el primer y el último día del mes
  * @desc {pt} retorna o primeiro e o último dia do mês
  * @desc {fr} retourne le premier et le dernier jour du mois
- * @desc {de} gibt das erste und das letzte
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  *  
  * @prototype {Date}
  * 
@@ -207,10 +207,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
  * @desc {es} devuelve el nombre del feriado
  * @desc {pt} retorna o primeiro e o último dia do mês
  * @desc {fr} retourne le premier et le dernier jour du mois
- * @desc {de} gibt das erste und das letzte
- * @desc {ja} 現在の日付を返します
- * @desc {zh} 返回当前日期
- * @desc {ru} возвращает текущую дату
+
+
+
+
  * 
  * @prototype {Date}
  * 
@@ -238,10 +238,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve una fecha con el tiempo establecido a medianoche
    * @desc {pt} retorna uma data com o horário definido para o meio-dia
    * @desc {fr} retourne une date avec l'heure e
-   * @desc {de} gibt ein Datum mit Zeit auf 00:00
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * 
    * @prototype {Date}
    */
@@ -267,10 +267,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} convierte el tiempo formato HH:mm en minutos
    * @desc {pt} converte o tempo formato HH:mm em minutos
    * @desc {fr} convertit l'heure format HH:mm en minutes
-   * @desc {de} wandelt die Zeit HH:mm in Minuten um
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * 
    * @prototype {string}
    * 
@@ -299,10 +299,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} Genera una secuencia de tiempo dentro del rango especificado.
    * @desc {pt} Gere uma sequência de tempo dentro do intervalo especificado.
    * @desc {fr} Génère une séquence de temps dans la plage spécifiée.
-   * @desc {de} Erstelle eine Zeitsequence im angegebenen Range.
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * 
    */
   export function forTimeSequence(min, max, minutesStep, callback) {
@@ -323,10 +323,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} Genera una secuencia de tiempo dentro del rango especificado.
    * @desc {pt} Gere uma sequência de tempo dentro do intervalo especificado.
    * @desc {fr} Génère une séquence de temps dans la plage spécifiée.
-   * @desc {de} Erstelle eine Zeitsequence im angegebenen Range.
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * 
    *
    * @param {number} min - the minimum time value
@@ -352,10 +352,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve el tiempo en el formato HH:MM
    * @desc {pt} retorna uma string no formato HH:MM
    * @desc {fr} retourne une chaine au format HH:MM
-   * @desc {de} gibt eine formatierte Zeitangabe
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * 
    */
     export function convertMinutesToTime(minutes) {
@@ -382,10 +382,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve la cadena de formato de tiempo
    * @desc {pt} retorna uma string no formato HH:MM
    * @desc {fr} retourne une chaine au format HH:MM
-   * @desc {de} gibt eine formatierte Zeitangabe
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    *    
    * 
    */
@@ -399,10 +399,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve el año actual
    * @desc {pt} retorna o ano atual
    * @desc {fr} retourne l'annee courante
-   * @desc {de} gibt das aktuelle Jahr
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * @return {number}
    */
   export function getCurrentYear() {
@@ -418,10 +418,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve el mes actual
    * @desc {pt} retorna o mes atual
    * @desc {fr} retourne le mois courant
-   * @desc {de} gibt das aktuelle Monat
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    */
   export function getCurrentMonth() {
       return getMonth(new Date());
@@ -434,10 +434,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve el dia actual
    * @desc {pt} retorna o dia atual
    * @desc {fr} retourne le jour courant
-   * @desc {de} gibt das aktuelle Tag
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    */
   export function getCurrentDay() {
       return getDay(new Date());
@@ -453,10 +453,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve el año
    * @desc {pt} retorna o ano
    * @desc {fr} retourne l'annee
-   * @desc {de} gibt das Jahr
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    */
   export function getYear(date) {
       var ret = date.getFullYear();
@@ -473,10 +473,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve el mes
    * @desc {pt} retorna o mes
    * @desc {fr} retourne le mois
-   * @desc {de} gibt das Monat
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * 
    */
   export function getMonth(date) {
@@ -493,10 +493,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve el dia
    * @desc {pt} retorna o dia
    * @desc {fr} retourne le jour
-   * @desc {de} gibt das Tag
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * 
   */
   export function getDay(date) {
@@ -514,10 +514,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} devuelve el nombre del dia
    * @desc {pt} retorna o nome do dia
    * @desc {fr} retourne le nom du jour
-   * @desc {de} gibt den Namen des Tages
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    * 
    * @prototype {Date}
    */
@@ -538,10 +538,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} calcula el domingo de pascua
    * @desc {pt} calcula o domingo de pascua
    * @desc {fr} calcule l'easter
-   * @desc {de} berechnet Ostersonntag
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    *    
    */
   export function calculateEaster(year) {
@@ -588,10 +588,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @desc {es} catalogo de vacaciones
    * @desc {pt} catalogo de feriados
    * @desc {fr} catalogue des vacances
-   * @desc {de} ferienkatalog
-   * @desc {ja} 現在の日付を返します
-   * @desc {zh} 返回当前日期
-   * @desc {ru} возвращает текущую дату
+
+
+
+
    *    
    */
   export const holidaysCatalog = [
@@ -892,10 +892,10 @@ export function getFirstAndLastDayOfMonth(this_date) {
  * @desc {es} Retorna la fecha del domingo de la semana n del mese en el año dado
  * @desc {pt} Retorna a data do domingo da semana n do mês no ano dado
  * @desc {fr} Retourne la date du dimanche de la semaine n du mois dans l'annee donnée
- * @desc {ru} Возвращает дату днёка недели n месяца в году
- * @desc {de} Gibt das Datum der nten Sonntag des Monats in dem Jahr
- * @desc {ja} 与えられた年月の日曜日の日付を返します
- * @desc {zh} 返回给定年月的第n个星期日
+
+
+
+
  */
 export function calculateNthSundayOfMonth(n,year, month) {
     const firstDayOfMonth = getFirstAndLastDayOfMonth(year, month)[0];
