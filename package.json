@@ -28,7 +28,6 @@
   "dependencies": {
     "@ares/files": "github:rstefani87info/ares-files#master",
     "deepl-node": "^1.12.0",
-    "js-yaml": "^4.1.0",
     "moment": "^2.30.1"
   }
 }

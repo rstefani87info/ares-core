@@ -1,5 +1,5 @@
 import datasources from "./datasources.js";
-import * as files  from "@ares/files";
+import * as files from "@ares/files";
 import fs from "fs";
 import path from "path";
 import unzipper from "unzipper";
@@ -21,7 +21,7 @@ export async function loadSwaggerSetting(aReS) {
 
 export async function saveSwaggerSetting(aReS, path) {
   const setting = await loadSwaggerSetting(aReS);
-  files.setFileContent(path+'/', JSON.stringify(setting, null, 2));
+  files.setFileContent(path + "/swagger.json", JSON.stringify(setting, null, 2));
   return true;
 }
 
@@ -34,93 +34,92 @@ export function exportDatasourceQueryAsSwaggerSetupService(
     "datasources",
     " - open REST: {" + mapper.name + ":  " + mapper.path
   );
-  aReS.exportRoute(
-    datasource.name + "." + mapper.querySetting.name + "." + mapper.name,
-    mapper,
-    (req, res) => {
-      let pathLevel = mapper.path;
-      if (!pathLevel.startWith("/")) pathLevel = "/" + pathLevel;
 
-      const pathLevelObject = {
-        summary: mapper.summary,
-        description: mapper.description,
-        operationId:
-          datasource.name + "." + mapper.querySetting.name + "." + mapper.name,
-        parameters: {},
-        responses: mapper.responses,
-      };
-      for (const k in mapper.parameters) {
-        pathLevelObject.parameters["-" + k] = {
-          name: k,
-          description: mapper.parameters[k].description,
-          required: mapper[k].required ?? false,
+  let pathLevel = mapper.path;
+  if (!pathLevel.startWith("/")) pathLevel = "/" + pathLevel;
 
-          schema: {},
-        };
-        if (
-          mapper.parameters[k].type.indexOf("/") +
-            mapper.parameters[k].type.indexOf("\\") +
-            mapper.parameters[k].type.indexOf(".") <=
-          -1
-        )
-          pathLevelObject.parameters["-" + k].schema.type =
-            mapper.parameters[k].type;
-        else
-          pathLevelObject.parameters["-" + k].schema["$ref"] =
-            "#components/schemas/" +
-            mapper.parameters[k].type.replaceAll(/\.\\/g, "/");
-        if (pathLevel.indexOf("{" + k + "}"))
-          pathLevelObject.parameters["-" + k].in = "path";
-      }
-      for (const m in mapper.methods) {
-        setting.paths[pathLevel] = setting.paths[pathLevel] || {};
-        setting.paths[pathLevel][m.toLowerCase()] = pathLevelObject;
-      }
-    }
-  );
+  const pathLevelObject = {
+    summary: mapper.summary,
+    description: mapper.description,
+    operationId:
+      datasource.name + "." + mapper.querySetting.name + "." + mapper.name,
+    parameters: {},
+    responses: mapper.responses,
+  };
+  for (const k in mapper.parameters) {
+    pathLevelObject.parameters["-" + k] = {
+      name: k,
+      description: mapper.parameters[k].description,
+      required: mapper[k].required ?? false,
+
+      schema: {},
+    };
+    if (
+      mapper.parameters[k].type.indexOf("/") +
+        mapper.parameters[k].type.indexOf("\\") +
+        mapper.parameters[k].type.indexOf(".") <=
+      -1
+    )
+      pathLevelObject.parameters["-" + k].schema.type =
+        mapper.parameters[k].type;
+    else
+      pathLevelObject.parameters["-" + k].schema["$ref"] =
+        "#components/schemas/" +
+        mapper.parameters[k].type.replaceAll(/\.\\/g, "/");
+    if (pathLevel.indexOf("{" + k + "}"))
+      pathLevelObject.parameters["-" + k].in = "path";
+  }
+  for (const m in mapper.methods) {
+    setting.paths[pathLevel] = setting.paths[pathLevel] || {};
+    setting.paths[pathLevel][m.toLowerCase()] = pathLevelObject;
+  }
   asyncConsole.log("datasources", " - }");
 }
 
-
- 
-
-async function generate(language,apiUsername, apiName, apiVersion, apiKey, packageName,specFilePath, outputPath) {
+export async function generate(
+  language,
+  apiUsername,
+  apiName,
+  apiVersion,
+  apiKey,
+  packageName,
+  outputPath
+) {
   try {
-    
-    const specContent = files.getFileContent(specFilePath);
+    saveSwaggerSetting(aReS, outputPath)
+    const specContent = files.getFileContent(outputPath+"/swagger.json");
 
     const endpoint = `https://api.swaggerhub.com/apis/${apiUsername}/${apiName}/${apiVersion}/swagger-codegen/clients/${language}`;
     const requestBody = {
       spec: specContent,
       options: {
-        packageName: packageName
-      }
+        packageName: packageName,
+      },
     };
 
     const requestOptions = {
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
-      responseType: 'arraybuffer'  
+      responseType: "arraybuffer",
     };
 
     const response = await axios.post(endpoint, requestBody, requestOptions);
 
-    console.log('Code generated successfully. Saving ZIP...');
+    console.log("Code generated successfully. Saving ZIP...");
 
-    const zipFilePath = path.join(outputPath, 'generated_code.zip');
+    const zipFilePath = path.join(outputPath, "generated_code.zip");
     fs.writeFileSync(zipFilePath, response.data);
 
-    console.log('ZIP saved successfully. Decompressing...');
+    console.log("ZIP saved successfully. Decompressing...");
 
     fs.createReadStream(zipFilePath)
       .pipe(unzipper.Extract({ path: outputPath }))
-      .on('close', () => {
-        console.log('Decompression complete.');
+      .on("close", () => {
+        console.log("Decompression complete.");
       });
   } catch (error) {
-    console.error('Error generating code:', error);
+    console.error("Error generating code:", error);
   }
 }
-
