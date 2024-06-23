@@ -12,7 +12,7 @@ import { URL }  from 'url';
  * 
  * @prototype {string}
  */
-function resolveUrl( relativePath, base) {
+export function resolveUrl( relativePath, base) {
     const baseUrl = new URL(base);
     const absoluteUrl = new URL(relativePath, baseUrl);
     return absoluteUrl.href;
@@ -28,6 +28,6 @@ function resolveUrl( relativePath, base) {
  * @param {*} url - The URL to convert to a URL object.
  * @returns 
  */
-function toURL( url ) {
+export function toURL( url ) {
     return new URL( url );
 }
