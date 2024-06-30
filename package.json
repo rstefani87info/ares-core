@@ -28,6 +28,7 @@
   "dependencies": {
     "@ares/files": "github:rstefani87info/ares-files#master",
     "deepl-node": "^1.12.0",
-    "moment": "^2.30.1"
+    "moment": "^2.30.1",
+    "node-geocoder": "^4.3.0"
   }
 }
