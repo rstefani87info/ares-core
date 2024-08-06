@@ -1,10 +1,5 @@
 /**
- * @desc {en} Trims initial regexp from a string.
- * @desc {it} Rimuove la regexp iniziale da una stringa.
- * @desc {es} Quita la regexp inicial de una cadena.
- * @desc {fr} Supprime la regexp initiale d'une chaîne.
-
- * @desc {pt} Remove a expressão regular inicial de uma string.
+ * Trims initial regexp from a string.
 
 
 
@@ -20,12 +15,7 @@ export function trimInitialRegexp(this_string, regexp) {
 }
 
 /**
- * @desc {en} Trims final regexp from a string.
- * @desc {it} Rimuove la regexp finale da una stringa.
- * @desc {es} Quita la regexp final de una cadena.
- * @desc {fr} Supprime la regexp finale d'une chaîne.
-
- * @desc {pt} Remove a expressão regular final de uma string.
+ * Trims final regexp from a string.
 
 
 
@@ -49,12 +39,7 @@ export function trimFinalRegexp(this_string, regexp) {
  * 
  * @prototype {string}
  * 
- * @desc {en} Trims initial and final regexp from a string.
- * @desc {it} Rimuove la regexp iniziale e la finale da una stringa.
- * @desc {es} Quita la regexp inicial y final de una cadena.
- * @desc {fr} Supprime la regexp initiale et la finale d'une chaîne.
-
- * @desc {pt} Remove a expressão regular inicial e final de uma string.
+ * Trims initial and final regexp from a string.
 
 
 

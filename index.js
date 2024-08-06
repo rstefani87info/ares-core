@@ -1,12 +1,7 @@
 /**
  * @author Roberto Stefani
  * @license MIT
- * @desc {en} A collection of base utilities of aReS framework.
- * @desc {it} Una collezione di utilità base di aReS framework.
- * @desc {es} Una colección de utilitarios base de aReS.
- * @desc {fr} Une collection d'utilitaires de base d'aReS.
-
- * @desc {pt} Uma coleção de utilitários base de aReS.
+ * A collection of base utilities of aReS framework.
 
 
 
@@ -16,12 +11,12 @@ import * as arrays from "./arrays.js";
 import * as crypto from "./crypto.js";
 import * as dataDescriptor from "./dataDescriptors.js";
 import * as deeplTranslator from "./deeplTranslator.js";
-import * as files from "./files.js";
 import * as localAi from "./localAI.js";
 import * as objects from "./objects.js";
 import * as permissions from "./permissions.js";
 import * as scripts from "./scripts.js";
 import * as prototype from "./prototype.js";
+import * as files from "@ares/files";
 export function getApplicationRoot() {
   return files.getAbsolutePath('./');
 }

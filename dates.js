@@ -1,11 +1,7 @@
 /**
  * 
  * @returns {Date}
- * @desc {en} returns the current date
- * @desc {it} restituisce la data odierna
- * @desc {es} devuelve la fecha actual
- * @desc {pt} retorna a data atual
- * @desc {fr} retourne la date actuelle
+ * returns the current date
 
 
 
@@ -17,11 +13,7 @@ export function now() {return new Date();}
 /**
  * 
  * @returns {Date}
- * @desc {en} returns yesterday's date
- * @desc {it} restituisce la data di ieri
- * @desc {es} devuelve la fecha de ayer
- * @desc {pt} retorna a data de ontem
- * @desc {fr} retourne la date d'hier
+ * returns yesterday's date
 
 
 
@@ -35,11 +27,7 @@ export function yesterday() {return new Date(this_from.getFullYear(),this_from.g
  * @param {number} years - number of years to sum
  * @param {Date} this_from - start date
  * @returns {Date}
- * @desc {en} returns a date some years before or after
- * @desc {it} restituisce una data alcuni anni prima o dopo
- * @desc {es} devuelve una fecha algunos años antes o después
- * @desc {pt} retorna uma data alguns anos antes ou depois
- * @desc {fr} retourne une date quelques ans avant ou après
+ * returns a date some years before or after
 
 
 
@@ -60,11 +48,7 @@ export function someYearsFrom (years, this_from=null){
  * @param {Date} this_from 
  * @returns 
  * 
- * @desc {en} returns a date some months before or after
- * @desc {it} restituisce una data alcuni mesi prima o dopo
- * @desc {es} devuelve una fecha algunos meses antes o después
- * @desc {pt} retorna uma data alguns meses antes ou depois
- * @desc {fr} retourne une date quelques mois avant ou après
+ * returns a date some months before or after
 
 
 
@@ -81,11 +65,7 @@ export function someMonthsFrom (months, this_from=null){
  * @param {Date} this_from - the date to start from (default is current date if not provided)
  * @return {Date} the date that is some days from the specified date
  * 
- * @desc {en} returns a date some days before or after
- * @desc {it} restituisce una data alcuni giorni prima o dopo
- * @desc {es} devuelve una fecha algunos días antes o después
- * @desc {pt} retorna uma data alguns dias antes ou depois
- * @desc {fr} retourne une date quelques jours avant ou après
+ * returns a date some days before or after
 
 
 
@@ -101,11 +81,7 @@ export function someDaysFrom (days, this_from=null){
  * @param {Date|null} [this_from=null] - The date from which to calculate the new date. If not provided, the current date is used.
  * @return {Date} - The new Date object that is the specified number of hours from the given date or the current date.
  * 
- * @desc {en} returns a date some hours before or after
- * @desc {it} restituisce una data alcuni ore prima o dopo
- * @desc {es} devuelve una fecha algunos horas antes o después
- * @desc {pt} retorna uma data alguns horas antes ou depois
- * @desc {fr} retourne une date quelques heures avant ou après
+ * returns a date some hours before or after
 
 
 
@@ -123,11 +99,7 @@ export function someHoursFrom (hours, this_from=null){
  * @param {Date} this_from - the starting time (default is the current time)
  * @return {Date} a new Date object representing the time after adding the specified minutes
  * 
- * @desc {en} returns a date some minutes before or after
- * @desc {it} restituisce una data alcuni minuti prima o dopo
- * @desc {es} devuelve una fecha algunos minutos antes o después
- * @desc {pt} retorna uma data alguns minutos antes ou depois
- * @desc {fr} retourne une date quelques minutes avant ou après
+ * returns a date some minutes before or after
 
 
 
@@ -145,11 +117,7 @@ export function someMinutesFrom (minutes, this_from=null){
  * @return {Date} A new Date object that is the specified number of seconds from the given date.
  * 
  * 
- * @desc {en} returns a date some seconds before or after
- * @desc {it} restituisce una data alcuni secondi prima o dopo
- * @desc {es} devuelve una fecha algunos segundos antes o después
- * @desc {pt} retorna uma data alguns segundos antes ou depois
- * @desc {fr} retourne une date quelques secondes avant ou après
+ * returns a date some seconds before or after
 
 
 
@@ -168,11 +136,7 @@ export function someSecondsFrom (seconds, this_from=null){
  * @param {*} this_date 
  * @returns {array}
  * 
- * @desc {en} returns the first and last day of the month
- * @desc {it} restituisce la prima e l'ultima giornata del mese
- * @desc {es} devuelve el primer y el último día del mes
- * @desc {pt} retorna o primeiro e o último dia do mês
- * @desc {fr} retourne le premier et le dernier jour du mois
+ * returns the first and last day of the month
 
 
 
@@ -202,11 +166,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
  * @param {string} countryCode
  * @returns {array}
  * 
- * @desc {en} returns the name of the holiday
- * @desc {it} restituisce il nome della festa
- * @desc {es} devuelve el nombre del feriado
- * @desc {pt} retorna o primeiro e o último dia do mês
- * @desc {fr} retourne le premier et le dernier jour du mois
+ * returns the name of the holiday
 
 
 
@@ -233,11 +193,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {Date} this_date - The Date object to modify
    * @return {Date} The modified Date object with time set to midnight
    * 
-   * @desc {en} returns a date with time set to midnight
-   * @desc {it} restituisce una data con l'orario impostato a mezzanotte
-   * @desc {es} devuelve una fecha con el tiempo establecido a medianoche
-   * @desc {pt} retorna uma data com o horário definido para o meio-dia
-   * @desc {fr} retourne une date avec l'heure e
+   * returns a date with time set to midnight
 
 
 
@@ -262,11 +218,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {*} this_stringTime 
    * @returns {number}
    * 
-   * @desc {en} convert time HH:mm formatted to minutes
-   * @desc {it} converte l'orario formato HH:mm in minuti 
-   * @desc {es} convierte el tiempo formato HH:mm en minutos
-   * @desc {pt} converte o tempo formato HH:mm em minutos
-   * @desc {fr} convertit l'heure format HH:mm en minutes
+   * convert time HH:mm formatted to minutes
 
 
 
@@ -294,11 +246,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {function} callback - the callback function to be called for each time value
    * 
    * 
-   * @desc {en} Generate a sequence of time within the specified range.
-   * @desc {it} Genera una sequenza di time nel range specificato.
-   * @desc {es} Genera una secuencia de tiempo dentro del rango especificado.
-   * @desc {pt} Gere uma sequência de tempo dentro do intervalo especificado.
-   * @desc {fr} Génère une séquence de temps dans la plage spécifiée.
+   * Generate a sequence of time within the specified range.
 
 
 
@@ -318,11 +266,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
   }
 
     /**
-   * @desc {en} Generate a sequence of time within the specified range.
-   * @desc {it} Genera una sequenza di time nel range specificato.
-   * @desc {es} Genera una secuencia de tiempo dentro del rango especificado.
-   * @desc {pt} Gere uma sequência de tempo dentro do intervalo especificado.
-   * @desc {fr} Génère une séquence de temps dans la plage spécifiée.
+   * Generate a sequence of time within the specified range.
 
 
 
@@ -347,11 +291,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {number} minutes - the number of minutes to convert
    * @return {string} the time in the format HH:MM
    * 
-   * @desc {en} returns the time in the format HH:MM
-   * @desc {it} restituisce il tempo nel formato HH:MM
-   * @desc {es} devuelve el tiempo en el formato HH:MM
-   * @desc {pt} retorna uma string no formato HH:MM
-   * @desc {fr} retourne une chaine au format HH:MM
+   * returns the time in the format HH:MM
 
 
 
@@ -377,11 +317,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @return {string} the formatted time string
    * 
    * 
-   * @desc {en} returns the formatted time string
-   * @desc {it} restituisce la stringa formattata del tempo
-   * @desc {es} devuelve la cadena de formato de tiempo
-   * @desc {pt} retorna uma string no formato HH:MM
-   * @desc {fr} retourne une chaine au format HH:MM
+   * returns the formatted time string
 
 
 
@@ -394,11 +330,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
   }
   
   /**
-   * @desc {en} returns the current year
-   * @desc {it} restituisce l'anno corrente
-   * @desc {es} devuelve el año actual
-   * @desc {pt} retorna o ano atual
-   * @desc {fr} retourne l'annee courante
+   * returns the current year
 
 
 
@@ -413,11 +345,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * 
    * @returns {number}
    * 
-   * @desc {en} returns the current month
-   * @desc {it} restituisce il mese corrente
-   * @desc {es} devuelve el mes actual
-   * @desc {pt} retorna o mes atual
-   * @desc {fr} retourne le mois courant
+   * returns the current month
 
 
 
@@ -429,11 +357,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
 
   /**
    * @returns {number}
-   * @desc {en} returns the current day
-   * @desc {it} restituisce il giorno corrente
-   * @desc {es} devuelve el dia actual
-   * @desc {pt} retorna o dia atual
-   * @desc {fr} retourne le jour courant
+   * returns the current day
 
 
 
@@ -448,11 +372,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {Date} date 
    * @returns {number}
    * 
-   * @desc {en} returns the year
-   * @desc {it} restituisce l'anno
-   * @desc {es} devuelve el año
-   * @desc {pt} retorna o ano
-   * @desc {fr} retourne l'annee
+   * returns the year
 
 
 
@@ -468,11 +388,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {Date} date 
    * @returns {number}
    * 
-   * @desc {en} returns the month
-   * @desc {it} restituisce il mese
-   * @desc {es} devuelve el mes
-   * @desc {pt} retorna o mes
-   * @desc {fr} retourne le mois
+   * returns the month
 
 
 
@@ -488,11 +404,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {Date} date
    * @returns {number}
    * 
-   * @desc {en} returns the day
-   * @desc {it} restituisce il giorno
-   * @desc {es} devuelve el dia
-   * @desc {pt} retorna o dia
-   * @desc {fr} retourne le jour
+   * returns the day
 
 
 
@@ -509,11 +421,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {Date} this_date
    * @returns {string}
    * 
-   * @desc {en} returns the day name
-   * @desc {it} restituisce il nome del giorno
-   * @desc {es} devuelve el nombre del dia
-   * @desc {pt} retorna o nome do dia
-   * @desc {fr} retourne le nom du jour
+   * returns the day name
 
 
 
@@ -533,11 +441,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @param {number} year
    * @returns {Date}
    * 
-   * @desc {en} calculate easter
-   * @desc {it} calcola la pasqua
-   * @desc {es} calcula el domingo de pascua
-   * @desc {pt} calcula o domingo de pascua
-   * @desc {fr} calcule l'easter
+   * calculate easter
 
 
 
@@ -583,11 +487,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
 
   /**
    *
-   * @desc {en} catalog of holidays 
-   * @desc {it} catalogo delle vacanze
-   * @desc {es} catalogo de vacaciones
-   * @desc {pt} catalogo de feriados
-   * @desc {fr} catalogue des vacances
+   * catalog of holidays
 
 
 
@@ -887,11 +787,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
  * @return {Date} - The date object representing the nth Sunday of the month in the given year.
  * 
  * 
- * @desc {en} Returns the date object of the nth Sunday of the month in the given year.
- * @desc {it} Restituisce la data dell'ultima settimana del mese nello anno dato
- * @desc {es} Retorna la fecha del domingo de la semana n del mese en el año dado
- * @desc {pt} Retorna a data do domingo da semana n do mês no ano dado
- * @desc {fr} Retourne la date du dimanche de la semaine n du mois dans l'annee donnée
+ * Returns the date object of the nth Sunday of the month in the given year.
 
 
 

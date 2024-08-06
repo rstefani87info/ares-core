@@ -8,12 +8,7 @@ import * as filesUtility from '@ares/files';
 import * as scriptsUtility from './scripts.js';
 /**
  * @prototype {string}
- * @desc {en} Initializes prototypes for all types declared on function docklet annotations in files of the given paths recoursively.
- * @desc {it} Inizializza le prototipi per tutti i tipi dichiarati con le annotazioni docklet in tutti i file dei percorsi indicati.
- * @desc {es} Inicializa prototipos para todos los tipos declarados en las anotaciones docklet en los archivos de los caminos indicados recursivamente.
- * @desc {fr} Initialise les prototypes pour tous les types déclarés dans les annotations docklet dans tous les fichiers des chemins indiqués récursivement.
-
- * @desc {pt} Inicializa prototipos para todos os tipos declarados nas anotações docklet nos arquivos dos caminhos indicados recursivamente.
+ * Initializes prototypes for all types declared on function docklet annotations in files of the given paths recoursively.
 
 
 
@@ -35,12 +30,7 @@ export async function initPrototypes (...paths) {
 
 /**
  * @prototype {string}
- * @desc {en} Initializes prototypes for all types declared on function docklet annotations in file.
- * @desc {it} Inizializza le prototipi per tutti i tipi dichiarati con le annotazioni docklet in file.
- * @desc {es} Inicializa prototipos para todos los tipos declarados en las anotaciones docklet en el archivo.
- * @desc {fr} Initialise les prototypes pour tous les types déclarés dans les annotations docklet dans le fichier.
-
- * @desc {pt} Inicializa prototipos para todos os tipos declarados nas anotações docklet no arquivo.
+ * Initializes prototypes for all types declared on function docklet annotations in file.
 
 
 

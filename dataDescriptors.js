@@ -1,56 +1,79 @@
-import {findPropValueByAlias} from './objects.js';
+import { findPropValueByAlias } from "./objects.js";
+import numeral from "numeral";
 
 /**
- * @desc {en} a mapping of the most common data descriptors useful for validation and formatting
- * @desc {it} una mappa di descrittori di dati comuni di utilità per la validazione e formattazione
- * @desc {es} un mapeo de datos comunes de uso comu
- * @desc {pt} um mapeamento de dados comuns de uso comum
- * @desc {fr} une carte descripteurs de données les plus courants utiles pour la validation et le formatage
+ * a mapping of the most common data descriptors useful for validation and formatting
 
 
 
 
  */
 export const objectDescriptorDefinitions = {
+  text: {
+    parse: (s) => s + "",
+    minLength: (v, m) => (m > 0 ? v.length >= m : true),
+    maxLength: (v, m) => (m > 0 ? v.length <= m : true),
+    minValue: (v, m) => (m ? v >= m : true),
+    maxValue: (v, m) => (m ? v <= m : true),
+    pattern: (v, p) => {
+      if (p) return v.match(p);
+      else return true;
+    },
+  },
+  number: {
+    parse: (s) => new Number(s + ""),
+    minLength: (v, m) => (m > 0 ? ("" + v).length >= m : true),
+    maxLength: (v, m) => (m > 0 ? ("" + v).length <= m : true),
+    minDecimalLength: (v, m) =>
+      m > 0 ? ("" + v).split("[.,]").pop().length >= m : true,
+    maxDecimalLength: (v, m) =>
+      m > 0 ? ("" + v).split("[.,]").pop().length <= m : true,
+    minValue: (v, m) => (m ? v >= m : true),
+    maxValue: (v, m) => (m ? v <= m : true),
+    format: (v, f) => {
+      if (f) {
+        try {
+          const number = numeral(v).value();
+          const formattedNumber = numeral(number).format(f);
 
-	"text": {
-		parse: (s) => s + '',
-		minLength: (v, m) => m > 0 ? v.length >= m : true,
-		maxLength: (v, m) => m > 0 ? v.length <= m : true,
-		minValue: (v, m) => m ? v >= m : true,
-		maxValue: (v, m) => m ? v <= m : true,
-		pattern: (v, p) => {
-			if (p) return v.match(p);
-			else return true;
-		}
-	},
-	"number": {
-		parse: (s) => new Number(s + ""),
-		minLength: (v, m) => m > 0 ? ('' + v).length >= m : true,
-		maxLength: (v, m) => m > 0 ? ('' + v).length <= m : true,
-		minDecimalLength: (v, m) => m > 0 ? ('' + v).split("[.,]").pop().length >= m : true,
-		maxDecimalLength: (v, m) => m > 0 ? ('' + v).split("[.,]").pop().length <= m : true,
-		minValue: (v, m) => m ? v >= m : true,
-		maxValue: (v, m) => m ? v <= m : true,
-		format: (v, f) => f ? moment(v, f) : moment(v),
-		pattern: (v, p) => {
-			if (p) return ('' + v).match(p);
-			else return ('' + v).match("\\d+(\\.\\d+)");
-		}
-	},
- 
-	"date([\\s\\-_]*time)?|time": {
-		parse: (s, f) => f ? moment(v, f) : moment(v),
-		minValue: (v, m, f) => m ? f ? moment(v, f) : moment(v).toDate() >= f ? moment(m, f).toDate() : moment(m).toDate() : true,
-		maxValue: (v, m, f) => m ? f ? moment(v, f) : moment(v).toDate() <= f ? moment(m, f).toDate() : moment(m).toDate() : true,
-		format: (v, f) => f ? moment(v, f) : moment(v),
-		pattern: (v, p) => {
-			if (p) return ('' + v).match(p);
-			else return true;
-		}
-	},
+          // Controlla se la stringa formattata corrisponde alla stringa originale
+          return formattedNumber === v;
+        } catch (e) {
+          return false;
+        }
+      }
+      return false;
+    },
+    pattern: (v, p) => {
+      if (p) return ("" + v).match(p);
+      else return ("" + v).match("\\d+(\\.\\d+)");
+    },
+  },
 
-
+  "date([\\s\\-_]*time)?|time": {
+    parse: (s, f) => (f ? moment(v, f) : moment(v)),
+    minValue: (v, m, f) =>
+      m
+        ? f
+          ? moment(v, f)
+          : moment(v).toDate() >= f
+          ? moment(m, f).toDate()
+          : moment(m).toDate()
+        : true,
+    maxValue: (v, m, f) =>
+      m
+        ? f
+          ? moment(v, f)
+          : moment(v).toDate() <= f
+          ? moment(m, f).toDate()
+          : moment(m).toDate()
+        : true,
+    format: (v, f) => (f ? moment(v, f) : moment(v)),
+    pattern: (v, p) => {
+      if (p) return ("" + v).match(p);
+      else return true;
+    },
+  },
 };
 
 /**
@@ -58,93 +81,153 @@ export const objectDescriptorDefinitions = {
  * @param {Object} this_object
  * @param {Object} descriptor
  * 
- * @desc {en} Format an object according to the descriptor
- * @desc {it} Formatta un oggetto in base al descrittore
- * @desc {es} Formate un objeto de acuerdo con el descritor
- * @desc {pt} Formata um objeto de acordo com o descritor
- * @desc {fr} Format un objet selon le descriteur
+ * Format an object according to the descriptor
 
 
 
 
  */
-export function format(this_object, descriptor) {
-	const ret = {};
-	for (const k in descriptor) {
-    console.log(' - formatting: '+ k);
-		ret[k] = this_object[k];
-		const objectDescriptorDefinitionKey = descriptor[k]?.type || null;
-		const objectDescriptorDefinition = findPropValueByAlias(objectDescriptorDefinitions, objectDescriptorDefinitionKey);
+export async function format(this_object, descriptor) {
+  const ret = {};
+  for (const k in descriptor) {
+    console.log(" - formatting: " + k);
+    ret[k] = this_object[k];
+    const objectDescriptorDefinitionKey = descriptor[k]?.type || null;
+    const objectDescriptorDefinition = findPropValueByAlias(
+      objectDescriptorDefinitions,
+      objectDescriptorDefinitionKey
+    );
     if (descriptor.normalization) {
-      ret[k] = descriptor.normalization(ret[k]);
+      ret[k] = await descriptor.normalization(ret[k]);
     }
-    if(descriptor.defaultValue  && !ret[k]) {
+    if (descriptor.defaultValue && !ret[k]) {
       ret[k] = descriptor.defaultValue;
-      if(ret[k] instanceof Object || Array.isArray(ret[k])) {
+      if (ret[k] instanceof Object || Array.isArray(ret[k])) {
         ret[k] = JSON.parse(JSON.stringify(ret[k]));
       }
     }
-    if(descriptor[k].required && !ret[k]) {
-      setRequestError(ret,k,'required');
+    if (descriptor[k].required && !ret[k]) {
+      setRequestError(ret, k, "required");
     }
-    if (descriptor[k].minValue && !(objectDescriptorDefinition?.minValue(ret[k], descriptor[k].minValue) || null)) {
-      setRequestError(ret,k,'minValue');
-		}
-		if (descriptor[k].maxValue && !(objectDescriptorDefinition?.maxValue(ret[k], descriptor[k].maxValue) || null)) {
-      setRequestError(ret,k,'maxValue');
-		}
-		if (descriptor[k].minLength && !(objectDescriptorDefinition?.minLength(ret[k], descriptor[k].minLength) || null)) {
-      setRequestError(ret,k,'minLength');
-		}
-		if (descriptor[k].maxLength && !(objectDescriptorDefinition?.maxLength(ret[k], descriptor[k].maxLength) || null)) {
-      setRequestError(ret,k,'maxLength');
-		}
-		if (descriptor[k].minDecimalLength && !(objectDescriptorDefinition?.minDecimalLength(ret[k], descriptor[k].minDecimalLength) || null)) {
-      setRequestError(ret,k,'minDecimalLength');
-		}
-		if (descriptor[k].maxDecimalLength && !(objectDescriptorDefinition?.maxDecimalLength(ret[k], descriptor[k].maxDecimalLength) || null)) {
-      setRequestError(ret,k,'maxDecimalLength');
-		}
-		if (descriptor[k].pattern && !(objectDescriptorDefinition?.pattern(ret[k], descriptor[k].pattern) || null)) {
-      setRequestError(ret,k,'pattern');
-		}
-    if(descriptor[k].format && !(objectDescriptorDefinition?.format(ret[k], descriptor[k].format) || null)) {
-      setRequestError(ret,k,'format');
+    if (
+      descriptor[k].minValue &&
+      !(
+        objectDescriptorDefinition?.minValue(ret[k], descriptor[k].minValue) ||
+        null
+      )
+    ) {
+      setRequestError(ret, k, "minValue");
     }
-    if (descriptor[k].transform && typeof descriptor[k].transform === 'function') {
-      ret[k] = descriptor[k].transform(ret[k]);
+    if (
+      descriptor[k].maxValue &&
+      !(
+        objectDescriptorDefinition?.maxValue(ret[k], descriptor[k].maxValue) ||
+        null
+      )
+    ) {
+      setRequestError(ret, k, "maxValue");
     }
-    if(descriptor[k].exists){
-      if(
-        (typeof descriptor[k].exists === 'function' && !descriptor[k].exists(ret[k])) ||
-        (Array.isArray(descriptor[k].exists) && !descriptor[k].exists.includes(ret[k]))
+    if (
+      descriptor[k].minLength &&
+      !(
+        objectDescriptorDefinition?.minLength(
+          ret[k],
+          descriptor[k].minLength
+        ) || null
+      )
+    ) {
+      setRequestError(ret, k, "minLength");
+    }
+    if (
+      descriptor[k].maxLength &&
+      !(
+        objectDescriptorDefinition?.maxLength(
+          ret[k],
+          descriptor[k].maxLength
+        ) || null
+      )
+    ) {
+      setRequestError(ret, k, "maxLength");
+    }
+    if (
+      descriptor[k].minDecimalLength &&
+      !(
+        objectDescriptorDefinition?.minDecimalLength(
+          ret[k],
+          descriptor[k].minDecimalLength
+        ) || null
+      )
+    ) {
+      setRequestError(ret, k, "minDecimalLength");
+    }
+    if (
+      descriptor[k].maxDecimalLength &&
+      !(
+        objectDescriptorDefinition?.maxDecimalLength(
+          ret[k],
+          descriptor[k].maxDecimalLength
+        ) || null
+      )
+    ) {
+      setRequestError(ret, k, "maxDecimalLength");
+    }
+    if (
+      descriptor[k].pattern &&
+      !(
+        objectDescriptorDefinition?.pattern(ret[k], descriptor[k].pattern) ||
+        null
+      )
+    ) {
+      setRequestError(ret, k, "pattern");
+    }
+    if (
+      descriptor[k].format &&
+      !(
+        objectDescriptorDefinition?.format(ret[k], descriptor[k].format) || null
+      )
+    ) {
+      setRequestError(ret, k, "format");
+    }
+    if (
+      descriptor[k].transform &&
+      typeof descriptor[k].transform === "function"
+    ) {
+      ret[k] = await descriptor[k].transform(ret[k]);
+    }
+    if (descriptor[k].exists) {
+      if (
+        (typeof descriptor[k].exists === "function" &&
+          !(await descriptor[k].exists(ret[k]))) ||
+        (Array.isArray(descriptor[k].exists) &&
+          !descriptor[k].exists.includes(ret[k]))
       ) {
-        setRequestError(ret,k,'exists');
+        setRequestError(ret, k, "exists");
       }
     }
-    if(descriptor[k].notExists && 
-      (typeof descriptor[k].notExists === 'function' && !descriptor[k].notExists(ret[k])) ||
-      (Array.isArray(descriptor[k].notExists) && !descriptor[k].notExists.includes(ret[k]))
+    if (
+      (descriptor[k].notExists &&
+        typeof descriptor[k].notExists === "function" &&
+        !(await descriptor[k].notExists(ret[k]))) ||
+      (Array.isArray(descriptor[k].notExists) &&
+        !descriptor[k].notExists.includes(ret[k]))
     ) {
-      setRequestError(ret,k,'notExists');
+      setRequestError(ret, k, "notExists");
     }
-
-	}
-	return ret;
+  }
+  return ret;
 }
 
-function setRequestError(requestParams,property,cause){
-  if (!requestParams['€rror']) requestParams['€rror'] = {};
-  if (!requestParams['€rror'] [property]) requestParams['€rror'][property] = [];
-  requestParams['€rror'][property] = [...requestParams['€rror'][property],cause];
+function setRequestError(requestParams, property, cause) {
+  if (!requestParams["€rror"]) requestParams["€rror"] = {};
+  if (!requestParams["€rror"][property]) requestParams["€rror"][property] = [];
+  requestParams["€rror"][property] = [
+    ...requestParams["€rror"][property],
+    cause,
+  ];
 }
 
 /**
- * @desc {en} Data descriptors
- * @desc {it} Descrittore di dati
- * @desc {es} Descriptores de datos
- * @desc {pt} Descriptores de dados
- * @desc {fr} Descripteurs de données
+ * Data descriptors
 
 
 
@@ -153,11 +236,15 @@ function setRequestError(requestParams,property,cause){
 export const dataDescriptors = {
   "(person(al){0,1}[\\s\\-_]*|sur|first[\\s\\-_]*|last[\\s\\-_]*)name": {
     type: "text",
-    normalization: (s) => s.split(/[^a-zA-Z]+/).map((x) => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase()).join(" "),
+    normalization: (s) =>
+      s
+        .split(/[^a-zA-Z]+/)
+        .map((x) => x.charAt(0).toUpperCase() + x.slice(1).toLowerCase())
+        .join(" "),
     pattern: /^\s*[a-z]{3,}(\s[a-z]{3,})*\s*$/i,
     minLength: 3,
   },
-  "date": {
+  date: {
     type: "date",
     normalization: (s) => s.trim(),
     format: "YYYY-MM-DD",
@@ -173,7 +260,7 @@ export const dataDescriptors = {
   "sql([\\s\\-_]){0,1}date([\\s\\-_]){0,1}time": {
     type: "date",
     normalization: (s) => s.trim(),
-    format: "YYYY-MM-DD HH:mm:ss.sssZ",
+    format: "YYYY-MM-DD\\THH:mm:ss.sssZ",
     maxLength: 19,
     minLength: 10,
   },
@@ -183,7 +270,7 @@ export const dataDescriptors = {
     format: "YYYY-MM-DD\\THH:mmZ",
     minLength: 10,
   },
-  "time": {
+  time: {
     type: "date",
     normalization: (s) => s.trim(),
     format: "HH:mm:ssZ",
@@ -384,7 +471,7 @@ export const dataDescriptors = {
     pattern: /^[+\\-]?[0-9]+(\.[0-9]+)?([\s,][+\\-]?[0-9]+(\.[0-9]+)?)?$/,
     normalization: (s) => s.trim().split(/[\s,]/),
   },
-  "hashtag": {
+  hashtag: {
     type: "text",
     pattern: /^#[a-zA-Z0-9_]+$/,
   },
@@ -459,4 +546,3 @@ export const dataDescriptors = {
       /^vb|vbs|php|js|css|html|xml|xsl(t)?|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|ts|tsx|vue|jsx$/,
   },
 };
- 

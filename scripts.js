@@ -1,3 +1,4 @@
+
 /**
  * @author Roberto Stefani
  * @license MIT
@@ -8,7 +9,7 @@
  */
 export async function getFunctionsFromFile(this_string) {
   const file = this_string;
-  const script = await import('file://'+ import.meta.resolve(file));
+  const script = await import("file://" + import.meta.resolve(file));
   return Object.getOwnPropertyNames(script)
     .map((n) => script[n])
     .filter((x) => typeof x == "function");
@@ -32,12 +33,7 @@ export function getDocklet(this_function) {
  * @prototype {function}
  * @param {function}
  * @returns {array}
- * @desc {en} Get docklet annotations from function.
- * @desc {it} Ottieni le annotazioni docklet dal
- * @desc {es} Obtener anotaciones docklet de la
- * @desc {fr} Obtenez les annotations docklet de la
-
- * @desc {pt} Obtenha as anotações docklet da
+ * Get docklet annotations from function.
 
 
 
@@ -77,12 +73,7 @@ export function getDockletAnnotations(this_function) {
  * @prototype {function} getParameters
  * @param {function}
  * @returns {array}
- * @desc {en} Get function parameters
- * @desc {it} Ottieni i parametri della funzione
- * @desc {es} Obtener los parámetros de la función
- * @desc {fr} Obtenez les paramètres de la fonction
-
- * @desc {pt} Obtenha os parâmetros da função
+ * Get function parameters
 
 
 
@@ -114,12 +105,7 @@ export function getFunctionParameters(this_function) {
  * @param {function} this_function
  * @param {string} alias
  * @returns {function}
- * @desc {en} Create facade function
- * @desc {it} Crea una funzione facade
- * @desc {es} Crear una función de fachada
- * @desc {fr} Creer une fonction de façade
-
- * @desc {pt} Criar uma função de fachada
+ * Create facade function
 
 
 
@@ -159,12 +145,7 @@ export function facade(this_function, alias = null) {
  * @param {string} alias
  * @returns {function}
  * 
- * @desc {en} Create facade function into prototype
- * @desc {it} Crea una funzione facade nel prototype
- * @desc {es} Crear una función de fachada en el prototype
- * @desc {fr} Creer une fonction de façade dans le prototype
-
- * @desc {pt} Criar uma função de fachada no prototype
+ * Create facade function into prototype
 
 
 
@@ -184,12 +165,7 @@ export function facadeOnPrototype(this_function, type, alias = null) {
  * @param {string} alias
  * @returns {function}
  * 
- * @desc {en} Create facade function into object
- * @desc {it} Crea una funzione facade nell'oggetto
- * @desc {es} Crear una función de fachada en el objeto
- * @desc {fr} Creer une fonction de façade dans l'objet
-
- * @desc {pt} Criar uma função de fachada no objeto
+ * Create facade function into object
 
 
 
@@ -200,7 +176,7 @@ export function facadeOnObject(this_function, object, alias = null) {
   if (functionName) {
     const name = alias ? alias : functionName;
     object[name] = facade(this_function, alias);
-	return object[name];
+    return object[name];
   }
   return null;
 }
@@ -208,12 +184,7 @@ export function facadeOnObject(this_function, object, alias = null) {
  * @prototype {string} reflect
  * @param {string} this_string
  * 
- * @desc {en} Reflecta js type
- * @desc {it} Refletta il tipo js
- * @desc {es} Reflejar el tipo js
- * @desc {fr} Réflechir le type js
-
- * @desc {pt} Refletir o tipo js
+ * Reflecta js type
 
 
 
@@ -227,12 +198,7 @@ export function getTypeByName(this_string) {
  * @param {function} this_function
  * 	@returns {string}
  * 
- * @desc {en} Get function name
- * @desc {it} Ottieni il nome della funzione
- * @desc {es} Obtener el nombre de la función
- * @desc {fr} Obtenez le nom de la fonction
-
- * @desc {pt} Obtenha o nome da função
+ * Get function name
 
 
 
@@ -240,43 +206,4 @@ export function getTypeByName(this_string) {
 export function getFunctionName(this_function) {
   const f = this_function.toString().match(/function\s*([^\s(]+)\s*\(/);
   return f && f.length > 0 ? f[1] : null;
-}
-
-/**
- * @desc {en} Wait import promise not asynchronously
- * @desc {it} Aspetta la promise di importazione non asincronamente
- * @desc {es} Esperar la promise de importación no asíncronamente
- * @desc {fr} Attendez la promise d'importation non asynchrone
-
- * @desc {pt} Espere a promise de importação não assíncrona
-
-
-
- * 
- * @prototype {string} waitImportPromise
- * 
- * @param {*} modulePath 
- * @returns {Promise}
- */
-export function waitImportPromise(modulePath) {
-  let ret = null;
-  const p = new Promise(async (resolve, reject) => {
-    try {
-        const module = await import(modulePath);
-        const expectedImport = module.default;
-        resolve(expectedImport);
-    } catch (error) {
-        reject(error);
-    }
-  }).then((data) => {
-     ret = data
-     return ret;
-  }).catch((error) => {
-    ret=false;
-    throw new Error(error);
-  });
-  while (ret===null) {
-     setTimeout(()=>{}, 100);
-  }
-   return p;
 }

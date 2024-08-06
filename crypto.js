@@ -8,12 +8,7 @@ import {createHash} from 'crypto';
  * @prototype {string}
  * @param {string} 
  * 
- * @desc {en} Get MD5 hash
- * @desc {it} Ottieni l'hash MD5
- * @desc {es} Obtener el hash MD5
- * @desc {fr} Obtenez le hachage MD5
-
- * @desc {pt} Obtenha o hash MD5
+ * Get MD5 hash
 
 
 

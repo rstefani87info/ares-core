@@ -7,11 +7,7 @@ import * as fileUtility from '@ares/files';
  * @param {Object} this_object 
  * @param {string} alias
  * 
- * @desc {en} Find property key by alias
- * @desc {it} Trova la chiave di un oggetto
- * @desc {es} Encontrar la llave de un objeto
- * @desc {pt} Encontrar la llave de un objeto
- * @desc {fr} Trouver la clef d'un objet
+ * Find property key by alias
 
 
 
@@ -27,11 +23,7 @@ export function findPropKeyByAlias(this_object, alias) {
  * @param {Object} this_object
  * @param {string} alias
  * 
- * @desc {en} Find property value by alias
- * @desc {it} Trova il valore di una proprietà tramite un alias
- * @desc {es} Encontrar el valor de una propiedad tramite un alias
- * @desc {pt} Encontrar o valor de uma propriedade por meio de um alias
- * @desc {fr} Trouver la valeur d'un objet par son alias
+ * Find property value by alias
 
 
 
@@ -49,11 +41,7 @@ export function findPropValueByAlias(this_object, alias) {
  * @param {Object} this_object
  * @param {string} alias
  * 
- * @desc {en} Setup a property alias for the object property that match the alias regexp
- * @desc {it} Imposta un alias ad una proprietà che corrisponde ad una regexp 
- * @desc {es} Configurar un alias para una propiedad del objeto que coincida con la expresión regular
- * @desc {pt} Configurar um alias para uma propriedade do objeto que coincida com uma expressão regular
- * @desc {fr} Configurer un alias pour un objet par son regexp
+ * Setup a property alias for the object property that match the alias regexp
 
 
 
@@ -77,11 +65,7 @@ export function setupPropertyAlias(this_object, alias) {
  * @prototype {string}
  * @param {string} this_file
  * 
- * @desc {en} Parse file content as object
- * @desc {it} Parsa il contenuto del file come oggetto
- * @desc {es} Parse el contenido del archivo como objeto
- * @desc {pt} Parse o conteúdo do arquivo como objeto
- * @desc {fr} Parse le contenu du fichier comme objet
+ * Parse file content as object
 
 
 
@@ -94,11 +78,7 @@ export function requireData(this_file) {
 
 
 /**
- * @desc {en} Creates a deep clone of an object, including all its methods.
- * @desc {it} Crea una copia approfondita di un oggetto, inclusi tutti i suoi metodi.
- * @desc {es} Crea una copia profunda de un objeto, incluyendo todos sus métodos.
- * @desc {pt} Cria uma cópia profunda de um objeto, incluindo todos os seus métodos.
- * @desc {fr} Creer une copie profonde d'un objet, y inclure tous ses methodes.
+ * Creates a deep clone of an object, including all its methods.
 
 
 
