@@ -1,4 +1,4 @@
-class XHRWrapper {
+export class XHRWrapper {
     constructor(baseURL, token) {
       this.baseURL = baseURL;
       this.token = token;
