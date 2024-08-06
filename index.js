@@ -10,8 +10,6 @@ import * as text from "./text.js";
 import * as arrays from "./arrays.js";
 import * as crypto from "./crypto.js";
 import * as dataDescriptor from "./dataDescriptors.js";
-import * as deeplTranslator from "./deeplTranslator.js";
-import * as localAi from "./localAI.js";
 import * as objects from "./objects.js";
 import * as permissions from "./permissions.js";
 import * as scripts from "./scripts.js";
