@@ -3,7 +3,6 @@
  * @license MIT
  */
 import mysql from "mysql";
-import {waitPromise} from "./scripts.js";
 import { asyncConsole } from "./console.js";
 import { format } from "./dataDescriptors.js";
 import {
@@ -477,20 +476,23 @@ export class RESTConnection extends DBConnection {
    * @throws {Error}
    */
   async executeNativeQueryAsync(command, params, callback) {
+    return this.executeQuery(command, params, callback, true)
+  }
+
+  executeQuerySync(command, params, callback) {
+    return this.executeNativeQueryAsync(command, params, callback, false);
+  }
+     
+  executeQuery(command, params, callback, async = true) {
     command= typeof command === 'string' ? JSON.parse(command) : command;
     if(!command instanceof Object) {
       throw new Error('Command must be an object or a stringified object');
     }
     const date = new Date();
     const response = { executionTime: date.getTime(), executionDateTime: date };
-    let results = this.xhrWrapper[command['method']](command['url'], ...params).then((res) =>{response.response = res; callback(res,null);}).catch((error) => {
+    let results = this.xhrWrapper[command['method']](command['url'], ...params, async).then((res) =>{response.response = res; callback(res,null);}).catch((error) => {
       callback(null, error);
     });
     return results;
   }
-
-  executeQuerySync(command, params, callback) {
-    return waitPromise(this.executeNativeQueryAsync(command, params, callback));
-  }
-     
 }
