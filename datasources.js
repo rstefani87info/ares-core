@@ -167,7 +167,7 @@ export class Datasource {
       conn.startTransaction(mapper.$name);
     }
     try {
-      const params = mapper.mapParameters(req, this);
+      const params = mapper.mapParameters(req,this.aReS);
       if (wait) return conn.executeQuerySync(command, params, callback);
 
       if (isTransaction) {
@@ -242,11 +242,11 @@ export class Datasource {
               "] : " +
               mapper.querySetting.query
           );
-          let params = request.parameters;
+          let params = {};
           if (mapper.mapParameters) {
             params = format(
-              request.parameters,
-              mapper.validateParameters(request, this.aReS)
+              request,
+              typeof mapper.parametersValidationRoles === "function" ?  mapper.parametersValidationRoles(request, this.aReS) : mapper.parametersValidationRoles
             );
             if (params["€rror"])
               throw new Error(
@@ -439,8 +439,6 @@ class MariaDB extends SQLDBConnection {
       setTimeout(() => {}, 100);
     }
     return response;
-
-    this.executeNativeQueryAsync(command, params, callback);
   }
 }
 

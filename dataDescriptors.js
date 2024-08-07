@@ -3,10 +3,6 @@ import numeral from "numeral";
 
 /**
  * a mapping of the most common data descriptors useful for validation and formatting
-
-
-
-
  */
 export const objectDescriptorDefinitions = {
   text: {
@@ -82,16 +78,12 @@ export const objectDescriptorDefinitions = {
  * @param {Object} descriptor
  * 
  * Format an object according to the descriptor
-
-
-
-
  */
 export async function format(this_object, descriptor) {
   const ret = {};
   for (const k in descriptor) {
     console.log(" - formatting: " + k);
-    ret[k] = this_object[k];
+    ret[k] = descriptor.source? descriptor.source(this_object, k) : this_object[k];
     const objectDescriptorDefinitionKey = descriptor[k]?.type || null;
     const objectDescriptorDefinition = findPropValueByAlias(
       objectDescriptorDefinitions,
@@ -228,10 +220,6 @@ function setRequestError(requestParams, property, cause) {
 
 /**
  * Data descriptors
-
-
-
-
  */
 export const dataDescriptors = {
   "(person(al){0,1}[\\s\\-_]*|sur|first[\\s\\-_]*|last[\\s\\-_]*)name": {
