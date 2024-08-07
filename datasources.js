@@ -444,21 +444,6 @@ class MariaDB extends SQLDBConnection {
   }
 }
 
-const drivers = {
-  mariadb: MariaDB,
-  rest: RESTConnection,
-  // mysql: MYSQL,
-  // mssql: MSSQL,
-  // oracle: Oracle,
-  // postgres: Postgres,
-  // sqlite: SQLite,
-  // mongo: Mongo,
-  // redis: Redis,
-  // couchdb: CouchDB,
-  // neo4j: Neo4J
-};
-
-
 export class RESTConnection extends DBConnection {
 
   constructor(connectionParameters, datasource, sessionId, connectionSettingName) {
@@ -496,3 +481,20 @@ export class RESTConnection extends DBConnection {
     return results;
   }
 }
+
+
+const drivers = {
+  mariadb: MariaDB,
+  rest: RESTConnection,
+  // mysql: MYSQL,
+  // mssql: MSSQL,
+  // oracle: Oracle,
+  // postgres: Postgres,
+  // sqlite: SQLite,
+  // mongo: Mongo,
+  // redis: Redis,
+  // couchdb: CouchDB,
+  // neo4j: Neo4J
+};
+
+
