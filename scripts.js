@@ -14,6 +14,7 @@ export async function getFunctionsFromFile(this_string) {
     .map((n) => script[n])
     .filter((x) => typeof x == "function");
 }
+
 /**
  * @prototype {function}
  */
@@ -33,11 +34,8 @@ export function getDocklet(this_function) {
  * @prototype {function}
  * @param {function}
  * @returns {array}
+ * 
  * Get docklet annotations from function.
-
-
-
- *
  *
  */
 
@@ -46,37 +44,33 @@ export function getDockletAnnotations(this_function) {
   if (s) {
     const annotations = [];
     var last = { annotation: "commonDescription", description: "" };
-
-    for (const l of s.split("\n")) {
-      var description = (
-        l.match(/^[\s\/*]*\s*(?<description>.*)/)[0] ?? ""
-      ).trim();
+    for (const l of s.replaceAll(/\r/g, "").split("\n")) {
+      var desc = l.match(/^[\s\/*]*\s*(?<description>.*)/)[0] ?? ""
       var match = l.match(
-        /\*\s*@(?<annotation>\w+)(\s*\{(?<type>([^@]|\s)+)*\}){0,1}(\s+(?<name>\w+)){0,1}([\s\-]+(?<description>[\s\S]*)+){0,}/gi
+        /\*\s*@(?<anno>[\w\|]+)\s*(?<type>\w+)?\s*(?<name>\w+)?\s*(?<note>.*)?/i
       );
+      
       if (match) {
-        const { annotation, type, name, description } = match.groups;
+        const { anno, type, name, note } = match.groups;
         last = {
-          annotation: annotation.trim(),
-          type: type.trim(),
-          name: name.trim(),
-          description: description.trim(),
+          annotation: anno.trim(),
+          type: type?.trim(),
+          name: name?.trim(),
+          note: note?.trim(),
         };
         annotations.push(last);
-      } else last.description += description ? "\n" + description : "";
+      } else last.description += desc ? "\n" + desc : "";
     }
     return annotations;
   }
   return [];
 }
+
 /**
  * @prototype {function} getParameters
  * @param {function}
  * @returns {array}
  * Get function parameters
-
-
-
  *
  */
 export function getFunctionParameters(this_function) {
@@ -88,7 +82,7 @@ export function getFunctionParameters(this_function) {
   const tokens = params.split(params);
   for (t of tokens) {
     const { commentLeft, multiple, name, value, commentRight } = t.match(
-      /(?<commentLeft>\/\*.*\*\/)*\s*(?<multiple>[.]{3}){0,1}\s*(?<name>\w+)\s*(=\s*(?<value>".*"|'.*'|(\w)+))(?<commentRight>\/\*.*\*\/)*\s*/gi
+      /(?<commentLeft>\/\*.*\*\/)*\s*(?<multiple>[.]{3}){0,1}\s*(?<name>\w+)\s*(=\s*(?<value>".*"|'.*'|(\w)+))(?<commentRight>\/\*.*\*\/)*\s*/i
     ).groups;
     parameters.push({
       name: name,
@@ -100,15 +94,13 @@ export function getFunctionParameters(this_function) {
   }
   return parameters;
 }
+
 /**
  * @prototype {function}
  * @param {function} this_function
  * @param {string} alias
  * @returns {function}
  * Create facade function
-
-
-
  *
  */
 export function facade(this_function, alias = null) {
@@ -138,18 +130,16 @@ export function facade(this_function, alias = null) {
     );
   }
 }
+
 /**
  * @prototype {function}
  * @param {function} this_function
  * @param {string} type
  * @param {string} alias
  * @returns {function}
- * 
+ *
  * Create facade function into prototype
-
-
-
- * 
+ *
  */
 export function facadeOnPrototype(this_function, type, alias = null) {
   return facadeOnObject(
@@ -158,18 +148,16 @@ export function facadeOnPrototype(this_function, type, alias = null) {
     alias
   );
 }
+
 /**
  * @prototype {function}
  * @param {function} this_function
  * @param {object} object
  * @param {string} alias
  * @returns {function}
- * 
+ *
  * Create facade function into object
-
-
-
- * 
+ *
  */
 export function facadeOnObject(this_function, object, alias = null) {
   const functionName = getFunctionName(this_function);
@@ -180,28 +168,24 @@ export function facadeOnObject(this_function, object, alias = null) {
   }
   return null;
 }
+
 /**
  * @prototype {string} reflect
  * @param {string} this_string
- * 
+ *
  * Reflecta js type
-
-
-
- * 
+ *
  */
 export function getTypeByName(this_string) {
   return global[this_string] || window[this_string];
 }
+
 /**
  * @prototype {function} getName
  * @param {function} this_function
  * 	@returns {string}
- * 
+ *
  * Get function name
-
-
-
  */
 export function getFunctionName(this_function) {
   const f = this_function.toString().match(/function\s*([^\s(]+)\s*\(/);
