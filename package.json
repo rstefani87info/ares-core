@@ -29,6 +29,7 @@
     "@ares/files": "github:rstefani87info/ares-files#master",
     "deepl-node": "^1.12.0",
     "json2xml": "^0.1.3",
+    "lodash": "^4.17.21",
     "moment": "^2.30.1",
     "node-geocoder": "^4.3.0",
     "numeral": "^2.0.6"
