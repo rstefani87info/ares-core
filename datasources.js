@@ -3,94 +3,46 @@
  * @license MIT
  */
 import mysql from "mysql";
+const { v4: uuidv4 } = require("uuid");
 import { asyncConsole } from "./console.js";
 import { format } from "./dataDescriptors.js";
-import {
-  isFile,
-  getFilesRecursively,
-  getParent,
-  getFileName,
-  fileExists,
-  getFileContent,
-} from "@ares/files";
 import { cloneWithMethods } from "./objects.js";
 import { XHRWrapper } from "./xhr.js";
 import app from "../../../app.js";
-
-
 
 const mapRequestOrResult = function (request) {
   return request;
 };
 /**
  * @param {Object} aReS - The express framework object
- * @param {string} datasourceName - The name of the database
+ * @param {Object} datasourceSetting - Object representing the datasource description
  * @param {function} onMapperLoaded - The callback when the mapper is loaded
  * @param {boolean} [force=false] - Whether to force the export
  * @return {Object} The exported database
- * 
+ *
  * Initialyze datasource objects
-
-
- * 
+ *
  */
 async function loadDatasource(
   aReS,
-  datasourceName,
+  datasourceSettings,
   onMapperLoaded,
   force = false
 ) {
-  datasourceName = datasourceName.toLowerCase();
+ const datasourceName = datasourceSettings.name.toLowerCase();
   aReS.datasourceMap = aReS.datasourceMap ?? {};
-  force = force || !datasourceName in aReS.datasourceMap;
+  force = force || !(datasourceName in aReS.datasourceMap);
   if (force) {
     asyncConsole.log("datasources", 'init db "' + datasourceName + '" {');
-    const datasourceRoot = app.datasourcesRoot + "/" + datasourceName;
     aReS.datasourceMap[datasourceName] = new Datasource(
       aReS,
-      await import("../../../" + datasourceRoot + "/datasource.js")
+      datasourceSettings
     );
-    aReS.datasourceMap[datasourceName].datasourceRoot = datasourceRoot;
     aReS.datasourceMap[datasourceName].onMapperLoaded = onMapperLoaded;
-    const areLoaded = await aReS.datasourceMap[datasourceName].loadQueryFiles();
+    aReS.datasourceMap[datasourceName].loadQueries();
     asyncConsole.log("datasources", "}");
   }
   return aReS.datasourceMap[datasourceName];
-}
-
-/**
- * @param {Object} aReS - The aRes framework object
- * @param {boolean} [force=true] - Whether to force the export
- * @return {array} The exported databases
- *
- * Initialyze db object
- *
- */
-async function initAllDatasources(
-  aReS,
-  onMapperLoaded = () => {},
-  force = true
-) {
-  const datasourcesRoot = app.datasourcesRoot;
-  const files = getFilesRecursively(
-    datasourcesRoot,
-    /(.*[\/\\]){0,1}datasource\.js/i,
-    true
-  );
-  const array = [];
-  for (const file of files) {
-    asyncConsole.log("datasources", 'connection file found: "' + file + ";");
-    array.push(
-      await loadDatasource(
-        aReS,
-        getFileName(getParent(file)),
-        onMapperLoaded,
-        force
-      )
-    );
-  }
-  asyncConsole.output("datasources");
-  return array;
 }
 
 export function exportAsAresMethod(aReS, mapper, datasource) {
@@ -113,27 +65,14 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
   asyncConsole.log("datasources", " - }");
 }
 
-const datasources = {
-  initAllDatasources: initAllDatasources,
-  loadDatasource: loadDatasource,
-};
-export default datasources;
-
 export class Datasource {
   constructor(aReS, dbConfig) {
     if (typeof dbConfig === "object") Object.assign(this, dbConfig);
     this.aReS = aReS;
-    this.extensionRegex =
-      /.(sql|url|json|xml|xsl[t]{0,1}|xpath|xquery|nosql\.js|knex\.js)$/i;
     this.sessions = {};
   }
 
-  getDBRoot(dbName) {
-    return app.dbRoot + "/" + dbName;
-  }
-
   getConnection(req, mapper, force = false) {
-    const ds = this;
     if (this.aReS.permissions.isResourceAllowed(this.name, req)) {
       const env = this.environments[app.isProduction ? "production" : "test"];
       const connectionSetting = env[mapper.connectionSetting];
@@ -167,11 +106,11 @@ export class Datasource {
       conn.startTransaction(mapper.$name);
     }
     try {
-      const params = mapper.mapParameters(req,this.aReS);
+      const params = mapper.mapParameters(req, this.aReS);
       if (wait) return conn.executeQuerySync(command, params, callback);
 
       if (isTransaction) {
-        conn.commity();
+        conn.commit();
       }
       return conn.executeNativeQueryAsync(command, params, callback);
     } catch (err) {
@@ -182,129 +121,100 @@ export class Datasource {
   }
 
   close(req) {
-    for (const connection in this.sessions) connection.end();
-  }
-
-  getQueryFiles() {
-    const qfe = this.queryFileExtensions;
-    return getFilesRecursively(this.datasourceRoot, this.extensionRegex, true);
-  }
-
-  async loadQueryFiles() {
-    for (const file of this.getQueryFiles()) {
-      await this.loadQueryFile(file);
+    for (const sessionId in this.sessions) {
+      for (const connName in this.sessions[sessionId]) {
+        const conn = this.sessions[sessionId][connName];
+        if (conn && conn.isOpen) {
+          conn.nativeDisconnect();
+        }
+      }
     }
-    return true;
+  }
+  
+  loadQueries() {
+    const thisDatasource = this;
+    return this.dbConfig.queries? Object.entries(this.dbConfig.queries).map(([key, value]) => { value.name=key; return thisDatasource.loadQuery(v); }) : [];
   }
 
-  async loadQueryFile(file) {
-    if (isFile(file)) {
+  async loadQuery(queryObject) {
+    if (typeof queryObject === "object") {
       asyncConsole.log(
         "datasources",
-        ' - init mapperCase "' + getFileName(file) + '" {'
+        ' - init mapperCase "' + queryObject.name + '" {'
       );
-      const extension = file.match(this.extensionRegex)[1];
-      const queryCompleteFileName = file.replace(this.extensionRegex, "");
-      const queryFileName = getFileName(queryCompleteFileName);
-      const mapperFile = queryCompleteFileName + ".js";
-      asyncConsole.log("datasources", ' - init mapper "' + mapperFile + '"');
-      this[queryFileName] = {
-        name: queryFileName,
-        mappers: fileExists(mapperFile)
-          ? (await import("../../../" + mapperFile)).default
-          : null,
-        query: getFileContent(file),
-        mode: extension.toUpperCase(),
-      };
-
-      for (const mapper of this[queryFileName].mappers || []) {
-        mapper.querySetting = this[queryFileName];
-        await this.loadMapper(mapper);
-      }
+      this[queryObject.name] = queryObject;
+      await this.loadMapper(mapper);
       return true;
     }
     return false;
   }
   async loadMapper(mapper) {
     const db = this;
-    if (mapper.querySetting && !mapper.name) {
-      mapper.name =
-        mapper.querySetting.name +
-        "[" +
-        mapper.querySetting.mappers.indexOf(mapper) +
-        "]";
-      mapper.execute = function (request, callback, wait = false) {
-        try {
-          console.log(
-            db.name +
-              "[" +
-              request.session.id +
-              "] : " +
-              mapper.querySetting.query
-          );
-          let params = {};
-          if (mapper.mapParameters) {
-            params = format(
-              request,
-              typeof mapper.parametersValidationRoles === "function" ?  mapper.parametersValidationRoles(request, this.aReS) : mapper.parametersValidationRoles
-            );
-            if (params["€rror"])
-              throw new Error(
-                "Formatting and validation error: " +
-                  JSON.stringify(params["€rror"])
-              );
-            request = cloneWithMethods(request);
-            request.parameters = params;
-          }
-          if (!mapper.mapRequest) mapper.mapRequest = mapRequestOrResult;
-          if (!mapper.mapResult) mapper.mapResult = mapRequestOrResult;
-          if (!mapper.methods) mapper.methods = ".*";
-          const ret = db.query(
+    if (!mapper.name) mapper.name = uuidv4();
+
+    mapper.execute = function (request, callback, wait = false) {
+      try {
+        console.log(db.name + "[" + request.session.id + "] : " + mapper.query);
+        let params = {};
+        if (mapper.mapParameters) {
+          params = format(
             request,
-            mapper.querySetting.query,
-            mapper,
-            (response) => {
-              if (response.results) {
-                if (Array.isArray(response.results))
-                  response.results = response.results.map((row, index) =>
-                    mapper.mapResult(row, index)
-                  );
-                else response.results = mapper.mapResult(response.results);
-              }
-              if (!app.isProduction) {
-                response.dbName = db.name;
-                response.queryName = mapper.querySetting.name;
-                response.mapperName = mapper.name;
-                response.query = mapper.querySetting.query;
-                response.params = params;
-                console.log(
-                  db.name + "[" + request.session.id + "] ",
-                  JSON.stringify(response)
-                );
-              }
-              if (callback) callback(response);
-            },
-            wait
+            typeof mapper.parametersValidationRoles === "function"
+              ? mapper.parametersValidationRoles(request, this.aReS)
+              : mapper.parametersValidationRoles
           );
-          if (mapper.postExecute) mapper.postExecute(request, this, ret);
-          return ret;
-        } catch (e) {
-          callback({
-            error: e,
-            db: db.name,
-            queryName: mapper.querySetting.name,
-            mapperName: mapper.name,
-          });
-          console.log(e);
+          if (params["€rror"])
+            throw new Error(
+              "Formatting and validation error: " +
+                JSON.stringify(params["€rror"])
+            );
+          request = cloneWithMethods(request);
+          request.parameters = params;
         }
-      };
-      mapper.querySetting[mapper.name] = mapper;
-      if (this.onMapperLoaded && typeof this.onMapperLoaded === "function") {
-        await this.onMapperLoaded(this.aReS, mapper, this);
+        if (!mapper.mapRequest) mapper.mapRequest = mapRequestOrResult;
+        if (!mapper.mapResult) mapper.mapResult = mapRequestOrResult;
+        if (!mapper.methods) mapper.methods = ".*";
+        const ret = db.query(
+          request,
+          mapper.query,
+          mapper,
+          (response) => {
+            if (response.results) {
+              if (Array.isArray(response.results))
+                response.results = response.results.map((row, index) =>
+                  mapper.mapResult(row, index)
+                );
+              else response.results = mapper.mapResult(response.results);
+            }
+            if (!app.isProduction) {
+              response.dbName = db.name;
+              response.queryName = mapper.name;
+              response.query = mapper.query;
+              response.params = params;
+              console.log(
+                db.name + "[" + request.session.id + "] ",
+                JSON.stringify(response)
+              );
+            }
+            if (callback) callback(response);
+          },
+          wait
+        );
+        if (mapper.postExecute) mapper.postExecute(request, this, ret);
+        return ret;
+      } catch (e) {
+        callback({
+          error: e,
+          db: db.name,
+          queryName: mapper.name,
+        });
+        console.log(e);
       }
-      return true;
+    };
+    if (this.onMapperLoaded && typeof this.onMapperLoaded === "function") {
+      await this.onMapperLoaded(this.aReS, mapper, this);
     }
-    return false;
+    return true;
   }
 }
 
@@ -394,8 +304,10 @@ class MariaDB extends SQLDBConnection {
         await connectionHandler.nativeConnect((err) => {
           if (err) {
             console.error("Errore di connessione:", err);
+            reject(err);
             return;
           }
+
           connectionHandler.connection.query(
             command,
             params,
@@ -443,43 +355,55 @@ class MariaDB extends SQLDBConnection {
 }
 
 export class RESTConnection extends DBConnection {
-
-  constructor(connectionParameters, datasource, sessionId, connectionSettingName) {
+  constructor(
+    connectionParameters,
+    datasource,
+    sessionId,
+    connectionSettingName
+  ) {
     super(connectionParameters, datasource, sessionId, connectionSettingName);
     this.xhrWrapper = new XHRWrapper(connectionParameters);
   }
 
   /**
    * Executes a native query asynchronously. It requires a command object with a (http) 'method'  and (relative) 'url' properties
-   * 
+   *
    * @param {Object|string} command
    * @param {Array} params
-   * @param {Function} callback 
+   * @param {Function} callback
    * @return {Promise}
    * @throws {Error}
    */
   async executeNativeQueryAsync(command, params, callback) {
-    return this.executeQuery(command, params, callback, true)
+    return this.executeQuery(command, params, callback, true);
   }
 
   executeQuerySync(command, params, callback) {
-    return this.executeNativeQueryAsync(command, params, callback, false);
+    return this.executeQuery(command, params, callback, false);
   }
-     
+
   executeQuery(command, params, callback, async = true) {
-    command= typeof command === 'string' ? JSON.parse(command) : command;
-    if(!command instanceof Object) {
-      throw new Error('Command must be an object or a stringified object');
+    command = typeof command === "string" ? JSON.parse(command) : command;
+    if (!(command instanceof Object)) {
+      throw new Error("Command must be an object or a stringified object");
     }
     const date = new Date();
     const response = { executionTime: date.getTime(), executionDateTime: date };
-    let results = this.xhrWrapper[command['method']](command['url'], ...params, async).then((res) =>{response.response = res; callback(res,null);}).catch((error) => {
-      callback(null, error);
-    });
+    let results = this.xhrWrapper[command["method"]](
+      command["url"],
+      ...params,
+      async
+    )
+      .then((res) => {
+        response.response = res;
+        callback(res, null);
+      })
+      .catch((error) => {
+        callback(null, error);
+      });
     return results;
   }
 }
-
 
 const drivers = {
   mariadb: MariaDB,
@@ -494,5 +418,3 @@ const drivers = {
   // couchdb: CouchDB,
   // neo4j: Neo4J
 };
-
-

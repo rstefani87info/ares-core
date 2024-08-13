@@ -1,4 +1,3 @@
-
 /**
  * @author Roberto Stefani
  * @license MIT
@@ -34,7 +33,7 @@ export function getDocklet(this_function) {
  * @prototype {function}
  * @param {function}
  * @returns {array}
- * 
+ *
  * Get docklet annotations from function.
  *
  */
@@ -45,11 +44,11 @@ export function getDockletAnnotations(this_function) {
     const annotations = [];
     var last = { annotation: "commonDescription", description: "" };
     for (const l of s.replaceAll(/\r/g, "").split("\n")) {
-      var desc = l.match(/^[\s\/*]*\s*(?<description>.*)/)[0] ?? ""
+      var desc = l.match(/^[\s\/*]*\s*(?<description>.*)/)[0] ?? "";
       var match = l.match(
         /\*\s*@(?<anno>[\w\|]+)\s*(?<type>\w+)?\s*(?<name>\w+)?\s*(?<note>.*)?/i
       );
-      
+
       if (match) {
         const { anno, type, name, note } = match.groups;
         last = {
@@ -190,4 +189,51 @@ export function getTypeByName(this_string) {
 export function getFunctionName(this_function) {
   const f = this_function.toString().match(/function\s*([^\s(]+)\s*\(/);
   return f && f.length > 0 ? f[1] : null;
+}
+
+/**
+ * Serialize an object to js code
+ *
+ * @param {string} name
+ * @param {object} this_object
+ * @param {boolean} quote
+ * @param {boolean} jsonAssignation
+ * @param {number} indentation
+ * @prototype {Object}
+ * @prototype {string}
+ * @prototype {Number}
+ * @prototype {boolean}
+ *
+ */
+export function toJS(
+  name,
+  this_object,
+  quote = false,
+  jsonAssignation = true,
+  indentation = 0
+) {
+  const indentationString = "\t".repeat(indentation);
+  if (quote) name = `"${name}"`;
+  const assignationString = jsonAssignation ? ":" : "=";
+  const endLine = jsonAssignation ? ",\n" : ";\n";
+  let serializedContent = `${indentationString}${name} ${assignationString} `;
+  if (typeof this_object === "function") {
+    serializedContent += `${this_object.toString()} `;
+  } else if (typeof this_object === "object") {
+    serializedContent += `{\n`;
+    for (const key in this_object) {
+      serializedContent += `${toJS(
+        key,
+        this_object[key],
+        true,
+        true,
+        indentation + 1
+      )}${endLine}`;
+    }
+    serializedContent += `\n}`;
+  } else {
+    serializedContent += `${JSON.stringify(this_object)} `;
+  }
+  serializedContent += `${endLine}`;
+  return serializedContent;
 }

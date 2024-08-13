@@ -533,4 +533,10 @@ export const dataDescriptors = {
     pattern:
       /^vb|vbs|php|js|css|html|xml|xsl(t)?|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|ts|tsx|vue|jsx$/,
   },
+
+  'jwt|json\s\\-_]*[wW]eb[\\s\\-_]*[tT]oken|json(\s\\-_]*[wW]eb[\\s\\-_]*[tT]oken': {
+    type: "text",
+    pattern: /^[A-Za-z0-9-_]{36,64}\.[A-Za-z0-9-_]{50,200}\.[A-Za-z0-9-_]{43,86}$/
+
+  }
 };
