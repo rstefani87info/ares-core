@@ -23,7 +23,7 @@ const mapRequestOrResult = function (request) {
  * Initialyze datasource objects
  *
  */
-async function loadDatasource(
+export async function loadDatasource(
   aReS,
   datasourceSettings,
   onMapperLoaded,
