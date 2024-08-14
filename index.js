@@ -10,7 +10,6 @@ import * as dataDescriptor from "./dataDescriptors.js";
 import * as datasources from "./datasources.js";
 import * as dates from "./dates.js";
 import * as geographical from "./geographical.js";
-import * as http from "./http.js";
 import * as i18n from "./i18n.js";
 import * as numbers from "./numbers.js";
 import * as objects from "./objects.js";
@@ -37,7 +36,6 @@ const aReS =  {
   datasources: datasources,
   dates: dates,
   geographical: geographical,
-  http: http,
   i18n: i18n,
   numbers: numbers,
   objects: objects,
