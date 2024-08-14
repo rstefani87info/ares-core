@@ -2,10 +2,6 @@
  * 
  * @returns {Date}
  * returns the current date
-
-
-
-
  * 
  */
 export function now() {return new Date();}  
@@ -14,10 +10,6 @@ export function now() {return new Date();}
  * 
  * @returns {Date}
  * returns yesterday's date
-
-
-
-
  * 
  * 
  */
@@ -28,10 +20,6 @@ export function yesterday() {return new Date(this_from.getFullYear(),this_from.g
  * @param {Date} this_from - start date
  * @returns {Date}
  * returns a date some years before or after
-
-
-
-
  * 
  * @prototype {Date}
  * 
@@ -49,10 +37,6 @@ export function someYearsFrom (years, this_from=null){
  * @returns 
  * 
  * returns a date some months before or after
-
-
-
-
  * @prototype {Date}
  * 
  */
@@ -66,10 +50,6 @@ export function someMonthsFrom (months, this_from=null){
  * @return {Date} the date that is some days from the specified date
  * 
  * returns a date some days before or after
-
-
-
-
  * @prototype {Date}
  */
 export function someDaysFrom (days, this_from=null){
@@ -82,10 +62,6 @@ export function someDaysFrom (days, this_from=null){
  * @return {Date} - The new Date object that is the specified number of hours from the given date or the current date.
  * 
  * returns a date some hours before or after
-
-
-
-
  * @prototype {Date}
  */
 export function someHoursFrom (hours, this_from=null){
@@ -100,10 +76,6 @@ export function someHoursFrom (hours, this_from=null){
  * @return {Date} a new Date object representing the time after adding the specified minutes
  * 
  * returns a date some minutes before or after
-
-
-
-
  * @prototype {Date}
  */
 export function someMinutesFrom (minutes, this_from=null){
@@ -118,10 +90,6 @@ export function someMinutesFrom (minutes, this_from=null){
  * 
  * 
  * returns a date some seconds before or after
-
-
-
-
  * 
  * @prototype {Date}
  */
@@ -137,10 +105,6 @@ export function someSecondsFrom (seconds, this_from=null){
  * @returns {array}
  * 
  * returns the first and last day of the month
-
-
-
-
  *  
  * @prototype {Date}
  * 
@@ -167,10 +131,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
  * @returns {array}
  * 
  * returns the name of the holiday
-
-
-
-
  * 
  * @prototype {Date}
  * 
@@ -194,10 +154,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @return {Date} The modified Date object with time set to midnight
    * 
    * returns a date with time set to midnight
-
-
-
-
    * 
    * @prototype {Date}
    */
@@ -219,10 +175,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @returns {number}
    * 
    * convert time HH:mm formatted to minutes
-
-
-
-
    * 
    * @prototype {string}
    * 
@@ -247,10 +199,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * 
    * 
    * Generate a sequence of time within the specified range.
-
-
-
-
    * 
    */
   export function forTimeSequence(min, max, minutesStep, callback) {
@@ -267,10 +215,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
 
     /**
    * Generate a sequence of time within the specified range.
-
-
-
-
    * 
    *
    * @param {number} min - the minimum time value
@@ -292,10 +236,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @return {string} the time in the format HH:MM
    * 
    * returns the time in the format HH:MM
-
-
-
-
    * 
    */
     export function convertMinutesToTime(minutes) {
@@ -318,10 +258,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * 
    * 
    * returns the formatted time string
-
-
-
-
    *    
    * 
    */
@@ -331,10 +267,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
   
   /**
    * returns the current year
-
-
-
-
    * @return {number}
    */
   export function getCurrentYear() {
@@ -346,10 +278,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @returns {number}
    * 
    * returns the current month
-
-
-
-
    */
   export function getCurrentMonth() {
       return getMonth(new Date());
@@ -358,10 +286,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
   /**
    * @returns {number}
    * returns the current day
-
-
-
-
    */
   export function getCurrentDay() {
       return getDay(new Date());
@@ -373,10 +297,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @returns {number}
    * 
    * returns the year
-
-
-
-
    */
   export function getYear(date) {
       var ret = date.getFullYear();
@@ -389,10 +309,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @returns {number}
    * 
    * returns the month
-
-
-
-
    * 
    */
   export function getMonth(date) {
@@ -405,10 +321,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @returns {number}
    * 
    * returns the day
-
-
-
-
    * 
   */
   export function getDay(date) {
@@ -422,10 +334,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @returns {string}
    * 
    * returns the day name
-
-
-
-
    * 
    * @prototype {Date}
    */
@@ -442,10 +350,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
    * @returns {Date}
    * 
    * calculate easter
-
-
-
-
    *    
    */
   export function calculateEaster(year) {
@@ -488,10 +392,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
   /**
    *
    * catalog of holidays
-
-
-
-
    *    
    */
   export const holidaysCatalog = [
@@ -788,10 +688,6 @@ export function getFirstAndLastDayOfMonth(this_date) {
  * 
  * 
  * Returns the date object of the nth Sunday of the month in the given year.
-
-
-
-
  */
 export function calculateNthSundayOfMonth(n,year, month) {
     const firstDayOfMonth = getFirstAndLastDayOfMonth(year, month)[0];

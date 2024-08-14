@@ -2,9 +2,6 @@
 
 /**
  * Check if the resource is allowed based on the provided parameters.
-
-
-
  *
  * @param {string} id - The ID of the resource
  * @param {string} [userId=null] - The user ID (optional)
@@ -28,9 +25,6 @@ export function isResourceAllowed(
 
 /**
  * Function to get filtered permissions based on userId.
-
-
-
  * 
  * 
  * @param {string} userId - The user ID for which permissions are being filtered
@@ -52,9 +46,6 @@ export function getPermission(userId = null) {
 
 /**
  * Throws an error indicating that permission has been denied.
-
-
-
  *
  * @param {string} id - The ID of the resource.
  * @param {object} params - Additional parameters.

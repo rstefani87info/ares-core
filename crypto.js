@@ -9,9 +9,6 @@ import {createHash} from 'crypto';
  * @param {string} 
  * 
  * Get MD5 hash
-
-
-
  * 
  */
 export function getMD5Hash(this_string){

@@ -1,5 +1,3 @@
-import moment from 'moment';
-import * as fileUtility from '@ares/files';
 //TODO: import numeral from 'numeral';
 
 /**
@@ -8,10 +6,6 @@ import * as fileUtility from '@ares/files';
  * @param {string} alias
  * 
  * Find property key by alias
-
-
-
-
  */
 export function findPropKeyByAlias(this_object, alias) {
 	for (const k in this_object) {
@@ -24,10 +18,6 @@ export function findPropKeyByAlias(this_object, alias) {
  * @param {string} alias
  * 
  * Find property value by alias
-
-
-
-
  */
 export function findPropValueByAlias(this_object, alias) {
 	for (const k in this_object) {
@@ -42,10 +32,6 @@ export function findPropValueByAlias(this_object, alias) {
  * @param {string} alias
  * 
  * Setup a property alias for the object property that match the alias regexp
-
-
-
-
  */
 export function setupPropertyAlias(this_object, alias) {
 	if (!obj.prototype.hasOwnProperty(alias)) {
@@ -64,25 +50,18 @@ export function setupPropertyAlias(this_object, alias) {
 /**
  * @prototype {string}
  * @param {string} this_file
+ * @returns {Object}
  * 
  * Parse file content as object
-
-
-
-
  * 
  */
-export function requireData(this_file) {
-	return JSON.parse(fileUtility.getFileContent(file));
+export async function requireData(this_file) {
+	return (await import(this_file)).default;
 }
 
 
 /**
  * Creates a deep clone of an object, including all its methods.
-
-
-
-
  *
  * @param {Object} obj - The object to clone.
  * @return {Object} The cloned object.

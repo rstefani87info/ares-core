@@ -1,9 +1,5 @@
 /**
  * Trims initial regexp from a string.
-
-
-
-
  * @param {string} this_string
  * @param {RegExp|string} regexp
  * @returns {string}
@@ -16,9 +12,6 @@ export function trimInitialRegexp(this_string, regexp) {
 
 /**
  * Trims final regexp from a string.
-
-
-
  * 
  * @param {string} this_string
  * @param {RegExp|string} regexp
@@ -40,9 +33,6 @@ export function trimFinalRegexp(this_string, regexp) {
  * @prototype {string}
  * 
  * Trims initial and final regexp from a string.
-
-
-
  *  
  */
 export function trimRegexp(this_string, regexp) {
