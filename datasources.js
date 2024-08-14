@@ -3,7 +3,7 @@
  * @license MIT
  */
 import mysql from "mysql";
-const { v4: uuidv4 } = require("uuid");
+import { uuidv4 as v4 } from "uuid";
 import { asyncConsole } from "./console.js";
 import { format } from "./dataDescriptors.js";
 import { cloneWithMethods } from "./objects.js";
