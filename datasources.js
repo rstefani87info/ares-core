@@ -3,7 +3,7 @@
  * @license MIT
  */
 import mysql from "mysql";
-import { uuidv4 as v4 } from "uuid";
+import { v4 as uuidv4 } from "uuid";
 import { asyncConsole } from "./console.js";
 import { format } from "./dataDescriptors.js";
 import { cloneWithMethods } from "./objects.js";
@@ -29,7 +29,7 @@ export async function loadDatasource(
   onMapperLoaded,
   force = false
 ) {
- const datasourceName = datasourceSettings.name.toLowerCase();
+  const datasourceName = datasourceSettings.name.toLowerCase();
   aReS.datasourceMap = aReS.datasourceMap ?? {};
   force = force || !(datasourceName in aReS.datasourceMap);
   if (force) {
@@ -130,10 +130,15 @@ export class Datasource {
       }
     }
   }
-  
+
   loadQueries() {
     const thisDatasource = this;
-    return this.dbConfig.queries? Object.entries(this.dbConfig.queries).map(([key, value]) => { value.name=key; return thisDatasource.loadQuery(v); }) : [];
+    return this.dbConfig.queries
+      ? Object.entries(this.dbConfig.queries).map(([key, value]) => {
+          value.name = key;
+          return thisDatasource.loadQuery(v);
+        })
+      : [];
   }
 
   async loadQuery(queryObject) {
