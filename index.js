@@ -24,9 +24,6 @@ import * as xhr from "./xhr.js";
 export function getApplicationRoot() {
   return import.meta.resolve('../../../');
 }
-const core=files.getParent(files.getParent(text.trimInitialRegexp(new URL(import.meta.url).pathname, '/')));
-
-prototype.initPrototypes(core);
 
 const aReS =  {
   arrays: arrays,
