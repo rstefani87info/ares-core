@@ -3,7 +3,6 @@
  * @license MIT
  * A collection of base utilities of aReS framework.
  */
-import * as text from "./text.js";
 import * as arrays from "./arrays.js";
 import * as console from "./console.js";
 import * as crypto from "./crypto.js";
