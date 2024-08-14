@@ -24,29 +24,9 @@ import * as url from "./url.js";
 import * as xhr from "./xhr.js";
 
 export function getApplicationRoot() {
-  return files.getAbsolutePath('./');
+  return import.meta.resolve('../../../');
 }
 const core=files.getParent(files.getParent(text.trimInitialRegexp(new URL(import.meta.url).pathname, '/')));
-const ptototypeFileList =[
-  "./node_modules/@ares/core/array.js",
-  "./node_modules/@ares/core/console.js",
-  "./node_modules/@ares/core/crypto.js", 
-  "./node_modules/@ares/core/dataDescriptor.js", 
-  "./node_modules/@ares/core/datasources.js", 
-  "./node_modules/@ares/core/dates.js", 
-  "./node_modules/@ares/core/geographical.js", 
-  "./node_modules/@ares/core/i18n.js",
-  "./node_modules/@ares/core/index.js",
-  "./node_modules/@ares/core/numbers.js",
-  "./node_modules/@ares/core/objects.js", 
-  "./node_modules/@ares/core/permissions.js", 
-  "./node_modules/@ares/core/regex.js",
-  "./node_modules/@ares/core/scripts.js", 
-  "./node_modules/@ares/core/prototype.js", 
-  "./node_modules/@ares/core/text.js",
-  "./node_modules/@ares/core/url.js",
-  "./node_modules/@ares/core/xhr.js"
-]
 
 prototype.initPrototypes(core);
 
