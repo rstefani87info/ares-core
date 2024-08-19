@@ -48,7 +48,7 @@ export async function loadDatasource(
 export function exportAsAresMethod(aReS, mapper, datasource) {
   asyncConsole.log(
     "datasources",
-    " - open REST: {" + mapper.name + ":  " + mapper.path
+    " - open REST: " + mapper.name + ":  " + mapper.path
   );
   aReS[datasource.name + "_" + mapper.querySetting.name + "_" + mapper.name] = (
     req,
