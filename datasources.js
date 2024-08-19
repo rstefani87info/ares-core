@@ -133,10 +133,10 @@ export class Datasource {
 
   loadQueries() {
     const thisDatasource = this;
-    return this.dbConfig.queries
-      ? Object.entries(this.dbConfig.queries).map(([key, value]) => {
+    return this.queries
+      ? Object.entries(this.queries).map(([key, value]) => {
           value.name = key;
-          return thisDatasource.loadQuery(v);
+          return thisDatasource.loadQuery(value);
         })
       : [];
   }
@@ -148,7 +148,7 @@ export class Datasource {
         ' - init mapperCase "' + queryObject.name + '" {'
       );
       this[queryObject.name] = queryObject;
-      await this.loadMapper(mapper);
+      await this.loadMapper(this[queryObject.name]);
       return true;
     }
     return false;
