@@ -106,14 +106,16 @@ export class Datasource {
       conn.startTransaction(mapper.$name);
     }
     try {
-      const params = mapper.mapParameters(req, this.aReS);
-      if (wait) return conn.executeQuerySync(command, params, callback);
-
+      const params = mapper.mapParameters?mapper.mapParameters(req, this.aReS):{};
+      let ret = null;
+      if (wait) ret = conn.executeQuerySync(command, params, callback);
+      else ret = conn.executeNativeQueryAsync(command, params, callback);
       if (isTransaction) {
         conn.commit();
       }
-      return conn.executeNativeQueryAsync(command, params, callback);
+      return ret;
     } catch (err) {
+      console.error(err);
       if (isTransaction) {
         conn.rollback();
       }
@@ -168,14 +170,17 @@ export class Datasource {
               ? mapper.parametersValidationRoles(request, this.aReS)
               : mapper.parametersValidationRoles
           );
-          if (params["€rror"])
+          console.log('params:',params);
+          if (params["€rror"]){
+            console.error(params["€rror"]);
             throw new Error(
               "Formatting and validation error: " +
                 JSON.stringify(params["€rror"])
-            );
+            );}
           request = cloneWithMethods(request);
           request.parameters = params;
         }
+        console.log("in query");
         if (!mapper.mapRequest) mapper.mapRequest = mapRequestOrResult;
         if (!mapper.mapResult) mapper.mapResult = mapRequestOrResult;
         if (!mapper.methods) mapper.methods = ".*";
@@ -184,6 +189,7 @@ export class Datasource {
           mapper.query,
           mapper,
           (response) => {
+            
             if (response.results) {
               if (Array.isArray(response.results))
                 response.results = response.results.map((row, index) =>
@@ -205,6 +211,7 @@ export class Datasource {
           },
           wait
         );
+        console.log('Ret:',ret);
         if (mapper.postExecute) mapper.postExecute(request, this, ret);
         return ret;
       } catch (e) {
@@ -213,7 +220,7 @@ export class Datasource {
           db: db.name,
           queryName: mapper.name,
         });
-        console.log(e);
+        console.error(e);
       }
     };
     if (this.onMapperLoaded && typeof this.onMapperLoaded === "function") {
