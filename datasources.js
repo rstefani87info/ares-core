@@ -59,7 +59,11 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
         throw new Error(
           queryResponse.error + ": " + JSON.stringify([req, res])
         );
-      else res.json(queryResponse);
+      else {
+        if(mapper.dtoTransformer  && mapper.dtoTransformer instanceof Function) 
+          queryResponse = mapper.dtoTransformer(queryResponse);
+        res.json(queryResponse);
+      }
     });
   };
   asyncConsole.log("datasources", " - }");

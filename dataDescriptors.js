@@ -538,5 +538,44 @@ export const dataDescriptors = {
     type: "text",
     pattern: /^[A-Za-z0-9-_]{36,64}\.[A-Za-z0-9-_]{50,200}\.[A-Za-z0-9-_]{43,86}$/
 
-  }
+  },
+  'sha1':{
+    type: "text",
+    pattern: /^[a-f0-9]{40}$/
+  },
+  'sha256':{
+    type: "text",
+    pattern: /^[a-f0-9]{64}$/
+  },
+  'sha512':{
+    type: "text", 
+    pattern: /^[a-f0-9]{128}$/
+  }, //fallo per altri algoritmi di encryption
+
+  'md5':{
+    type: "text",
+    pattern: /^[a-f0-9]{32}$/
+  },
+
+  'base64':{
+    type: "text", 
+    pattern: /^[a-zA-Z0-9+\/]+={0,2}$/
+  },
+
+  'base64url':{
+    type: "text",
+    pattern: /^[a-zA-Z0-9-_]+={0,2}$/
+  },
+
+  'base32':{
+    type: "text",
+    pattern: /^[a-zA-Z2-7]+={0,2}$/
+  },
+
+  'base16':{
+    type: "text",
+    pattern: /^[a-zA-Z0-9]+={0,2}$/
+  },
+
+
 };
