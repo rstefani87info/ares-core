@@ -46,6 +46,6 @@ export function getMD5Hash(this_string){
  * @prototype {Number}
  * 
  */
-function getSHA256(this_string) {
+export function getSHA256(this_string) {
   return encrypt(this_string, 'sha256');
 }
