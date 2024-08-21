@@ -557,25 +557,6 @@ export const dataDescriptors = {
     pattern: /^[a-f0-9]{32}$/
   },
 
-  'base64':{
-    type: "text", 
-    pattern: /^[a-zA-Z0-9+\/]+={0,2}$/
-  },
-
-  'base64url':{
-    type: "text",
-    pattern: /^[a-zA-Z0-9-_]+={0,2}$/
-  },
-
-  'base32':{
-    type: "text",
-    pattern: /^[a-zA-Z2-7]+={0,2}$/
-  },
-
-  'base16':{
-    type: "text",
-    pattern: /^[a-zA-Z0-9]+={0,2}$/
-  },
-
+  
 
 };
