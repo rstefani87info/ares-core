@@ -238,9 +238,7 @@ export function toJS(
   return serializedContent;
 }
 
-
-
- class PropertyPointer {
+ export class PropertyPointer {
   constructor(getter,setter) {
     this.getter = getter;
     this.setter = setter;
