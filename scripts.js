@@ -237,3 +237,27 @@ export function toJS(
   serializedContent += `${endLine}`;
   return serializedContent;
 }
+
+
+
+ class PropertyPointer {
+  constructor(getter,setter) {
+    this.getter = getter;
+    this.setter = setter;
+  }
+  get(object) {
+    return this.getter(object);
+  }
+  set (object, value) {
+    return this.setter(object, value);
+  }
+} 
+
+/**
+ * @param {function} getter
+ * @param {function} setter
+ * 
+ */
+export function getPropertyPointer(getter,setter) {
+  return new PropertyPointer(getter,setter);
+}
