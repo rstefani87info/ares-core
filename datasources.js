@@ -60,8 +60,8 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
           queryResponse.error + ": " + JSON.stringify([req, res])
         );
       else {
-        if(mapper.dtoTransformer  && mapper.dtoTransformer instanceof Function) 
-          queryResponse = mapper.dtoTransformer(queryResponse);
+        if(mapper.transformToDTO  && mapper.transformToDTO instanceof Function) 
+          queryResponse = mapper.transformToDTO(queryResponse);
         res.json(queryResponse);
       }
     });
