@@ -259,3 +259,19 @@ export function toJS(
 export function getPropertyPointer(getter,setter) {
   return new PropertyPointer(getter,setter);
 }
+
+/**
+ * Gets a property from an object by a path. The path is a string with . (dot) separated
+ * property names. The method returns the property value.
+ * @param {object} object
+ * @param {string} path
+ * @returns {*}
+ */
+export function getByPropertyPath(object, path) {
+  const pathArray = path.split(".");
+  let result = object;
+  for (let i = 0; i < pathArray.length; i++) {
+    result = result[pathArray[i]];
+  }
+  return result;
+}

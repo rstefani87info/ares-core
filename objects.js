@@ -80,3 +80,15 @@ export function cloneWithMethods(obj) {
 	}
 	return newObj;
   }
+
+/**
+ * Compare two objects to see if they are equal based on this_object keys and values
+ *
+ * @param {Object} this_object
+ * @param {Object} other
+ * @return {boolean}
+ * @prototype {Object}
+ */
+  export function fieldsMatch(this_object,other){
+	return Object.keys(this_object).every(k => this_object[k] === other[k]);
+  }
