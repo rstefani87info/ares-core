@@ -253,7 +253,7 @@ class SQLDBConnection extends DBConnection {}
 
 class MariaDB extends SQLDBConnection {
   async nativeConnect(callback) {
-    if (!MariaDB.pool) MariaDB.pool = mysql.createPool(this);
+    if (!MariaDB.pool) MariaDB.pool = mysql.createPool({...this, multipleStatements: true});
     const dbConn = this;
     this.connection = this.connection ?? null;
     if (!this.connection) {
