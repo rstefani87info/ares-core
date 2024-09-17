@@ -141,7 +141,7 @@ export class Datasource {
     const thisDatasource = this;
     return this.queries
       ? Object.entries(this.queries).map(([key, value]) => {
-          value.name = key;
+          value.name = value.name ?? key;
           return thisDatasource.loadQuery(value);
         })
       : [];
