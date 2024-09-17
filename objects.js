@@ -47,17 +47,6 @@ export function setupPropertyAlias(this_object, alias) {
 
 }
 
-/**
- * @prototype {string}
- * @param {string} this_file
- * @returns {Object}
- * 
- * Parse file content as object
- * 
- */
-export async function requireData(this_file) {
-	return (await import(this_file)).default;
-}
 
 
 /**
