@@ -249,7 +249,7 @@ class DBConnection {
   }
 }
 
-class SQLDBConnection extends DBConnection {}
+export class SQLDBConnection extends DBConnection {}
 
 
 export class RESTConnection extends DBConnection {
