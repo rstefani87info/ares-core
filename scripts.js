@@ -3,16 +3,6 @@
  * @license MIT
  */
 
-/**
- * @prototype {string}
- */
-export async function getFunctionsFromFile(this_string) {
-  const file = this_string;
-  const script = await import("file://" + import.meta.resolve(file));
-  return Object.getOwnPropertyNames(script)
-    .map((n) => script[n])
-    .filter((x) => typeof x == "function");
-}
 
 /**
  * @prototype {function}
