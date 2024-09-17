@@ -4,8 +4,7 @@
  */
 
 
-
-import {createHash} from 'crypto';
+import CryptoJS from 'crypto-js';
 /**
  * 
  * @param {*} this_val 
@@ -20,9 +19,8 @@ import {createHash} from 'crypto';
  * 
  */
 export function encrypt(this_val, mode){
-	const md5Hash = createHash(mode);
-	md5Hash.update(this_val);
-	return   md5Hash.digest('hex');
+	const md5Hash = CryptoJS[mode.toUpperCase()](this_val);
+	return md5Hash.toString(CryptoJS.enc.Hex);
 }
 /**
  * @prototype {string}
@@ -32,7 +30,7 @@ export function encrypt(this_val, mode){
  * 
  */
 export function getMD5Hash(this_string){
-	return   encrypt(this_string, 'md5');
+	return encrypt(this_string, 'md5');
 }
 
 /**

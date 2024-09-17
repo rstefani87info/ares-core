@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/rstefani87info/ares-core#readme",
   "dependencies": {
+    "crypto-js": "^4.2.0",
     "json2xml": "^0.1.3",
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
