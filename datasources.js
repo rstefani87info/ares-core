@@ -8,6 +8,7 @@ import { asyncConsole } from "./console.js";
 import { format } from "./dataDescriptors.js";
 import { cloneWithMethods } from "./objects.js";
 import { XHRWrapper } from "./xhr.js";
+import { getDocklet, getDockletAnnotations } from "./scripts.js";
 import app from "../../../app.js";
 
 const mapRequestOrResult = function (request) {
@@ -29,6 +30,7 @@ export async function loadDatasource(
   onMapperLoaded,
   force = false
 ) {
+  asyncConsole.log("datasource ", JSON.stringify(datasourceSettings));
   const datasourceName = datasourceSettings.name.toLowerCase();
   aReS.datasourceMap = aReS.datasourceMap ?? {};
   force = force || !(datasourceName in aReS.datasourceMap);
@@ -60,7 +62,7 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
           queryResponse.error + ": " + JSON.stringify([req, res])
         );
       else {
-        if(mapper.transformToDTO  && mapper.transformToDTO instanceof Function) 
+        if (mapper.transformToDTO && mapper.transformToDTO instanceof Function)
           queryResponse = mapper.transformToDTO(queryResponse);
         res.json(queryResponse);
       }
@@ -110,10 +112,12 @@ export class Datasource {
       conn.startTransaction(mapper.$name);
     }
     try {
-      const params = mapper.mapParameters?mapper.mapParameters(req, this.aReS):{};
+      const params = mapper.mapParameters
+        ? mapper.mapParameters(req, this.aReS)
+        : {};
       let ret = null;
-      if (wait) ret = conn.executeQuerySync(command, params, callback);
-      else ret = conn.executeNativeQueryAsync(command, params, callback);
+      if (wait) ret = conn._executeQuerySync(command, params, callback);
+      else ret = conn._executeNativeQueryAsync(command, params, callback);
       if (isTransaction) {
         conn.commit();
       }
@@ -174,13 +178,14 @@ export class Datasource {
               ? mapper.parametersValidationRoles(request, this.aReS)
               : mapper.parametersValidationRoles
           );
-          console.log('params:',params);
-          if (params["€rror"]){
+          console.log("params:", params);
+          if (params["€rror"]) {
             console.error(params["€rror"]);
             throw new Error(
               "Formatting and validation error: " +
                 JSON.stringify(params["€rror"])
-            );}
+            );
+          }
           request = cloneWithMethods(request);
           request.parameters = params;
         }
@@ -193,7 +198,6 @@ export class Datasource {
           mapper.query,
           mapper,
           (response) => {
-            
             if (response.results) {
               if (Array.isArray(response.results))
                 response.results = response.results.map((row, index) =>
@@ -215,7 +219,7 @@ export class Datasource {
           },
           wait
         );
-        console.log('Ret:',ret);
+        console.log("Ret:", ret);
         if (mapper.postExecute) mapper.postExecute(request, this, ret);
         return ret;
       } catch (e) {
@@ -249,8 +253,233 @@ class DBConnection {
   }
 }
 
-export class SQLDBConnection extends DBConnection {}
+export class SQLDBConnection extends DBConnection {
+  insert(type, parameters) {
+    const fields = [];
+    const values = [];
+    const newParams =[];
+    Object.keys(parameters).forEach((key) => {
+      fields.push(key);
+      const newValue = this.checkInnerQuery(parameters[key]);
+      values.push(newValue);
+      if(newValue==='?')newParams.push(parameters[key]);
+    })
+    const command =
+      "INSERT INTO " +
+      type +
+      " (" +
+      fields.join(",") +
+      ") VALUES (" +
+      values.join(",") +
+      ")";
+    return {
+      command,
+      parameters: newParams,
+    };
+  }
 
+  update(type, parameters) {
+    const fields = [];
+    const newParams = [];
+    
+    // Genera la parte SET della query
+    Object.keys(parameters.values).forEach((key) => {
+        const newValue = this.checkInnerQuery(parameters.values[key]);
+        fields.push(`${key}=${newValue}`);
+        if (newValue === '?') newParams.push(parameters.values[key]);
+    });
+
+    let command = `UPDATE ${type} SET ${fields.join(",")}`;
+
+    // Gestione della clausola WHERE
+    if (parameters.filter) {
+        command += " WHERE ";
+        if (typeof parameters.filter === 'object') {
+            command += Object.entries(parameters.filter).map(([key, value]) => {
+                const newValue = this.checkInnerQuery(value);
+                if (newValue === '?') newParams.push(value);
+                return `${key}=${newValue}`;
+            }).join(" AND ");
+        } else if (Array.isArray(parameters.filter) && parameters.filter.length) {
+            const filter = this.filterBy(...parameters.filter);
+            command += filter.command;
+            newParams.push(...filter.parameters);
+        } else if (typeof parameters.filter === 'string') {
+            command += parameters.filter;
+        }
+    }
+
+    return {
+        command,
+        parameters: newParams,
+    };
+}
+
+  // update(type, parameters) {
+  //   const fields = [];
+  //   const newParams =[];
+  //   Object.keys(parameters.values).forEach((key) => {
+  //     const newValue = this.checkInnerQuery(parameters[key]);
+  //     fields.push(key+"="+newValue);
+  //     if(newValue==='?')newParams.push(parameters[key]);
+  //   })
+
+  //   const command =
+  //     "UPDATE " +
+  //     type +
+  //     " SET " +
+  //     fields.join(",") ;
+  //   if(parameters.filter) {
+  //     command += " WHERE " ;
+  //     if(typeof parameters.filter === 'object'){
+  //       command += Object.entries(parameters.filter).map(([key, value]) => 
+  //       {
+  //         const newValue = this.checkInnerQuery(value);
+  //         if(newValue==='?')newParams.push(value);
+  //         return `${key}=${newValue}`;
+  //       }
+  //       ).join(" AND ");
+  //     }else if(Array.isArray(parameters.filter) && parameters.filter.length){command +=" WHERE " ;
+  //       const filter = this.filterBy(...parameters.filter);
+  //       command+=filter.command;
+  //       newParams.push(...filter.parameters);
+  //     }else if (typeof parameters.filter === 'string'){
+  //       command+=parameters.filter;
+  //     }
+  //   }
+  //   return {
+  //     command,
+  //     parameters: newParams,
+  //   };
+  // }
+  delete(type, parameters) {
+    const newParams = [];
+
+    let command = `DELETE FROM ${type}`;
+
+    // Gestione della clausola WHERE
+    if (parameters.filter) {
+        command += " WHERE ";
+        if (typeof parameters.filter === 'object') {
+            command += Object.entries(parameters.filter).map(([key, value]) => {
+                const newValue = this.checkInnerQuery(value);
+                if (newValue === '?') newParams.push(value);
+                return `${key}=${newValue}`;
+            }).join(" AND ");
+        } else if (Array.isArray(parameters.filter) && parameters.filter.length) {
+            const filter = this.filterBy(...parameters.filter);
+            command += filter.command;
+            newParams.push(...filter.parameters);
+        } else if (typeof parameters.filter === 'string') {
+            command += parameters.filter;
+        }
+    }
+
+    return {
+        command,
+        parameters: newParams,
+    };
+}
+
+  // delete(type, parameters) {
+  //   const newParams = Object.keys(parameters).map((x) => parameters[x]);
+  //   const command =
+  //     "DELETE " +
+  //     type +
+  //     "  WHERE " ;
+  //     const filter = this.filterBy(...parameters.filter);
+  //     command+=filter.command;
+  //     newParams.push(...filter.parameters);
+  //   return {
+  //     command,
+  //     parameters: newParams,
+  //   }; 
+  // }
+  filterBy(...filters) {
+    let groups = 0;
+    const newParams = [];
+    const command = filters
+      .map((x) => {
+        let ret = "x.expression";
+        if (x.expression.match(/(\s\n\r){1,}BETWEEN(\s\n\r)*$/gi)) {
+          newParams.push(
+            this.checkInnerQuery(x.value[0]),
+            this.checkInnerQuery(x.value[1])
+          );
+          ret += " BETWEEN ? AND ?";
+        } else if (x.expression.match(/(\s\n\r){1,}IN(\s\n\r)*$/gi)) {
+          newParams.push(x.value);
+          ret += Array.isArray(x.value)
+            ? (x.value.length > 1 ? " (" : " ") +
+              x.value.map(this.checkInnerQuery).join(",") +
+              (x.value.length > 1 ? ")" : "")
+            : ("(" + this.checkInnerQuery(x.value) + ")")
+                .replace(/^\(\(/g, "(")
+                .replace(/\)\)$/g, ")");
+        } else {
+          newParams.push(this.checkInnerQuery(x));
+          ret = x.expression + "?";
+        }
+        if (x.startGroup) {
+          groups++;
+          ret = " ( " + ret;
+        }
+        if (x.endGroup) {
+          groups--;
+          ret = ret + " ) ";
+        }
+        return ret;
+      })
+      .join(" ");
+      return {command, parameters: newParams};
+  }
+
+  checkInnerQuery(parameter) {
+    if (typeof parameter === "object" && "query" in parameter) {
+      return "(" + query + ")";
+    }
+    return "?";
+  }
+
+  handleAnnotationTransformations(command, parameters) {
+    let docklet = "";
+    const newCommand = [];
+    const newParameters = [];
+    while ((docklet = getDocklet(command) ?? "") !== "") {
+      const annotations = getDockletAnnotations(docklet);
+      annotations.forEach((x) => {
+        if (this[x.annotation] && typeof this[x.annotation] === "function") {
+          const resolvedAnnotation = this[x.annotation](parameters);
+          newCommand.push(resolvedAnnotation.command);
+          newParameters.join(resolvedAnnotation.parameters);
+        } else {
+          newCommand.push("/**\n * " + docklet.toString() + "\n*/");
+        }
+      });
+      command = command.replace(docklet, "");
+    }
+    return {
+      command: newCommand.join("\n\n"),
+      parameters: newParameters,
+    };
+  }
+  _executeQuerySync(command, params, callback) {
+    newCommand = this.handleAnnotationTransformations(command);
+    return this.executeQuerySync(
+      newCommand.command,
+      newCommand.parameters,
+      callback
+    );
+  }
+  async _executeNativeQueryAsync(command, params, callback) {
+    newCommand = this.handleAnnotationTransformations(command);
+    return this.executeNativeQueryAsync(
+      newCommand.command,
+      newCommand.parameters,
+      callback
+    );
+  }
+}
 
 export class RESTConnection extends DBConnection {
   constructor(
@@ -302,5 +531,3 @@ export class RESTConnection extends DBConnection {
     return results;
   }
 }
-
- 

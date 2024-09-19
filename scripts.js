@@ -7,10 +7,17 @@
 /**
  * @prototype {function}
  */
-export function getDocklet(this_function) {
+export function getFunctionDocklet(this_function) {
   const fnString = this_function.toString();
+  return getDocklet(fnString);
+}
+
+/**
+ * @prototype {string}
+ */
+export function getDocklet(this_string) {
   const commentRegex = /\/\*\*([\s\S]*?)\*\//;
-  const match = fnString.match(commentRegex);
+  const match = this_string.match(commentRegex);
 
   if (match && match[1]) {
     return match[1].trim();
@@ -28,12 +35,23 @@ export function getDocklet(this_function) {
  *
  */
 
-export function getDockletAnnotations(this_function) {
-  const s = getDocklet(this_function) ?? "";
-  if (s) {
+export function getFunctionDockletAnnotations(this_function) {
+  const s = getFunctionDocklet(this_function) ?? "";
+  return getDockletAnnotations(s);
+}
+
+/*
+ * @prototype {string}
+ * @param {string}
+ * @returns {array}
+ *
+ * Get docklet annotations from string.
+*/
+export function getDockletAnnotations(this_string) {
+  if (this_string) {
     const annotations = [];
     var last = { annotation: "commonDescription", description: "" };
-    for (const l of s.replaceAll(/\r/g, "").split("\n")) {
+    for (const l of this_string.replaceAll(/\r/g, "").split("\n")) {
       var desc = l.match(/^[\s\/*]*\s*(?<description>.*)/)[0] ?? "";
       var match = l.match(
         /\*\s*@(?<anno>[\w\|]+)\s*(?<type>\w+)?\s*(?<name>\w+)?\s*(?<note>.*)?/i
@@ -46,6 +64,11 @@ export function getDockletAnnotations(this_function) {
           type: type?.trim(),
           name: name?.trim(),
           note: note?.trim(),
+          toString: function() {
+            return (this.annotation === 'commonDescription' ? '':this.annotation + 
+            (this.type ? ' {' + this.type : '}') + (this.name ? ' ' + this.name : '') + (this.description ? ' - ' : ''))
+            + (this.description ? this.description : '');
+          }
         };
         annotations.push(last);
       } else last.description += desc ? "\n" + desc : "";

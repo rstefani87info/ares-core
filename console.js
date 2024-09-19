@@ -24,6 +24,6 @@ export const asyncConsole={
 export const powerConsole = {
     map: {},
     log: (name, msg, format='log') => {
-        console.log(console.log(`[${name}]{\n\t${ Array.isArray(msg)?msg.join('\n\t\t'):msg }\n}`));
+        console.log(console.log(`[${name}] \n\t${ Array.isArray(msg)?msg.join('\n\t\t'):msg }\n`));
     }
 };
