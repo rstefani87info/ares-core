@@ -80,7 +80,7 @@ export class Datasource {
 
   getConnection(req, mapper, force = false) {
     if (this.aReS.permissions.isResourceAllowed(this.name, req)) {
-      const env = this.environments[app.isProduction ? "production" : "test"];
+      const env = this.environments[this.aReS.isProduction() ? "production" : "test"];
       const connectionSetting = env[mapper.connectionSetting];
       if (force || !this.sessions[req.session.id]) {
         this.sessions[req.session.id] = this.sessions[req.session.id] ?? {};
@@ -465,6 +465,9 @@ export class SQLDBConnection extends DBConnection {
   }
   _executeQuerySync(command, params, callback) {
     newCommand = this.handleAnnotationTransformations(command);
+    console.debug(
+      "executeQuerySync: " + newCommand.command + " " + newCommand.parameters
+    )
     return this.executeQuerySync(
       newCommand.command,
       newCommand.parameters,

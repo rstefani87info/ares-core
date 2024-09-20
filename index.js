@@ -3,6 +3,7 @@
  * @license MIT
  * A collection of base utilities of aReS framework.
  */
+import { isProduction } from "../web/server.js";
 import * as arrays from "./arrays.js";
 import * as console from "./console.js";
 import * as crypto from "./crypto.js";
@@ -20,6 +21,8 @@ import * as scripts from "./scripts.js";
 import * as text from "./text.js";
 import * as url from "./url.js";
 import * as xhr from "./xhr.js";
+
+import appSetup from "../../../app.js";
 
 export function getApplicationRoot() {
   return import.meta.resolve('../../../');
@@ -42,7 +45,11 @@ const aReS =  {
   scripts: scripts,
   text: text,
   url: url,
-  xhr: xhr
+  xhr: xhr,
+  appSetup: appSetup,
+  isProduction: function() {
+    appSetup.environmet.match(/production(\s*-\s*.*)*/i);
+  }
 };
 
 export default aReS;
