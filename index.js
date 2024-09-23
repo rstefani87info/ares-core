@@ -24,31 +24,31 @@ import * as xhr from "./xhr.js";
 
 import appSetup from "../../../app.js";
 
-export function getApplicationRoot() {
-  return import.meta.resolve('../../../');
-}
-
+const idMap = { idKeyMap:{}, hashKeyMap:{} };
 const aReS =  {
-  arrays: arrays,
-  console: console,
-  crypto: crypto,
-  dataDescriptor: dataDescriptor,
-  datasources: datasources,
-  dates: dates,
-  geographical: geographical,
-  i18n: i18n,
-  numbers: numbers,
-  objects: objects,
-  permissions: permissions,
-  prototype: prototype,
-  regex: regex,
-  scripts: scripts,
-  text: text,
-  url: url,
-  xhr: xhr,
-  appSetup: appSetup,
+  arrays,
+  console,
+  crypto,
+  dataDescriptor,
+  datasources,
+  dates,
+  geographical,
+  i18n,
+  numbers,
+  objects,
+  permissions,
+  prototype,
+  regex,
+  scripts,
+  text,
+  url,
+  xhr,
+  appSetup,
   isProduction: function() {
     appSetup.environmet.match(/production(\s*-\s*.*)*/i);
+  },
+  getIdMap:function(){
+    return idMap;
   }
 };
 

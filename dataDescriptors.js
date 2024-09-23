@@ -79,12 +79,14 @@ export const objectDescriptorDefinitions = {
  * 
  * Format an object according to the descriptor
  */
-export async function format(this_object, descriptor) {
+export async function format(this_object, descriptor, db) {
   const ret = {};
   for (const k in descriptor) {
-    console.log(" - formatting: " + k);
     ret[k] = descriptor.source? descriptor.source(this_object, k) : this_object[k];
     const objectDescriptorDefinitionKey = descriptor[k]?.type || null;
+    if(objectDescriptorDefinitionKey.match(/id(enti(fier|ty))|primary[\\s\\-_]*(key){0,1}/)){
+      ret[k] = db.hashKeyMap[ret[k]];
+    }
     const objectDescriptorDefinition = findPropValueByAlias(
       objectDescriptorDefinitions,
       objectDescriptorDefinitionKey
@@ -556,7 +558,8 @@ export const dataDescriptors = {
     type: "text",
     pattern: /^[a-f0-9]{32}$/
   },
-
-  
-
+  'id(enti(fier|ty))|primary[\\s\\-_]*(key){0,1}': {
+    type: "text",
+    pattern: /^[a-f0-9]{128}$/,
+  }
 };

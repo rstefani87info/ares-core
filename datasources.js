@@ -10,6 +10,8 @@ import { cloneWithMethods } from "./objects.js";
 import { XHRWrapper } from "./xhr.js";
 import { getDocklet, getDockletAnnotations } from "./scripts.js";
 import app from "../../../app.js";
+import aReS from "./index.js";
+import { getSHA256Hash } from "./crypto.js";
 
 const mapRequestOrResult = function (request) {
   return request;
@@ -76,6 +78,8 @@ export class Datasource {
     if (typeof dbConfig === "object") Object.assign(this, dbConfig);
     this.aReS = aReS;
     this.sessions = {};
+    this.hashKeyMap = {};
+    this.idKeyMap = {};
   }
 
   getConnection(req, mapper, force = false) {
@@ -130,6 +134,16 @@ export class Datasource {
     }
   }
 
+  getKeyHash(key){
+    if(!this.idKeyMap[key]){
+      const hash = getSHA256Hash(key);
+      this.hashKeyMap = {hash:key};
+      this.idKeyMap = {key:hash};
+      return hash;
+    }
+    return this.idKeyMap[key];
+  }
+
   close(req) {
     for (const sessionId in this.sessions) {
       for (const connName in this.sessions[sessionId]) {
@@ -176,7 +190,8 @@ export class Datasource {
             request,
             typeof mapper.parametersValidationRoles === "function"
               ? mapper.parametersValidationRoles(request, this.aReS)
-              : mapper.parametersValidationRoles
+              : mapper.parametersValidationRoles,
+              this
           );
           console.log("params:", params);
           if (params["€rror"]) {
