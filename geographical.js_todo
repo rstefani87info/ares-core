@@ -1,4 +1,6 @@
 import NodeGeocoder from 'node-geocoder';
+
+// todo: get a react native compatible version of this module
 export const defaultGeocoderOptions = {
     provider: 'openstreetmap',
     formatter: 'geojson',
