@@ -1,4 +1,4 @@
- import permissions from "../../../permissionData.json" assert { type: "json" };
+ import permissions from "../../../permissionData.js";
 
 /**
  * Check if the resource is allowed based on the provided parameters.

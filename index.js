@@ -3,19 +3,17 @@
  * @license MIT
  * A collection of base utilities of aReS framework.
  */
-import { isProduction } from "../web/server.js";
 import * as arrays from "./arrays.js";
 import * as console from "./console.js";
 import * as crypto from "./crypto.js";
 import * as dataDescriptor from "./dataDescriptors.js";
 import * as datasources from "./datasources.js";
 import * as dates from "./dates.js";
-import * as geographical from "./geographical.js";
 import * as i18n from "./i18n.js";
 import * as numbers from "./numbers.js";
 import * as objects from "./objects.js";
 import * as permissions from "./permissions.js";
-import * as prototype from "./prototype.js";
+// import * as prototype from "./prototype.js";
 import * as regex from "./regex.js";
 import * as scripts from "./scripts.js";
 import * as text from "./text.js";
@@ -32,12 +30,11 @@ const aReS =  {
   dataDescriptor,
   datasources,
   dates,
-  geographical,
   i18n,
   numbers,
   objects,
   permissions,
-  prototype,
+  // prototype,
   regex,
   scripts,
   text,
