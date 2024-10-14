@@ -9,12 +9,14 @@ import { format } from "./dataDescriptors.js";
 import { cloneWithMethods } from "./objects.js";
 import { XHRWrapper } from "./xhr.js";
 import { getDocklet, getDockletAnnotations } from "./scripts.js";
-import app from "../../../app.js";
-import aReS from "./index.js";
 import { getSHA256Hash } from "./crypto.js";
 
 const mapRequestOrResult = function (request) {
   return request;
+};
+
+export const defaultConnectionCallback = (error) => {
+  if (error) throw error;
 };
 /**
  * @param {Object} aReS - The express framework object
@@ -54,25 +56,97 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
     "datasources",
     " - open REST: " + mapper.name + ":  " + mapper.path
   );
-  aReS[datasource.name + "_" + mapper.querySetting.name + "_" + mapper.name] = (
-    req,
-    res
-  ) => {
-    mapper.execute(req, (queryResponse) => {
-      if (queryResponse.error)
-        throw new Error(
-          queryResponse.error + ": " + JSON.stringify([req, res])
-        );
+  aReS[datasource.name + "_" + mapper.querySetting.name + "_" + mapper.name] =
+    async (req, res) => {
+      let result = await mapper.execute(req);
+      if (result["€rror"]) throw new Error(JSON.stringify([result, req, res]));
       else {
-        if (mapper.transformToDTO && mapper.transformToDTO instanceof Function)
-          queryResponse = mapper.transformToDTO(queryResponse);
-        res.json(queryResponse);
+        return result;
       }
-    });
-  };
+    };
   asyncConsole.log("datasources", " - }");
 }
 
+export class DatasourceRequestMapper {
+  constructor(aReS, datasource, settings) {
+    if (typeof settings === "object") Object.assign(this, settings);
+    this.datasource = datasource;
+    this.aReS = aReS;
+    if (!settings.name) this.name = uuidv4();
+    if (!this.mapParameters) this.mapParameters = mapRequestOrResult;
+    if (!this.mapResult) this.mapResult = mapRequestOrResult;
+    if (!this.methods) this.methods = ".*";
+  }
+
+  async execute(request) {
+    console.log(
+      "called database: " +
+        this.datasource.name +
+        "[" +
+        request.session.id +
+        "] : <<" +
+        this.query +
+        ">>"
+    );
+    let params = {};
+    params = await format(
+      request,
+      this.parametersValidationRoles? await this.parametersValidationRoles(request, this.aReS): {},
+      this.datasource
+    );
+    console.log("params:", params);
+    if (params["€rror"]) {
+      console.error('aReS Error:',params["€rror"]);
+      console.error("Stack trace:", error.stack);
+      throw new Error(
+        "Formatting and validation error: " + JSON.stringify(params["€rror"])
+      );
+    }
+    request = cloneWithMethods(request);
+    request.parameters = params;
+    console.log("in query");
+    const response = await this.datasource.query(
+      request,
+      this.query,
+      this
+    );
+    if (response.results) {
+      if(this.objectify){
+        throw new Error('TODO:  implement me!');
+      }
+      if (Array.isArray(response.results)) {
+        if (this.mapResult && this.mapResult instanceof Function) {
+          let i=0;
+          for(; i<response.results.length; i++){
+            response.results[i] = await this.mapResult(response.results[i], i);
+          }
+        }
+        if (this.transformToDTO && this.transformToDTO instanceof Function) {
+          result = await this.transformToDTO(result);
+        }
+      } else {
+        response.results = this.mapResult(response.results);
+      }
+      
+      if (this.postExecute && this.mapResult instanceof Function) {
+        this.postExecute(request, this.datasource, response);
+      }
+    }
+    if (!this.aReS.isProduction()) {
+      response.datasourceName = this.datasource.name;
+      response.queryName = this.name;
+      response.query = this.query;
+      response.params = params;
+      response.session = request.session.id;
+      console.log(
+        this.datasource.name + "[" + request.session.id + "] ",
+        JSON.stringify(response)
+      );
+    }
+    console.log("Mapped results:", response);
+    return response;
+  }
+}
 export class Datasource {
   constructor(aReS, dbConfig) {
     if (typeof dbConfig === "object") Object.assign(this, dbConfig);
@@ -82,14 +156,19 @@ export class Datasource {
     this.idKeyMap = {};
   }
 
-  getConnection(req, mapper, force = false) {
+  async getConnection(req, mapper, force = false) {
+    console.log(
+      "Datasource: " + this.name + " - connecting: " + mapper.connectionSetting,this.aReS.permissions.isResourceAllowed(this.name, req)
+    )
     if (this.aReS.permissions.isResourceAllowed(this.name, req)) {
-      const env = this.environments[this.aReS.isProduction() ? "production" : "test"];
+      const env =
+        this.environments[this.aReS.isProduction() ? "production" : "test"];
       const connectionSetting = env[mapper.connectionSetting];
       if (force || !this.sessions[req.session.id]) {
         this.sessions[req.session.id] = this.sessions[req.session.id] ?? {};
       }
       if (force || !this.sessions[req.session.id][mapper.connectionSetting]) {
+        
         const driverConstructor = connectionSetting.driver;
         this.sessions[req.session.id][mapper.connectionSetting] =
           new driverConstructor(
@@ -99,46 +178,83 @@ export class Datasource {
             mapper.connectionSetting
           );
       }
+      await this.sessions[req.session.id][
+        mapper.connectionSetting
+      ].nativeConnect(defaultConnectionCallback);
       this.sessions[req.session.id][mapper.connectionSetting].isOpen = true;
       return this.sessions[req.session.id][mapper.connectionSetting];
     }
-    return null;
+    throw new Error('Can not establish connection!');
   }
 
-  async query(req, command, mapper, callback, wait = false) {
-    const conn = await this.getConnection(req, mapper);
+  async query(
+    req,
+    command,
+    mapper
+  ) {
+    let connection = this.sessions[req.session.id]? this.sessions[req.session.id][mapper.connectionSetting] : undefined;
+    const thisInstance = this;
+    if (!connection || !connection.isOpen) {
+      connection = await this.getConnection(req, mapper);
+      if (!connection.isOpen) throw new Error("connection is not open");
+    }
     const isTransaction =
       (mapper.transaction === true || mapper.transaction === 1) &&
-      conn.startTransaction &&
-      conn.commit &&
-      conn.rollback;
+      connection.startTransaction &&
+      connection.commit &&
+      connection.rollback;
+    req.transactionIndex = req.transactionIndex ? req.transactionIndex + 1 : 0;
+    req.executedTransactionSteps = req.executedTransactionSteps ?? [];
+    const transactionName = mapper.name + "[" + req.transactionIndex + "]";
+    req.executedTransactionSteps.push(transactionName);
     if (isTransaction) {
-      conn.startTransaction(mapper.$name);
+      console.log(
+        "called database transaction: " +
+          thisInstance.name +
+          "[" +
+          req.session.id +
+          "]"
+      );
+      connection.startTransaction(transactionName);
     }
     try {
-      const params = mapper.mapParameters
-        ? mapper.mapParameters(req, this.aReS)
-        : {};
-      let ret = null;
-      if (wait) ret = conn._executeQuerySync(command, params, callback);
-      else ret = conn._executeNativeQueryAsync(command, params, callback);
+      const params = await mapper.mapParameters(req, thisInstance.aReS, connection) ;
+      console.log("executing query", command, params);
+      const ret = await connection._executeNativeQueryAsync(command, params,mapper);
+      console.log("query results", ret);
       if (isTransaction) {
-        conn.commit();
+        console.log(
+          "commit database transaction: " +
+            thisInstance.name +
+            "[" +
+            req.session.id +
+            "]"
+        );
+        connection.commit(transactionName);
       }
       return ret;
     } catch (err) {
-      console.error(err);
+      console.error('aReS Error:',err);
+      console.error("Stack trace:", err.stack);
       if (isTransaction) {
-        conn.rollback();
+        console.log(
+          "rollback database transaction: " +
+            thisInstance.name +
+            "[" +
+            req.session.id +
+            "]"
+        );
+        connection.rollback(transactionName);
       }
+      return { "€rror": err };
     }
   }
 
-  getKeyHash(key){
-    if(!this.idKeyMap[key]){
+  getKeyHash(key) {
+    if (!this.idKeyMap[key]) {
       const hash = getSHA256Hash(key);
-      this.hashKeyMap = {hash:key};
-      this.idKeyMap = {key:hash};
+      this.hashKeyMap = { hash: key };
+      this.idKeyMap = { key: hash };
       return hash;
     }
     return this.idKeyMap[key];
@@ -171,90 +287,17 @@ export class Datasource {
         "datasources",
         ' - init mapperCase "' + queryObject.name + '" {'
       );
-      this[queryObject.name] = queryObject;
-      await this.loadMapper(this[queryObject.name]);
+      this[queryObject.name] = new DatasourceRequestMapper(this.aReS, this, queryObject);
+      if (this.onMapperLoaded && typeof this.onMapperLoaded === "function") {
+        await this.onMapperLoaded(this.aReS, this[queryObject.name], this);
+      }
       return true;
     }
     return false;
   }
-  async loadMapper(mapper) {
-    const db = this;
-    if (!mapper.name) mapper.name = uuidv4();
-
-    mapper.execute = function (request, callback, wait = false) {
-      try {
-        console.log(db.name + "[" + request.session.id + "] : " + mapper.query);
-        let params = {};
-        if (mapper.mapParameters) {
-          params = format(
-            request,
-            typeof mapper.parametersValidationRoles === "function"
-              ? mapper.parametersValidationRoles(request, this.aReS)
-              : mapper.parametersValidationRoles,
-              this
-          );
-          console.log("params:", params);
-          if (params["€rror"]) {
-            console.error(params["€rror"]);
-            throw new Error(
-              "Formatting and validation error: " +
-                JSON.stringify(params["€rror"])
-            );
-          }
-          request = cloneWithMethods(request);
-          request.parameters = params;
-        }
-        console.log("in query");
-        if (!mapper.mapRequest) mapper.mapRequest = mapRequestOrResult;
-        if (!mapper.mapResult) mapper.mapResult = mapRequestOrResult;
-        if (!mapper.methods) mapper.methods = ".*";
-        const ret = db.query(
-          request,
-          mapper.query,
-          mapper,
-          (response) => {
-            if (response.results) {
-              if (Array.isArray(response.results))
-                response.results = response.results.map((row, index) =>
-                  mapper.mapResult(row, index)
-                );
-              else response.results = mapper.mapResult(response.results);
-            }
-            if (!app.isProduction) {
-              response.dbName = db.name;
-              response.queryName = mapper.name;
-              response.query = mapper.query;
-              response.params = params;
-              console.log(
-                db.name + "[" + request.session.id + "] ",
-                JSON.stringify(response)
-              );
-            }
-            if (callback) callback(response);
-          },
-          wait
-        );
-        console.log("Ret:", ret);
-        if (mapper.postExecute) mapper.postExecute(request, this, ret);
-        return ret;
-      } catch (e) {
-        callback({
-          error: e,
-          db: db.name,
-          queryName: mapper.name,
-        });
-        console.error(e);
-      }
-    };
-    if (this.onMapperLoaded && typeof this.onMapperLoaded === "function") {
-      await this.onMapperLoaded(this.aReS, mapper, this);
-    }
-    return true;
-  }
 }
 
 class DBConnection {
-  static pool;
   constructor(
     connectionParameters,
     datasource,
@@ -266,19 +309,33 @@ class DBConnection {
     this.sessionId = sessionId;
     this.name = connectionSettingName;
   }
+  async nativeConnect(callback = defaultConnectionCallback) {
+    throw new Error(
+      "Missing " + this.constructor.name + " nativeConnect implementation!"
+    );
+  }
 }
 
 export class SQLDBConnection extends DBConnection {
+  constructor(
+    connectionParameters,
+    datasource,
+    sessionId,
+    connectionSettingName
+  ) {
+    super(connectionParameters, datasource, sessionId, connectionSettingName);
+  }
+
   insert(type, parameters) {
     const fields = [];
     const values = [];
-    const newParams =[];
+    const newParams = [];
     Object.keys(parameters).forEach((key) => {
       fields.push(key);
       const newValue = this.checkInnerQuery(parameters[key]);
       values.push(newValue);
-      if(newValue==='?')newParams.push(parameters[key]);
-    })
+      if (newValue === "?") newParams.push(parameters[key]);
+    });
     const command =
       "INSERT INTO " +
       type +
@@ -296,77 +353,42 @@ export class SQLDBConnection extends DBConnection {
   update(type, parameters) {
     const fields = [];
     const newParams = [];
-    
+
     // Genera la parte SET della query
     Object.keys(parameters.values).forEach((key) => {
-        const newValue = this.checkInnerQuery(parameters.values[key]);
-        fields.push(`${key}=${newValue}`);
-        if (newValue === '?') newParams.push(parameters.values[key]);
+      const newValue = this.checkInnerQuery(parameters.values[key]);
+      fields.push(`${key}=${newValue}`);
+      if (newValue === "?") newParams.push(parameters.values[key]);
     });
 
     let command = `UPDATE ${type} SET ${fields.join(",")}`;
 
     // Gestione della clausola WHERE
     if (parameters.filter) {
-        command += " WHERE ";
-        if (typeof parameters.filter === 'object') {
-            command += Object.entries(parameters.filter).map(([key, value]) => {
-                const newValue = this.checkInnerQuery(value);
-                if (newValue === '?') newParams.push(value);
-                return `${key}=${newValue}`;
-            }).join(" AND ");
-        } else if (Array.isArray(parameters.filter) && parameters.filter.length) {
-            const filter = this.filterBy(...parameters.filter);
-            command += filter.command;
-            newParams.push(...filter.parameters);
-        } else if (typeof parameters.filter === 'string') {
-            command += parameters.filter;
-        }
+      command += " WHERE ";
+      if (typeof parameters.filter === "object") {
+        command += Object.entries(parameters.filter)
+          .map(([key, value]) => {
+            const newValue = this.checkInnerQuery(value);
+            if (newValue === "?") newParams.push(value);
+            return `${key}=${newValue}`;
+          })
+          .join(" AND ");
+      } else if (Array.isArray(parameters.filter) && parameters.filter.length) {
+        const filter = this.filterBy(...parameters.filter);
+        command += filter.command;
+        newParams.push(...filter.parameters);
+      } else if (typeof parameters.filter === "string") {
+        command += parameters.filter;
+      }
     }
 
     return {
-        command,
-        parameters: newParams,
+      command,
+      parameters: newParams,
     };
-}
+  }
 
-  // update(type, parameters) {
-  //   const fields = [];
-  //   const newParams =[];
-  //   Object.keys(parameters.values).forEach((key) => {
-  //     const newValue = this.checkInnerQuery(parameters[key]);
-  //     fields.push(key+"="+newValue);
-  //     if(newValue==='?')newParams.push(parameters[key]);
-  //   })
-
-  //   const command =
-  //     "UPDATE " +
-  //     type +
-  //     " SET " +
-  //     fields.join(",") ;
-  //   if(parameters.filter) {
-  //     command += " WHERE " ;
-  //     if(typeof parameters.filter === 'object'){
-  //       command += Object.entries(parameters.filter).map(([key, value]) => 
-  //       {
-  //         const newValue = this.checkInnerQuery(value);
-  //         if(newValue==='?')newParams.push(value);
-  //         return `${key}=${newValue}`;
-  //       }
-  //       ).join(" AND ");
-  //     }else if(Array.isArray(parameters.filter) && parameters.filter.length){command +=" WHERE " ;
-  //       const filter = this.filterBy(...parameters.filter);
-  //       command+=filter.command;
-  //       newParams.push(...filter.parameters);
-  //     }else if (typeof parameters.filter === 'string'){
-  //       command+=parameters.filter;
-  //     }
-  //   }
-  //   return {
-  //     command,
-  //     parameters: newParams,
-  //   };
-  // }
   delete(type, parameters) {
     const newParams = [];
 
@@ -374,42 +396,30 @@ export class SQLDBConnection extends DBConnection {
 
     // Gestione della clausola WHERE
     if (parameters.filter) {
-        command += " WHERE ";
-        if (typeof parameters.filter === 'object') {
-            command += Object.entries(parameters.filter).map(([key, value]) => {
-                const newValue = this.checkInnerQuery(value);
-                if (newValue === '?') newParams.push(value);
-                return `${key}=${newValue}`;
-            }).join(" AND ");
-        } else if (Array.isArray(parameters.filter) && parameters.filter.length) {
-            const filter = this.filterBy(...parameters.filter);
-            command += filter.command;
-            newParams.push(...filter.parameters);
-        } else if (typeof parameters.filter === 'string') {
-            command += parameters.filter;
-        }
+      command += " WHERE ";
+      if (typeof parameters.filter === "object") {
+        command += Object.entries(parameters.filter)
+          .map(([key, value]) => {
+            const newValue = this.checkInnerQuery(value);
+            if (newValue === "?") newParams.push(value);
+            return `${key}=${newValue}`;
+          })
+          .join(" AND ");
+      } else if (Array.isArray(parameters.filter) && parameters.filter.length) {
+        const filter = this.filterBy(...parameters.filter);
+        command += filter.command;
+        newParams.push(...filter.parameters);
+      } else if (typeof parameters.filter === "string") {
+        command += parameters.filter;
+      }
     }
 
     return {
-        command,
-        parameters: newParams,
+      command,
+      parameters: newParams,
     };
-}
+  }
 
-  // delete(type, parameters) {
-  //   const newParams = Object.keys(parameters).map((x) => parameters[x]);
-  //   const command =
-  //     "DELETE " +
-  //     type +
-  //     "  WHERE " ;
-  //     const filter = this.filterBy(...parameters.filter);
-  //     command+=filter.command;
-  //     newParams.push(...filter.parameters);
-  //   return {
-  //     command,
-  //     parameters: newParams,
-  //   }; 
-  // }
   filterBy(...filters) {
     let groups = 0;
     const newParams = [];
@@ -446,7 +456,7 @@ export class SQLDBConnection extends DBConnection {
         return ret;
       })
       .join(" ");
-      return {command, parameters: newParams};
+    return { command, parameters: newParams };
   }
 
   checkInnerQuery(parameter) {
@@ -458,43 +468,44 @@ export class SQLDBConnection extends DBConnection {
 
   handleAnnotationTransformations(command, parameters) {
     let docklet = "";
-    const newCommand = [];
     const newParameters = [];
     while ((docklet = getDocklet(command) ?? "") !== "") {
       const annotations = getDockletAnnotations(docklet);
       annotations.forEach((x) => {
         if (this[x.annotation] && typeof this[x.annotation] === "function") {
           const resolvedAnnotation = this[x.annotation](parameters);
-          newCommand.push(resolvedAnnotation.command);
           newParameters.join(resolvedAnnotation.parameters);
-        } else {
-          newCommand.push("/**\n * " + docklet.toString() + "\n*/");
         }
+        command = command.replace(
+          docklet,
+          docklet + "\n-- docklet generated\n" + resolvedAnnotation.command
+        );
       });
-      command = command.replace(docklet, "");
     }
+    console.log("new command:", command);
     return {
-      command: newCommand.join("\n\n"),
+      command,
       parameters: newParameters,
     };
   }
-  _executeQuerySync(command, params, callback) {
-    newCommand = this.handleAnnotationTransformations(command);
-    console.debug(
-      "executeQuerySync: " + newCommand.command + " " + newCommand.parameters
-    )
-    return this.executeQuerySync(
+  // _executeQuerySync(command, params, callback) {
+  //   const newCommand = this.handleAnnotationTransformations(command);
+  //   console.debug(
+  //     "executeQuerySync: " + newCommand.command + " " + newCommand.parameters
+  //   )
+  //   return this.executeQuerySync(
+  //     newCommand.command,
+  //     newCommand.parameters,
+  //     callback
+  //   );
+  // }
+  async _executeNativeQueryAsync(command, params, mapper) {
+    const newCommand = this.handleAnnotationTransformations(command, params);
+    console.log("newCommand:", newCommand);
+    return await this.executeNativeQueryAsync(
       newCommand.command,
-      newCommand.parameters,
-      callback
-    );
-  }
-  async _executeNativeQueryAsync(command, params, callback) {
-    newCommand = this.handleAnnotationTransformations(command);
-    return this.executeNativeQueryAsync(
-      newCommand.command,
-      newCommand.parameters,
-      callback
+      newCommand.parameters
+      // callback
     );
   }
 }
@@ -507,45 +518,37 @@ export class RESTConnection extends DBConnection {
     connectionSettingName
   ) {
     super(connectionParameters, datasource, sessionId, connectionSettingName);
-    this.xhrWrapper = new XHRWrapper(connectionParameters);
+    this.xhrWrapper = new XHRWrapper(this.host,sessionId);
   }
 
-  /**
-   * Executes a native query asynchronously. It requires a command object with a (http) 'method'  and (relative) 'url' properties
-   *
-   * @param {Object|string} command
-   * @param {Array} params
-   * @param {Function} callback
-   * @return {Promise}
-   * @throws {Error}
-   */
-  async executeNativeQueryAsync(command, params, callback) {
-    return this.executeQuery(command, params, callback, true);
+  async nativeConnect(callback) {
+    this.xhrWrapper = new XHRWrapper(this.host,this.sessionId);
+    return this;
   }
 
-  executeQuerySync(command, params, callback) {
-    return this.executeQuery(command, params, callback, false);
+  async _executeNativeQueryAsync(command, params, mapper) {
+    console.log("new command:", command);
+    return await this.executeNativeQueryAsync(
+      {url:command, method:mapper.method},
+      params
+    );
   }
 
-  executeQuery(command, params, callback, async = true) {
+  async executeNativeQueryAsync(command, params) {
     command = typeof command === "string" ? JSON.parse(command) : command;
     if (!(command instanceof Object)) {
       throw new Error("Command must be an object or a stringified object");
     }
     const date = new Date();
-    const response = { executionTime: date.getTime(), executionDateTime: date };
-    let results = this.xhrWrapper[command["method"]](
-      command["url"],
-      ...params,
-      async
-    )
-      .then((res) => {
-        response.response = res;
-        callback(res, null);
-      })
-      .catch((error) => {
-        callback(null, error);
-      });
-    return results;
+    const response = { 
+      executionTime: date.getTime(), 
+      executionDateTime: date,
+      data: await this.xhrWrapper[command.method?.toLowerCase()||'get'](
+        command.url,
+        params
+      )
+    };
+    console.log('response',response);
+    return response;
   }
 }

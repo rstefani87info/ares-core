@@ -17,7 +17,7 @@ export function getFunctionDocklet(this_function) {
  */
 export function getDocklet(this_string) {
   const commentRegex = /\/\*\*([\s\S]*?)\*\//;
-  const match = this_string.match(commentRegex);
+  const match = this_string?.match(commentRegex);
 
   if (match && match[1]) {
     return match[1].trim();
@@ -52,8 +52,8 @@ export function getDockletAnnotations(this_string) {
     const annotations = [];
     var last = { annotation: "commonDescription", description: "" };
     for (const l of this_string.replaceAll(/\r/g, "").split("\n")) {
-      var desc = l.match(/^[\s\/*]*\s*(?<description>.*)/)[0] ?? "";
-      var match = l.match(
+      var desc = l?.match(/^[\s\/*]*\s*(?<description>.*)/)[0] ?? "";
+      var match = l?.match(
         /\*\s*@(?<anno>[\w\|]+)\s*(?<type>\w+)?\s*(?<name>\w+)?\s*(?<note>.*)?/i
       );
 
@@ -79,13 +79,14 @@ export function getDockletAnnotations(this_string) {
 }
 
 /**
- * @prototype {function} getParameters
+ * @prototype {Function} getParameters
  * @param {function}
  * @returns {array}
  * Get function parameters
  *
  */
 export function getFunctionParameters(this_function) {
+  if(!this_function && !this_function instanceof Function) return null;
   const parameters = [];
   const s = f.toString();
   const { params } = s.match(

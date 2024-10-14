@@ -42,7 +42,7 @@ const aReS =  {
   xhr,
   appSetup,
   isProduction: function() {
-    appSetup.environment.match(/production(\s*-\s*.*)*/i);
+    return appSetup.environments.find(x=>x.type.toLowerCase()=='production' && x.selected)!== undefined;
   },
   getIdMap:function(){
     return idMap;

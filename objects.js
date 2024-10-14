@@ -21,9 +21,10 @@ export function findPropKeyByAlias(this_object, alias) {
  */
 export function findPropValueByAlias(this_object, alias) {
 	for (const k in this_object) {
-		if(typeof k)
-		if (alias.match(k)) return this_object[k];
+
+		if (alias.match(new RegExp(k,'i'))) return this_object[k];
 	}
+	return undefined;
 }
 
 /**

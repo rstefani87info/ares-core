@@ -24,6 +24,23 @@ export const asyncConsole={
 export const powerConsole = {
     map: {},
     log: (name, msg, format='log') => {
-        console.log(console.log(`[${name}] \n\t${ Array.isArray(msg)?msg.join('\n\t\t'):msg }\n`));
+        console.log(`[${name}] \n\t${ Array.isArray(msg)?msg.join('\n\t\t'):msg }\n`);
     }
 };
+
+export function log(...messages){
+    console.log(...messages);
+}
+
+export function error(...messages){
+    console.error(...messages);
+}
+export function warn(...messages){
+    console.warn(...messages);
+}
+export function info(...messages){
+    console.info(...messages);
+}
+export function debug(...messages){
+    console.debug(...messages);
+}

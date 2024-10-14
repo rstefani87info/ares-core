@@ -12,7 +12,7 @@ export const objectDescriptorDefinitions = {
     minValue: (v, m) => (m ? v >= m : true),
     maxValue: (v, m) => (m ? v <= m : true),
     pattern: (v, p) => {
-      if (p) return v.match(p);
+      if (p) return (v+'').match(p);
       else return true;
     },
   },
@@ -82,7 +82,8 @@ export const objectDescriptorDefinitions = {
 export async function format(this_object, descriptor, db) {
   const ret = {};
   for (const k in descriptor) {
-    ret[k] = descriptor.source? descriptor.source(this_object, k) : this_object[k];
+    
+    ret[k] = descriptor[k].source? descriptor[k].source(this_object, k) : this_object[k];
     const objectDescriptorDefinitionKey = descriptor[k]?.type || null;
     if(objectDescriptorDefinitionKey.match(/id(enti(fier|ty))|primary[\\s\\-_]*(key){0,1}/)){
       ret[k] = db.hashKeyMap[ret[k]];
@@ -91,10 +92,10 @@ export async function format(this_object, descriptor, db) {
       objectDescriptorDefinitions,
       objectDescriptorDefinitionKey
     );
-    if (descriptor.normalization) {
-      ret[k] = await descriptor.normalization(ret[k]);
+    if (descriptor[k].normalization) {
+      ret[k] = await descriptor[k].normalization(ret[k]);
     }
-    if (descriptor.defaultValue && !ret[k]) {
+    if (descriptor[k].defaultValue && !ret[k]) {
       ret[k] = descriptor.defaultValue;
       if (ret[k] instanceof Object || Array.isArray(ret[k])) {
         ret[k] = JSON.parse(JSON.stringify(ret[k]));
@@ -165,14 +166,11 @@ export async function format(this_object, descriptor, db) {
     ) {
       setRequestError(ret, k, "maxDecimalLength");
     }
-    if (
-      descriptor[k].pattern &&
-      !(
-        objectDescriptorDefinition?.pattern(ret[k], descriptor[k].pattern) ||
-        null
-      )
-    ) {
-      setRequestError(ret, k, "pattern");
+    if (descriptor[k].pattern )
+    {
+      const match = objectDescriptorDefinition.pattern(ret[k], descriptor[k].pattern);
+      if(!match)
+        setRequestError(ret, k, "pattern");
     }
     if (
       descriptor[k].format &&
@@ -280,10 +278,10 @@ export const dataDescriptors = {
     pattern: /^(\+?\d{2,3})?[.-\s\/\\0-9]{10,}$/,
     minLength: 10,
   },
-  "(@|email)[\\s\\-_](address){0,1}": {
+  "(@|email)([\\s\\-_]*address){0,1}": {
     type: "text",
     normalization: (s) => s.trim().toLowerCase(),
-    pattern: /^[\w-]+@[\w-]+\.[\w-]+$/,
+    pattern: /^[a-zA-Z0-9\._%+-]+@[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,}$/,
     maxLength: 100,
     minLength: 5,
   },
@@ -420,37 +418,37 @@ export const dataDescriptors = {
   },
   "bool(ean)?|y(es)([\\s\\-_]*or)([\\s\\-_]*n(o(t)?)?)|binary[\\s\\-_]*digit|true([\\s\\-_]*or)([\\s\\-_]*false)":
     { type: "boolean" },
-  "(real|float|double|decimal|numeric|r)?[\\s\\-_]*(n(umber)?|°|#)?": {
-    type: "number",
-    pattern: /^[+-]?[0-9]+([.,]{0,1}[0-9])?$/,
-  },
-  "(positive|+)[\\s\\-_]*(real|float|double|decimal|numeric|r)[\\s\\-_]*(n(umber)?|°|#)?":
-    {
-      type: "number",
-      pattern: /^(\+)?[1-9]+([.,]{0,1}[0-9])?$/,
-      normalization: (s) => s.trim(),
-    },
-  "(negative|-)[\\s\\-_]*(real|float|double|decimal|numeric|r)[\\s\\-_]*(n(umber)?|°|#)?":
-    {
-      type: "number",
-      pattern: /^-[1-9]+([.,]{0,1}[0-9])?$/,
-      normalization: (s) => s.trim(),
-    },
-  "integer[\\s\\-_]*(n(umber)?|°|#)?": {
-    type: "number",
-    pattern: /^[+-]?[0-9]+$/,
-    normalization: (s) => s.trim(),
-  },
-  "((positive|+)[\\s\\-_]*integer|natural|n)[\\s\\-_]*(n(umber)?|°|#)?": {
-    type: "number",
-    pattern: /^(\+)?[1-9]+$/,
-    normalization: (s) => s.trim(),
-  },
-  "(negative|-)[\\s\\-_]*integer[\\s\\-_]*(n(umber)?|°|#)?": {
-    type: "number",
-    pattern: /^-[1-9]+$/,
-    normalization: (s) => s.trim(),
-  },
+  // "(real|float|double|decimal|numeric|r){1}[\\s\\-_]*(number|°|#)*|(number|°|#)": {
+  //   type: "number",
+  //   pattern: /^[+-]?[0-9]+([.,]{0,1}[0-9])?$/,
+  // },
+  // "(positive|+)[\\s\\-_]*(real|float|double|decimal|numeric|r)[\\s\\-_]*(number|°|#)?":
+  //   {
+  //     type: "number",
+  //     pattern: /^(\+)?[1-9]+([.,]{0,1}[0-9])?$/,
+  //     normalization: (s) => s.trim(),
+  //   },
+  // "(negative|-)[\\s\\-_]*(real|float|double|decimal|numeric|r)[\\s\\-_]*(number|°|#)?":
+  //   {
+  //     type: "number",
+  //     pattern: /^-[1-9]+([.,]{0,1}[0-9])?$/,
+  //     normalization: (s) => s.trim(),
+  //   },
+  // "integer[\\s\\-_]*(number|°|#)?": {
+  //   type: "number",
+  //   pattern: /^[+-]?[0-9]+$/,
+  //   normalization: (s) => s.trim(),
+  // },
+  // "((positive|+)[\\s\\-_]*integer|natural|n)[\\s\\-_]*(number|°|#)?": {
+  //   type: "number",
+  //   pattern: /^(\+)?[1-9]+$/,
+  //   normalization: (s) => s.trim(),
+  // },
+  // "(negative|-)[\\s\\-_]*integer[\\s\\-_]*(number|°|#)?": {
+  //   type: "number",
+  //   pattern: /^-[1-9]+$/,
+  //   normalization: (s) => s.trim(),
+  // },
   "(geographical)[\\s\\-_]*coordinate": {
     type: "number",
     pattern: /^[+-]?[0-9]+(\.[0-9]+)?$/,
@@ -536,7 +534,7 @@ export const dataDescriptors = {
       /^vb|vbs|php|js|css|html|xml|xsl(t)?|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|ts|tsx|vue|jsx$/,
   },
 
-  'jwt|json\s\\-_]*[wW]eb[\\s\\-_]*[tT]oken|json(\s\\-_]*[wW]eb[\\s\\-_]*[tT]oken': {
+  'jwt|json[\\s\\-_]*web[\\s\\-_]*token': {
     type: "text",
     pattern: /^[A-Za-z0-9-_]{36,64}\.[A-Za-z0-9-_]{50,200}\.[A-Za-z0-9-_]{43,86}$/
 
