@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export class XHRWrapper {
-    constructor(baseURL, token) {
+    constructor(baseURL, token=null) {
       this.baseURL = baseURL;
       this.token = token;
     }
@@ -13,6 +13,9 @@ export class XHRWrapper {
         .join('&');
     }
   
+    setToken(token) {
+      this.token = token;
+    }
     getXHR(method, url, data = null, options = {}) {
       const fullUrl = this.baseURL + url; 
       const config = {

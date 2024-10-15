@@ -527,7 +527,8 @@ export class RESTConnection extends DBConnection {
   }
 
   async _executeNativeQueryAsync(command, params, mapper) {
-    console.log("new command:", command);
+    if(mapper.isJWTSensible && mapper.getToken)
+      this.xhrWrapper.setToken(mapper.getToken());
     return await this.executeNativeQueryAsync(
       {url:command, method:mapper.method},
       params
