@@ -137,10 +137,6 @@ export class DatasourceRequestMapper {
       response.query = this.query;
       response.params = params;
       response.session = request.session.id;
-      console.log(
-        this.datasource.name + "[" + request.session.id + "] ",
-        JSON.stringify(response)
-      );
     }
     console.log("Mapped results:", response);
     return response;
@@ -231,7 +227,7 @@ export class Datasource {
         );
         connection.commit(transactionName);
       }
-      return [ret];
+      return ret;
     } catch (err) {
       console.error('aReS Error:',err);
       console.error("Stack trace:", err.stack);
@@ -533,10 +529,10 @@ export class RESTConnection extends DBConnection {
     const response = { 
       executionTime: date.getTime(), 
       executionDateTime: date,
-      data: await this.xhrWrapper[command.method?.toLowerCase()||'get'](
+      data: [await this.xhrWrapper[command.method?.toLowerCase()||'get'](
         command.url,
         params
-      )
+      )]
     };
     return response;
   }
