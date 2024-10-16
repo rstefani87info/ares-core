@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { nanoid  } from "nanoid ";
+import { nanoid  } from "nanoid";
 import { format } from "./dataDescriptors.js";
 import { cloneWithMethods } from "./objects.js";
 import { XHRWrapper } from "./xhr.js";
