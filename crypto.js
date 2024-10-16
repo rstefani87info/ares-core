@@ -47,3 +47,19 @@ export function getMD5Hash(this_string){
 export function getSHA256Hash(this_string) {
   return encrypt(this_string, 'sha256');
 }
+
+/**
+ * Generates a cryptographically secure random byte array of a given length.
+ * 
+ * @param {number} length
+ * @returns {string} a hexadecimal string of the same length as the input
+ */
+function randomBytes(length) {
+	let result = [];
+	for (let i = 0; i < length; i++) {
+	  result.push(Math.floor(Math.random() * 256));
+	}
+	return result.map(byte => ('0' + byte.toString(16)).slice(-2)).join('');
+} 
+
+
