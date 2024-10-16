@@ -54,7 +54,7 @@ export function getSHA256Hash(this_string) {
  * @param {number} length
  * @returns {string} a hexadecimal string of the same length as the input
  */
-function randomBytes(length) {
+export function randomBytes(length) {
 	let result = [];
 	for (let i = 0; i < length; i++) {
 	  result.push(Math.floor(Math.random() * 256));
@@ -62,4 +62,15 @@ function randomBytes(length) {
 	return result.map(byte => ('0' + byte.toString(16)).slice(-2)).join('');
 } 
 
+
+
+/**
+ * Generate a unique id using a string data
+ * 
+ * @param {string} baseIdentity 
+ * @returns 
+ */
+export function getUniqueId(baseIdentity){
+	return getSHA256Hash(baseIdentity);
+}
 

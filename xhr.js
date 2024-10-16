@@ -31,15 +31,12 @@ export class XHRWrapper {
         ...(options.headers || {}),
       },
     };
-    console.log("HEADER: ", config);
-    // Aggiungere i parametri per GET o DELETE
     if (method.match(/GET|DELETE/i) && data) {
-      config.params = data; // Axios gestisce automaticamente la query string
+      config.params = data;
     }
 
-    // Aggiungere il body per POST o PATCH
     if (method.match(/POST|PATCH/i) && data) {
-      config.data = JSON.stringify(data);
+      config.data = data;
     }
 
     return axios(config)

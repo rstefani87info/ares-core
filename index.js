@@ -34,7 +34,6 @@ const aReS =  {
   numbers,
   objects,
   permissions,
-  // prototype,
   regex,
   scripts,
   text,

@@ -3,8 +3,7 @@
  * @license MIT
  */
 
-import { v4 as uuidv4 } from "uuid";
-import { asyncConsole } from "./console.js";
+import { nanoid  } from "nanoid ";
 import { format } from "./dataDescriptors.js";
 import { cloneWithMethods } from "./objects.js";
 import { XHRWrapper } from "./xhr.js";
@@ -34,25 +33,25 @@ export async function loadDatasource(
   onMapperLoaded,
   force = false
 ) {
-  asyncConsole.log("datasource ", JSON.stringify(datasourceSettings));
+  aReS.console.asyncConsole.log("datasource ", JSON.stringify(datasourceSettings));
   const datasourceName = datasourceSettings.name.toLowerCase();
   aReS.datasourceMap = aReS.datasourceMap ?? {};
   force = force || !(datasourceName in aReS.datasourceMap);
   if (force) {
-    asyncConsole.log("datasources", 'init db "' + datasourceName + '" {');
+    aReS.console.asyncConsole.log("datasources", 'init db "' + datasourceName + '" {');
     aReS.datasourceMap[datasourceName] = new Datasource(
       aReS,
       datasourceSettings
     );
     aReS.datasourceMap[datasourceName].onMapperLoaded = onMapperLoaded;
     aReS.datasourceMap[datasourceName].loadQueries();
-    asyncConsole.log("datasources", "}");
+    aReS.console.asyncConsole.log("datasources", "}");
   }
   return aReS.datasourceMap[datasourceName];
 }
 
 export function exportAsAresMethod(aReS, mapper, datasource) {
-  asyncConsole.log(
+  aReS.console.asyncConsole.log(
     "datasources",
     " - open REST: " + mapper.name + ":  " + mapper.path
   );
@@ -64,7 +63,7 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
         return result;
       }
     };
-  asyncConsole.log("datasources", " - }");
+    aReS.console.asyncConsole.log("datasources", " - }");
 }
 
 export class DatasourceRequestMapper {
@@ -72,7 +71,7 @@ export class DatasourceRequestMapper {
     if (typeof settings === "object") Object.assign(this, settings);
     this.datasource = datasource;
     this.aReS = aReS;
-    if (!settings.name) this.name = uuidv4();
+    if (!settings.name) this.name = nanoid();
     if (!this.mapParameters) this.mapParameters = mapRequestOrResult;
     if (!this.mapResult) this.mapResult = mapRequestOrResult;
     if (!this.methods) this.methods = ".*";
@@ -218,9 +217,9 @@ export class Datasource {
       connection.startTransaction(transactionName);
     }
     try {
-      const params = await mapper.mapParameters(req, thisInstance.aReS, connection) ;
+      const params = mapper.mapParameters? await mapper.mapParameters(req, thisInstance.aReS, connection) : {};
       console.log("executing query", command, params);
-      const ret = await connection._executeNativeQueryAsync(command, params,mapper);
+      const ret = await connection._executeNativeQueryAsync(command, params,mapper,req);
       console.log("query results", ret);
       if (isTransaction) {
         console.log(
@@ -232,7 +231,7 @@ export class Datasource {
         );
         connection.commit(transactionName);
       }
-      return ret;
+      return [ret];
     } catch (err) {
       console.error('aReS Error:',err);
       console.error("Stack trace:", err.stack);
@@ -283,7 +282,7 @@ export class Datasource {
 
   async loadQuery(queryObject) {
     if (typeof queryObject === "object") {
-      asyncConsole.log(
+      this.aReS.console.asyncConsole.log(
         "datasources",
         ' - init mapperCase "' + queryObject.name + '" {'
       );
@@ -488,24 +487,12 @@ export class SQLDBConnection extends DBConnection {
       parameters: newParameters,
     };
   }
-  // _executeQuerySync(command, params, callback) {
-  //   const newCommand = this.handleAnnotationTransformations(command);
-  //   console.debug(
-  //     "executeQuerySync: " + newCommand.command + " " + newCommand.parameters
-  //   )
-  //   return this.executeQuerySync(
-  //     newCommand.command,
-  //     newCommand.parameters,
-  //     callback
-  //   );
-  // }
-  async _executeNativeQueryAsync(command, params, mapper) {
+  async _executeNativeQueryAsync(command, params, mapper, req) {
     const newCommand = this.handleAnnotationTransformations(command, params);
     console.log("newCommand:", newCommand);
     return await this.executeNativeQueryAsync(
       newCommand.command,
       newCommand.parameters
-      // callback
     );
   }
 }
@@ -522,13 +509,15 @@ export class RESTConnection extends DBConnection {
   }
 
   async nativeConnect(callback) {
-    this.xhrWrapper = new XHRWrapper(this.host,this.sessionId);
+    this.xhrWrapper = new XHRWrapper(this.host);
     return this;
   }
 
-  async _executeNativeQueryAsync(command, params, mapper) {
-    if(mapper.isJWTSensible )
-      this.xhrWrapper.setToken(this.sessionId);
+  async _executeNativeQueryAsync(command, params, mapper, req) {
+    if(mapper.isJWTSensible && mapper.getRESTApiToken)
+      this.xhrWrapper.setToken(mapper.getRESTApiToken(req,this.datasource,this.datasource.aReS));
+    else if(mapper.isJWTSensible && !mapper.getRESTApiToken) throw new Error('When a mapper has isJWTSensible = true, it needs to implement getRESTApiToken(req, datasource, aReS) function');
+    else this.xhrWrapper.setToken(null);
     return await this.executeNativeQueryAsync(
       {url:command, method:mapper.method},
       params
@@ -549,7 +538,6 @@ export class RESTConnection extends DBConnection {
         params
       )
     };
-    console.log('response',response);
     return response;
   }
 }
