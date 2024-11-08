@@ -289,3 +289,14 @@ export function getByPropertyPath(object, path) {
   }
   return result;
 }
+
+/**
+ * @prototype {function}
+ * @param {function} this_function
+ * @returns {boolean}
+ *
+ * Check if a function is async
+ */
+function isAsyncFunction(this_function) {
+  return this_function.constructor.name === 'AsyncFunction';
+}
