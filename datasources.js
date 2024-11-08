@@ -93,10 +93,8 @@ export class DatasourceRequestMapper {
       this.parametersValidationRoles? await this.parametersValidationRoles(request, this.aReS): {},
       this.datasource
     );
-    console.log("params:", params);
     if (params["€rror"]) {
       console.error('aReS Error:',params["€rror"]);
-      console.error("Stack trace:", error.stack);
       throw new Error(
         "Formatting and validation error: " + JSON.stringify(params["€rror"])
       );
@@ -117,12 +115,15 @@ export class DatasourceRequestMapper {
         if (this.mapResult && this.mapResult instanceof Function) {
           let i=0;
           for(; i<response.results.length; i++){
-            response.results[i] = await this.mapResult(response.results[i], i);
+            if (this.mapResult && this.mapResult instanceof Function) {
+              response.results[i] = await this.mapResult(response.results[i], i);
+            }
+            if (this.transformToDTO && this.transformToDTO instanceof Function) {
+              response.results[i] = await this.transformToDTO(response.results[i]);
+            }
           }
         }
-        if (this.transformToDTO && this.transformToDTO instanceof Function) {
-          result = await this.transformToDTO(result);
-        }
+        
       } else {
         response.results = this.mapResult(response.results);
       }
@@ -135,8 +136,6 @@ export class DatasourceRequestMapper {
       response.datasourceName = this.datasource.name;
       response.queryName = this.name;
       response.query = this.query;
-      response.params = params;
-      response.session = request.session.id;
     }
     console.log("Mapped results:", response);
     return response;
@@ -227,7 +226,7 @@ export class Datasource {
         );
         connection.commit(transactionName);
       }
-      return ret;
+      return {results:ret};
     } catch (err) {
       console.error('aReS Error:',err);
       console.error("Stack trace:", err.stack);
@@ -463,7 +462,7 @@ export class SQLDBConnection extends DBConnection {
 
   handleAnnotationTransformations(command, parameters) {
     let docklet = "";
-    const newParameters = [];
+    let newParameters = [];
     while ((docklet = getDocklet(command) ?? "") !== "") {
       const annotations = getDockletAnnotations(docklet);
       annotations.forEach((x) => {
@@ -477,6 +476,7 @@ export class SQLDBConnection extends DBConnection {
         );
       });
     }
+    if(newParameters.length===0) newParameters = parameters;
     console.log("new command:", command);
     return {
       command,
@@ -529,11 +529,13 @@ export class RESTConnection extends DBConnection {
     const response = { 
       executionTime: date.getTime(), 
       executionDateTime: date,
-      data: [await this.xhrWrapper[command.method?.toLowerCase()||'get'](
-        command.url,
-        params
-      )]
+      data: []
     };
+    const responseValue = await this.xhrWrapper[command.method?.toLowerCase()||'get'](
+      command.url,
+      params
+    );
+    response.data.push(responseValue);
     return response;
   }
 }

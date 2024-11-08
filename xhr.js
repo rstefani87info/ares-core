@@ -18,7 +18,7 @@ export class XHRWrapper {
   setToken(token) {
     this.token = token;
   }
-  getXHR(method, url, data = null, options = {}) {
+  async getXHR(method, url, data = null, options = {}) {
     const fullUrl = this.baseURL + url;
     const config = {
       method: method.toLowerCase(),
@@ -35,36 +35,35 @@ export class XHRWrapper {
       config.params = data;
     }
 
-    if (method.match(/POST|PATCH/i) && data) {
+    if (method.match(/POST|PATCH|PUT/i) && data) {
       config.data = data;
     }
-
-    return axios(config)
-      .then((response) => {
-        return response.data;
-      })
-      .catch((error) => {
-        if (error.response) {
-          return {
-            status: error.response.status,
-            url: fullUrl,
-            "€rror": error || { message: "Something went wrong" },
-          };
-        } else {
-          return { "€rror": error || { error: "Something went wrong" } };
-        }
-      });
+    try {
+      const response = await axios(config);
+      return response.data;
+    } catch (error) {
+      console.error('Error:', error);
+      if (error.response) {
+        return {
+          status: error.response.status,
+          url: fullUrl,
+          error: error.response.data || { message: "Something went wrong" },
+        };
+      } else {
+        return { error: error.message || "Something went wrong" };
+      }
+    }
   }
 
-  get(url, data, options = {}, async = true) {
-    return this.getXHR("GET", url, data, options, async);
+  async get(url, data, options = {}) {
+    return await this.getXHR("GET", url, data, options);
   }
 
-  post(url, data, options = {}, async = true) {
-    return this.getXHR("POST", url, data, options, async);
+  async post(url, data, options = {}) {
+    return await this.getXHR("POST", url, data, options);
   }
 
-  patch(url, originalData, dataUpload, options = {}, async = true) {
+  async patch(url, originalData, dataUpload, options = {}) {
     const data = {};
     for (const key in dataUpload) {
       if (
@@ -74,14 +73,14 @@ export class XHRWrapper {
         data[key] = dataUpload[key];
       }
     }
-    return this.getXHR("PATCH", url, data, options, async);
+    return await this.getXHR("PATCH", url, data, options);
   }
 
-  delete(url, data, options = {}, async = true) {
-    return this.getXHR("DELETE", url, data, options, async);
+  async delete(url, data, options = {}) {
+    return await this.getXHR("DELETE", url, data, options);
   }
 
-  put(url, data, options = {}, async = true) {
-    return this.getXHR("PUT", url, data, options, async);
+  async put(url, data, options = {}) {
+    return await this.getXHR("PUT", url, data, options);
   }
 }
