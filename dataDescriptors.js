@@ -47,7 +47,7 @@ export const objectDescriptorDefinitions = {
     },
   },
 
-  "date([+s-_]*time)?|time": {
+  "date([+s\-_]*time)?|time": {
     parse: (s, f) => (f ? moment(v, f) : moment(v)),
     minValue: (v, m, f) =>
       m
@@ -226,7 +226,7 @@ function setRequestError(requestParams, property, cause) {
 
 export const regexMap = {
   text: { 
-    id: /plain|(plain[+s-_]*)?t[e]?xt|t[e]?xt([+s-_]*plain)?$/, 
+    id: /plain|(plain[+\s\-_]*)?t[e]?xt|t[e]?xt([+\s\-_]*plain)?$/, 
     tokenizer: /[a-zA-Z]+|[^0-9a-zA-Z\s\r\n]+|[0-9]+|\s+|[\r\n]+/ 
   },
   personalName: {
@@ -308,49 +308,49 @@ export const regexMap = {
     id: /hashtag/,
     pattern: /#[a-zA-Z0-9_]+$/,
   },
-  mimeType: { id: /e([+s-_]*type)?/, pattern: /[a-zA-Z0-9_]+\/[a-zA-Z0-9_+-. ]+$/},
+  mimeType: { id: /e([+s\-_]*type)?/, pattern: /[a-zA-Z0-9_]+\/[a-zA-Z0-9_+-. ]+$/},
   imageFileExtension: {
-    id: /age[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /age[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(jpg|jpeg|png|gif|bmp|tiff|svg|webp|heic|heif|ico|psd|raw|cr2|nef|orf|sr2|raf|dng|arw|3fr|ai|arw|bay|bpg|cap|cin|crw|cs1|cur|dc2|dcr|dds|djvu|erf|exr|fff|fits|fpx|gbr|hrd|iff|iiq|j2k|jng|jp2|jpe|jpf|jpx|k25|kdc|mef|mng|mrw|nrw|ora|pbm|pcd|pct|pcx|pef|pgf|pgm|pnm|ppm|psb|ptx|pxn|r3d|rle|rw2|rwl|sct|sfw|srw|tga|webp|x3f|xcf|yuv)/,
   },
   videoFileExtension: {
-    id: /video[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /video[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(mp4|m4v|mov|avi|wmv|flv|f4v|mkv|webm|mpeg|mpg|3gp|3g2|ogg|ogv|mts|m2ts|ts|vob|mxf|rm|rmvb|asf|swf|dv|divx|xvid|h264|hevc|avchd|mpe|mpv|m2v|amv|bik|drc|fli|flic|ivf|mjpg|mjpeg|roq|svi|yuv)/,
   },
   audioFileExtension: {
-    id: /audio[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /audio[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(mp3|wav|aac|flac|alac|ogg|oga|opus|wma|m4a|m4b|m4p|aiff|aif|aifc|au|ra|rm|mid|midi|mpa|mpc|amr|dss|dvf|gsm|iklax|ivs|m3u|m3u8|pls|xspf|tta|voc|vox|wv)/,
   },
   documentFileExtension: {
-    id: /document[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /document[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(pdf|doc|docx|odt|rtf|txt|tex|wpd|wps|ppt|pptx|odp|xls|xlsx|ods|csv|tsv|epub|mobi|azw|azw3|ibooks|fb2|djvu|ps|md|rst|rtfd|pages|key|numbers|xml|xps|oxps|sdw|sgm|sgml|wks|wp|gdoc|gsheet|gslides)/,
   },
   textFileExtension: {
-    id: /(plain|(plain[+s-_]*)?t[e]?xt|t[e]?xt([+s-_]*plain)?)[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /(plain|(plain[+s\-_]*)?t[e]?xt|t[e]?xt([+s\-_]*plain)?)[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(txt|wps|vb|vbs|php|js|css|html|xml|xsl|xslt|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|tsx|vue|jsx)/,
   },
   markupLanguageFileExtension: {
-    id: /arkup[+s-_]*lang(uage)?[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /arkup[+s\-_]*lang(uage)?[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(xml|html|xhtml|xht|svg|rss|atom|kml|gpx|xsd|xslt|xsl|xul|xaml|xlf|xliff|svgz|wsdl|opf|ncx|plist|rdf|smil|mathml|collada|scxml|sitemap|xbrl|cxml|dita|ditamap|x3d|sldx|docx|pptx|xlsx|odt|ods|odp|gml|ebxml|rvt|lvproj)/,
   },
   dataFileExtension: {
-    id: /data[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /data[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(csv|tsv|xml|json|yaml|yml|toml|ini|sql|ts|scss|sass|properties|init|conf|cfg|json5|jsonc|jsonl|jsonml|json5l|jsonmlc|css|scss|sass|js|ejs|cjs)/,
   },
   oopFileExtension: {
-    id: /oop[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /oop[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(js|jsx|ts|tsx|json|java|php|cs|cpp|c|py|rb|go|ts|scss|sass|ejs|cjs)/,
   },
   programmingLanguageFileExtension: {
-    id: /prog(r(amming)?)?[+s-_]*lang(uage)?[+s-_]*file[+s-_]*ext(ension)?/,
+    id: /prog(r(amming)?)?[+s\-_]*lang(uage)?[+s\-_]*file[+s\-_]*ext(ension)?/,
     pattern: /\.(vb|vbs|php|js|css|cjs|ejs|html|xhtml|xht|shtm|xml|xsl|xslt|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|tsx|vue|jsx)/,
   },
   jwt: {
-    id: /jwt|json[+s-_]*web[+s-_]*token/,
+    id: /jwt|json[+s\-_]*web[+s\-_]*token/,
     pattern: /[A-Za-z0-9-_]{36,64}\.[A-Za-z0-9-_]{50,200}\.[A-Za-z0-9-_]{43,86}$/,
   },
   identity: {
-    id: /d(enti(fier|ty)?)?|(primary[+s-_]*)?key|index|idx/,
+    id: /d(enti(fier|ty)?)?|(primary[+s\-_]*)?key|index|idx/,
     pattern: /[a-f0-9]{128}/,
   },
   ip: {
