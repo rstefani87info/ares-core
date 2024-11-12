@@ -611,10 +611,10 @@ export const dataDescriptors = {
     maxLength: 15,
     minLength: 5,
   },
-  [regexMap.ipV6.id]: {
+  [regexMap.ipv6.id]: {
     type: "text",
     normalization: (s) => s.trim(),
-    pattern: regexMap.ipV6.pattern,
+    pattern: regexMap.ipv6.pattern,
     maxLength: 39,
     minLength: 5,
   },
