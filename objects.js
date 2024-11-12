@@ -7,10 +7,17 @@
  * 
  * Find property key by alias
  */
-export function findPropKeyByAlias(this_object, alias) {
+export function findPropKeyByAlias(this_object, alias, regexMask = "/^\\s*$content\\s*$/im") {
 	for (const k in this_object) {
-		if (alias.match(k)) return k;
+		let regexK = null;
+		if(typeof k === 'string' )regexK = new RegExp(k);
+		else if(k instanceof RegExp) regexK = k;
+		if(regexK){
+			if(regexMask.includes("$content")) regexK =  new RegExp(regexMask.replace("$content",regexK.source));
+			if (alias.match(regexK)) return k;
+		}
 	}
+	return undefined;
 }
 /**
  * @prototype {Object}  
@@ -19,12 +26,8 @@ export function findPropKeyByAlias(this_object, alias) {
  * 
  * Find property value by alias
  */
-export function findPropValueByAlias(this_object, alias) {
-	for (const k in this_object) {
-
-		if (alias.match(new RegExp(k,'i'))) return this_object[k];
-	}
-	return undefined;
+export function findPropValueByAlias(this_object, alias, regexMask = "/^\\s*$content\\s*$/im") {
+	return this_object[findPropKeyByAlias(this_object, alias, regexMask)]??undefined;
 }
 
 /**
