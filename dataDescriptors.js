@@ -424,12 +424,13 @@ export const regexMap = {
       pattern:
         /^(ldap:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
-    uuid: {
+    
+  },
+  uuid: {
       id: /uuid|unique([+\s\-_]*id)?/,
       pattern:
         /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/,
     },
-  },
   hashes: {
     md5: { id: /hash[+\s\-_]*md5/, pattern: /[a-fA-F0-9]{32}/ },
     sha1: { id: /hash[+\s\-_]*sha1/, pattern: /[a-fA-F0-9]{40}/ },
@@ -618,10 +619,10 @@ export const dataDescriptors = {
     maxLength: 39,
     minLength: 5,
   },
-  [regexMap.url.id]: {
+  [regexMap.urls.url.id]: {
     type: "text",
     normalization: (s) => s.trim(),
-    pattern: regexMap.url.pattern,
+    pattern: regexMap.urls.url.pattern,
     maxLength: 100,
     minLength: 5,
   },
@@ -942,13 +943,11 @@ export const dataDescriptors = {
   [regexMap.countryCode.id]: {
     type: "text",
     pattern: regexMap.countryCode.pattern,
-    maxLength: 2,
     minLength: 2,
   },
-  [regexMap.countryCode2.id]: {
+  [regexMap.languageCode.id]: {
     type: "text",
-    pattern: regexMap.countryCode2.pattern,
-    maxLength: 2,
+    pattern: regexMap.languageCode.pattern,
     minLength: 2,
   },
   [regexMap.boolean.id]: {
