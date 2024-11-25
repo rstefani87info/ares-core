@@ -30,6 +30,9 @@ export class XHRWrapper {
         }),
         ...(options.headers || {}),
       },
+      validateStatus: function (status) {
+        return true;
+      },
     };
     if (method.match(/GET|DELETE/i) && data) {
       config.params = data;
@@ -40,18 +43,16 @@ export class XHRWrapper {
     }
     try {
       const response = await axios(config);
-      return response.data;
+      let ret = {
+        status: response.status,
+        message: response.statusText,
+        url: fullUrl,
+      };
+      ret = Object.assign({}, ret, response.data || (response.status >= 400? { message: response.statusMessage || "Something went wrong" }:null));
+      return ret;
     } catch (error) {
       console.error('Error:', error);
-      if (error.response) {
-        return {
-          status: error.response.status,
-          url: fullUrl,
-          error: error.response.data || { message: "Something went wrong" },
-        };
-      } else {
-        return { error: error.message || "Something went wrong" };
-      }
+      return { "€rror": error.message || "Something went wrong" };
     }
   }
 

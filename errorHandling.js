@@ -16,7 +16,7 @@ export function tryToDo(action,  onError=null, onFinally=null) {
 export async function tryToDoAsync(action,  onError=null, onFinally=null) {
     const res = {};
     try{
-        res.response=onError && onError instanceof Function ? (await action()) : action;
+        res.response=action && action instanceof Function ? (await action()) : action;
     }catch(e){
         console.warn(e);
         res.error = e;

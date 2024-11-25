@@ -2,228 +2,6 @@ import numeral from "numeral";
 import { findPropValueByAlias } from "./objects.js";
 import { stringTokenizer, capitalizeTokens } from "./text.js";
 
-/**
- * a mapping of the most common data descriptors useful for validation and formatting
- */
-export const objectDescriptorDefinitions = {
-  text: {
-    parse: (s) => s + "",
-    minLength: (v, m) => (m > 0 ? v.length >= m : true),
-    maxLength: (v, m) => (m > 0 ? v.length <= m : true),
-    minValue: (v, m) => (m ? v >= m : true),
-    maxValue: (v, m) => (m ? v <= m : true),
-    pattern: (v, p) => {
-      if (p) return (v + "").match(p);
-      else return true;
-    },
-  },
-  number: {
-    parse: (s) => new Number(s + ""),
-    minLength: (v, m) => (m > 0 ? ("" + v).length >= m : true),
-    maxLength: (v, m) => (m > 0 ? ("" + v).length <= m : true),
-    minDecimalLength: (v, m) =>
-      m > 0 ? ("" + v).split("[.,]").pop().length >= m : true,
-    maxDecimalLength: (v, m) =>
-      m > 0 ? ("" + v).split("[.,]").pop().length <= m : true,
-    minValue: (v, m) => (m ? v >= m : true),
-    maxValue: (v, m) => (m ? v <= m : true),
-    format: (v, f) => {
-      if (f) {
-        try {
-          const number = numeral(v).value();
-          const formattedNumber = numeral(number).format(f);
-
-          // Controlla se la stringa formattata corrisponde alla stringa originale
-          return formattedNumber === v;
-        } catch (e) {
-          return false;
-        }
-      }
-      return false;
-    },
-    pattern: (v, p) => {
-      if (p) return ("" + v).match(p);
-      else return ("" + v).match("\\d+(\\.\\d+)");
-    },
-  },
-
-  "date([+s\-_]*time)?|time": {
-    parse: (s, f) => (f ? moment(v, f) : moment(v)),
-    minValue: (v, m, f) =>
-      m
-        ? f
-          ? moment(v, f)
-          : moment(v).toDate() >= f
-          ? moment(m, f).toDate()
-          : moment(m).toDate()
-        : true,
-    maxValue: (v, m, f) =>
-      m
-        ? f
-          ? moment(v, f)
-          : moment(v).toDate() <= f
-          ? moment(m, f).toDate()
-          : moment(m).toDate()
-        : true,
-    format: (v, f) => (f ? moment(v, f) : moment(v)),
-    pattern: (v, p) => {
-      if (p) return ("" + v).match(p);
-      else return true;
-    },
-  },
-};
-
-/**
- * @prototype {Object}
- * @param {Object} this_object
- * @param {Object} descriptor
- *
- * Format an object according to the descriptor
- */
-export async function format(this_object, descriptor, db) {
-  const ret = {};
-  for (const k in descriptor) {
-    ret[k] = descriptor[k].source
-      ? descriptor[k].source(this_object, k)
-      : this_object[k];
-    const objectDescriptorDefinitionKey = descriptor[k]?.type || "text";
-    console.log("objectDescriptorDefinitionKey:", k, descriptor[k]);
-    if (
-      objectDescriptorDefinitionKey.match(regexMap.identity.id)
-    ) {
-      ret[k] = db.hashKeyMap[ret[k]];
-    }
-    const objectDescriptorDefinition = findPropValueByAlias(
-      objectDescriptorDefinitions,
-      objectDescriptorDefinitionKey
-    );
-    if (descriptor[k].normalization) {
-      ret[k] = await descriptor[k].normalization(ret[k]);
-    }
-    if (descriptor[k].defaultValue && !ret[k]) {
-      ret[k] = descriptor.defaultValue;
-      if (ret[k] instanceof Object || Array.isArray(ret[k])) {
-        ret[k] = JSON.parse(JSON.stringify(ret[k]));
-      }
-    }
-    if (descriptor[k].required && !ret[k]) {
-      setRequestError(ret, k, "required");
-    }
-    if (
-      descriptor[k].minValue &&
-      !(
-        objectDescriptorDefinition?.minValue(ret[k], descriptor[k].minValue) ||
-        null
-      )
-    ) {
-      setRequestError(ret, k, "minValue");
-    }
-    if (
-      descriptor[k].maxValue &&
-      !(
-        objectDescriptorDefinition?.maxValue(ret[k], descriptor[k].maxValue) ||
-        null
-      )
-    ) {
-      setRequestError(ret, k, "maxValue");
-    }
-    if (
-      descriptor[k].minLength &&
-      !(
-        objectDescriptorDefinition?.minLength(
-          ret[k],
-          descriptor[k].minLength
-        ) || null
-      )
-    ) {
-      setRequestError(ret, k, "minLength");
-    }
-    if (
-      descriptor[k].maxLength &&
-      !(
-        objectDescriptorDefinition?.maxLength(
-          ret[k],
-          descriptor[k].maxLength
-        ) || null
-      )
-    ) {
-      setRequestError(ret, k, "maxLength");
-    }
-    if (
-      descriptor[k].minDecimalLength &&
-      !(
-        objectDescriptorDefinition?.minDecimalLength(
-          ret[k],
-          descriptor[k].minDecimalLength
-        ) || null
-      )
-    ) {
-      setRequestError(ret, k, "minDecimalLength");
-    }
-    if (
-      descriptor[k].maxDecimalLength &&
-      !(
-        objectDescriptorDefinition?.maxDecimalLength(
-          ret[k],
-          descriptor[k].maxDecimalLength
-        ) || null
-      )
-    ) {
-      setRequestError(ret, k, "maxDecimalLength");
-    }
-    if (descriptor[k].pattern) {
-      const match = objectDescriptorDefinition.pattern(
-        ret[k],
-        descriptor[k].pattern
-      );
-      if (!match) setRequestError(ret, k, "pattern");
-    }
-    if (
-      descriptor[k].format &&
-      !(
-        objectDescriptorDefinition?.format(ret[k], descriptor[k].format) || null
-      )
-    ) {
-      setRequestError(ret, k, "format");
-    }
-    if (
-      descriptor[k].transform &&
-      typeof descriptor[k].transform === "function"
-    ) {
-      ret[k] = await descriptor[k].transform(ret[k]);
-    }
-    if (descriptor[k].exists) {
-      if (
-        (typeof descriptor[k].exists === "function" &&
-          !(await descriptor[k].exists(ret[k]))) ||
-        (Array.isArray(descriptor[k].exists) &&
-          !descriptor[k].exists.includes(ret[k]))
-      ) {
-        setRequestError(ret, k, "exists");
-      }
-    }
-    if (
-      (descriptor[k].notExists &&
-        typeof descriptor[k].notExists === "function" &&
-        !(await descriptor[k].notExists(ret[k]))) ||
-      (Array.isArray(descriptor[k].notExists) &&
-        !descriptor[k].notExists.includes(ret[k]))
-    ) {
-      setRequestError(ret, k, "notExists");
-    }
-  }
-  return ret;
-}
-
-function setRequestError(requestParams, property, cause) {
-  if (!requestParams["€rror"]) requestParams["€rror"] = {};
-  if (!requestParams["€rror"][property]) requestParams["€rror"][property] = [];
-  requestParams["€rror"][property] = [
-    ...requestParams["€rror"][property],
-    cause,
-  ];
-}
-
 export const regexMap = {
   text: { 
     id: /plain|(plain[+\s\-_]*)?t[e]?xt|t[e]?xt([+\s\-_]*plain)?$/, 
@@ -272,7 +50,7 @@ export const regexMap = {
   number: { id: /number|°|#/, pattern: /[+-]?[0-9]+([\.]?[0-9])?/ },
   date: { id: /date/ },
   isodate: {
-    id: /so([+\s\-_]*)?date/,
+    id: /iso([+\s\-_]*)?date/,
     pattern: /(\d{4})-(\d{2})-(\d{2})/,
   },
   datetime: { id: /date([+\s\-_]*)?time/ },
@@ -282,13 +60,13 @@ export const regexMap = {
       /^(\d{4})-(\d{2})-(\d{2})T?(\d{2}):(\d{2}):(\d{2})(\.\d{1,3})?.*?/,
   },
   isodatetime: {
-    id: /so([+\s\-_]*)?date([+\s\-_]*)?time/,
+    id: /iso([+\s\-_]*)?date([+\s\-_]*)?time/,
     pattern:
       /^(\d{4})-(\d{2})-(\d{2})T?(\d{2}):(\d{2}):(\d{2})(\.\d{1,3})?.*?/,
   },
   time: { id: /time/ },
   isotime: {
-    id: /so([+\s\-_]*)?time/,
+    id: /iso([+\s\-_]*)?time/,
     pattern: /(\d{2}):(\d{2}):(\d{2})(\.\d{1,3})?.*?/,
   },
   datetimeoffset: { id: /date(([+\s\-_]*)?time)?([+]|[+\s\-_]offset)?/ },
@@ -521,6 +299,224 @@ export const regexMap = {
     },
   },
 };
+
+
+/**
+ * a mapping of the most common data descriptors useful for validation and formatting
+ */
+export const objectDescriptorDefinitions = {
+  text: {
+    parse: (s) => s + "",
+    minLength: (v, m) => (m > 0 ? v.length >= m : true),
+    maxLength: (v, m) => (m > 0 ? v.length <= m : true),
+    minValue: (v, m) => (m ? v >= m : true),
+    maxValue: (v, m) => (m ? v <= m : true),
+    pattern: (v, p) => {
+      if (p) return (v + "").match(p);
+      else return true;
+    },
+  },
+  number: {
+    parse: (s) => new Number(s + ""),
+    minLength: (v, m) => (m > 0 ? ("" + v).length >= m : true),
+    maxLength: (v, m) => (m > 0 ? ("" + v).length <= m : true),
+    minDecimalLength: (v, m) =>
+      m > 0 ? ("" + v).split("[.,]").pop().length >= m : true,
+    maxDecimalLength: (v, m) =>
+      m > 0 ? ("" + v).split("[.,]").pop().length <= m : true,
+    minValue: (v, m) => (m ? v >= m : true),
+    maxValue: (v, m) => (m ? v <= m : true),
+    format: (v, f) => {
+      if (f) {
+        try {
+          const number = numeral(v).value();
+          const formattedNumber = numeral(number).format(f);
+
+          // Controlla se la stringa formattata corrisponde alla stringa originale
+          return formattedNumber === v;
+        } catch (e) {
+          return false;
+        }
+      }
+      return false;
+    },
+    pattern: (v, p) => {
+      if (p) return ("" + v).match(p);
+      else return ("" + v).match("\\d+(\\.\\d+)");
+    },
+  },
+
+  [regexMap.datetime.id]: {
+    parse: (s, f) => (f ? moment(v, f) : moment(v)),
+    minValue: (v, m, f) =>
+      m
+        ? f
+          ? moment(v, f)
+          : moment(v).toDate() >= f
+          ? moment(m, f).toDate()
+          : moment(m).toDate()
+        : true,
+    maxValue: (v, m, f) =>
+      m
+        ? f
+          ? moment(v, f)
+          : moment(v).toDate() <= f
+          ? moment(m, f).toDate()
+          : moment(m).toDate()
+        : true,
+    format: (v, f) => (f ? moment(v, f) : moment(v)),
+    pattern: (v, p) => {
+      if (p) return ("" + v).match(p);
+      else return true;
+    },
+  },
+};
+
+/**
+ * @prototype {Object}
+ * @param {Object} this_object
+ * @param {Object} descriptor
+ *
+ * Format an object according to the descriptor
+ */
+export async function format(this_object, descriptor, db) {
+  const ret = {};
+  for (const k in descriptor) {
+    ret[k] = descriptor[k].source
+      ? descriptor[k].source(this_object, k)
+      : this_object[k];
+    const objectDescriptorDefinitionKey = descriptor[k]?.type || "text";
+    console.log("objectDescriptorDefinitionKey:", k, descriptor[k]);
+    if (
+      objectDescriptorDefinitionKey.match(regexMap.identity.id)
+    ) {
+      ret[k] = db.hashKeyMap[ret[k]];
+    }
+    const objectDescriptorDefinition = findPropValueByAlias(
+      objectDescriptorDefinitions,
+      objectDescriptorDefinitionKey
+    );
+    if (descriptor[k].normalization) {
+      ret[k] = await descriptor[k].normalization(ret[k]);
+    }
+    if (descriptor[k].defaultValue && !ret[k]) {
+      ret[k] = descriptor.defaultValue;
+      if (ret[k] instanceof Object || Array.isArray(ret[k])) {
+        ret[k] = JSON.parse(JSON.stringify(ret[k]));
+      }
+    }
+    if (descriptor[k].required && !ret[k]) {
+      setRequestError(ret, k, "required");
+    }
+    if (
+      descriptor[k].minValue && objectDescriptorDefinition?.minValue &&
+      !
+        objectDescriptorDefinition?.minValue(ret[k], descriptor[k].minValue) 
+      
+    ) {
+      setRequestError(ret, k, "minValue");
+    }
+    if (
+      descriptor[k].maxValue && objectDescriptorDefinition?.maxValue &&
+      !
+        objectDescriptorDefinition?.maxValue(ret[k], descriptor[k].maxValue) 
+    ) {
+      setRequestError(ret, k, "maxValue");
+    }
+    if (
+      descriptor[k].minLength && objectDescriptorDefinition?.minLength &&
+      !
+        objectDescriptorDefinition?.minLength(
+          ret[k],
+          descriptor[k].minLength
+    
+      )
+    ) {
+      setRequestError(ret, k, "minLength");
+    }
+    if (
+      descriptor[k].maxLength && objectDescriptorDefinition?.maxLength &&
+      ! 
+        objectDescriptorDefinition?.maxLength(
+          ret[k],
+          descriptor[k].maxLength
+      )
+    ) {
+      setRequestError(ret, k, "maxLength");
+    }
+    if (
+      descriptor[k].minDecimalLength && objectDescriptorDefinition?.minDecimalLength &&
+      !
+        objectDescriptorDefinition?.minDecimalLength(
+          ret[k],
+          descriptor[k].minDecimalLength
+      )
+    ) {
+      setRequestError(ret, k, "minDecimalLength");
+    }
+    if (
+      descriptor[k].maxDecimalLength && objectDescriptorDefinition?.maxDecimalLength &&
+      !
+        objectDescriptorDefinition?.maxDecimalLength(
+          ret[k],
+          descriptor[k].maxDecimalLength
+        ) 
+    ) {
+      setRequestError(ret, k, "maxDecimalLength");
+    }
+    if (descriptor[k].pattern) {
+      const match = objectDescriptorDefinition.pattern(
+        ret[k],
+        descriptor[k].pattern
+      );
+      if (!match) setRequestError(ret, k, "pattern");
+    }
+    if (
+      descriptor[k].format && objectDescriptorDefinition?.format &&
+      !
+        objectDescriptorDefinition?.format(ret[k], descriptor[k].format) 
+      
+    ) {
+      setRequestError(ret, k, "format");
+    }
+    if (
+      descriptor[k].transform &&
+      typeof descriptor[k].transform === "function"
+    ) {
+      ret[k] = await descriptor[k].transform(ret[k]);
+    }
+    if (descriptor[k].exists) {
+      if (
+        (typeof descriptor[k].exists === "function" &&
+          !(await descriptor[k].exists(ret[k]))) ||
+        (Array.isArray(descriptor[k].exists) &&
+          !descriptor[k].exists.includes(ret[k]))
+      ) {
+        setRequestError(ret, k, "exists");
+      }
+    }
+    if (
+      (descriptor[k].notExists &&
+        typeof descriptor[k].notExists === "function" &&
+        !(await descriptor[k].notExists(ret[k]))) ||
+      (Array.isArray(descriptor[k].notExists) &&
+        !descriptor[k].notExists.includes(ret[k]))
+    ) {
+      setRequestError(ret, k, "notExists");
+    }
+  }
+  return ret;
+}
+
+function setRequestError(requestParams, property, cause) {
+  if (!requestParams["€rror"]) requestParams["€rror"] = {};
+  if (!requestParams["€rror"][property]) requestParams["€rror"][property] = [];
+  requestParams["€rror"][property] = [
+    ...requestParams["€rror"][property],
+    cause,
+  ];
+}
+
 
 /**
  * Data descriptors

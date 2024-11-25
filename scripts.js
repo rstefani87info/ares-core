@@ -285,6 +285,7 @@ export function getByPropertyPath(object, path) {
   const pathArray = path.split(".");
   let result = object;
   for (let i = 0; i < pathArray.length; i++) {
+    if (!result) return undefined;
     result = result[pathArray[i]];
   }
   return result;

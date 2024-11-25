@@ -66,6 +66,13 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
     aReS.console.asyncConsole.log("datasources", " - }");
 }
 
+export class ValidationError extends Error {
+  constructor(message, params) {
+    super(message);
+    this.name = "ValidationError";
+    this.parameters = params;
+  }
+}
 export class DatasourceRequestMapper {
   constructor(aReS, datasource, settings) {
     if (typeof settings === "object") Object.assign(this, settings);
@@ -88,6 +95,7 @@ export class DatasourceRequestMapper {
         ">>"
     );
     let params = {};
+    let response = {};
     params = await format(
       request,
       this.parametersValidationRoles? await this.parametersValidationRoles(request, this.aReS): {},
@@ -95,26 +103,24 @@ export class DatasourceRequestMapper {
     );
     if (params["€rror"]) {
       console.error('aReS Error:',params["€rror"]);
-      throw new Error(
-        "Formatting and validation error: " + JSON.stringify(params["€rror"])
+      throw new ValidationError(
+        "Formatting and validation error: " + JSON.stringify(params["€rror"]),params["€rror"]
       );
-    }
-    request = cloneWithMethods(request);
-    request.parameters = params;
-    console.log("in query");
-    const response = await this.datasource.query(
-      request,
-      this.query,
-      this
-    );
-    if (response.results) {
-      if(this.objectify){
-        throw new Error('TODO:  implement me!');
-      }
-      if (Array.isArray(response.results)) {
-        if (this.mapResult && this.mapResult instanceof Function) {
-          let i=0;
-          for(; i<response.results.length; i++){
+    } else {
+      request = cloneWithMethods(request);
+      request.parameters = params;
+      console.log("in query");
+      response = await this.datasource.query(
+        request,
+        this.query,
+        this
+      );
+      if (response.results) {
+        if(this.objectify){
+          throw new Error('TODO:  implement me!');
+        }
+        if (Array.isArray(response.results)) {
+          for(i=0; i<response.results.length; i++){
             if (this.mapResult && this.mapResult instanceof Function) {
               response.results[i] = await this.mapResult(response.results[i], i);
             }
@@ -122,21 +128,21 @@ export class DatasourceRequestMapper {
               response.results[i] = await this.transformToDTO(response.results[i]);
             }
           }
+        } else {
+          response.results = this.mapResult(response.results);
         }
-        
-      } else {
-        response.results = this.mapResult(response.results);
-      }
-      
-      if (this.postExecute && this.mapResult instanceof Function) {
-        this.postExecute(request, this.datasource, response);
       }
     }
+    if (this.postExecute && this.mapResult instanceof Function) {
+      this.postExecute(request, this.datasource, response);
+    }
+    
     if (!this.aReS.isProduction()) {
       response.datasourceName = this.datasource.name;
       response.queryName = this.name;
       response.query = this.query;
     }
+    
     console.log("Mapped results:", response);
     return response;
   }
