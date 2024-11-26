@@ -116,3 +116,20 @@ export function isEmptyString(this_str) {
     }
     return false;
 }
+
+/**
+ * returns an array of strings that match a pattern
+ * 
+ * @param {*} this_str_array 
+ * @param {*} pattern 
+ * @returns 
+ * 
+ * @prototype {string}
+ * @prototype {array}
+ */
+export function filterLike(this_str_array, pattern) {
+    if(typeof pattern === "string") {
+        pattern = new RegExp(pattern);
+    }
+    return this_str_array.filter((x) => pattern.test(x));
+}
