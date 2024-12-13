@@ -133,3 +133,66 @@ export function filterLike(this_str_array, pattern) {
     }
     return this_str_array.filter((x) => pattern.test(x));
 }
+
+
+/**
+ * Generates a random alphanumeric string of a given length.
+ *
+ * @param {number} length - The length of the string to generate. Defaults to 28.
+ * @returns {string} A random alphanumeric string of the specified length.
+ */
+function generateRandomString(length = 28) {
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+
+    for (let i = 0; i < length; i++) {
+        const randomIndex = Math.floor(Math.random() * characters.length);
+        result += characters[randomIndex];
+    }
+    
+    return result;
+}
+
+/**
+ * Converts a string to kebab case, by default removing all spaces, underscores, 
+ * non-word characters and new lines. The conversion is case insensitive.
+ * The following characters are kept as is: letters (both lowercase and uppercase), 
+ * numbers and underscores.
+ * @param {string} this_str - The string to convert.
+ * @param {boolean} [ignoreSpaces=false] - Set to true to keep spaces as is.
+ * @param {boolean} [ignoreUnderscore=false] - Set to true to keep underscores as is.
+ * @param {boolean} [ignoreNonWords=false] - Set to true to keep non-word characters as is.
+ * @param {boolean} [ignoreNewLines=false] - Set to true to keep new lines as is.
+ * @returns {string} The converted string in kebab case.
+ * 
+ * @prototype {string}
+ */
+export function getAsKebabCase(this_str, ignoreSpaces = false , ignoreUnderscore = false, ignoreNonWords = false, ignoreNewLines=false) {
+    let ret = this_str.replace (/([a-z0-9]+)([A-Z]+)/g, '$1-$2');
+    if(!ignoreSpaces) ret = ret.replace(" ", "-");
+    if(!ignoreUnderscore) ret = ret.replace ("_", "-");
+    if(!ignoreNonWords) ret = ret.replace(/([^a-zA-Z0-9_])+/g, '-');
+    if(!ignoreNewLines) ret = ret.replace(/(\n|\r)+/g, '-');
+    return trimRegexp(ret.toLowerCase(), "-");
+}
+
+/**
+ * Converts a string to snake_case format.
+ * 
+ * @param {string} this_str - The input string to be converted.
+ * @param {boolean} [ignoreSpaces=false] - If true, spaces will not be converted to underscores.
+ * @param {boolean} [ignoreDashes=false] - If true, dashes will not be converted to underscores.
+ * @param {boolean} [ignoreNonWords=false] - If true, non-word characters (except underscores) will not be converted to underscores.
+ * @param {boolean} [ignoreNewLines=false] - If true, new line characters will not be converted to underscores.
+ * @returns {string} - The converted string in snake_case.
+ * 
+ * @prototype {string}
+ */
+export function getAsSnakeCase(this_str, ignoreSpaces = false , ignoreDashes = false, ignoreNonWords = false, ignoreNewLines=false) {
+    let ret = this_str.trim().replace (/([a-z0-9]+)([A-Z]+)/g, '$1_$2');
+    if(!ignoreSpaces) ret = ret.replace (/\s+/g, "_");
+    if(!ignoreDashes) ret = ret.replace ("-", "_");
+    if(!ignoreNonWords) ret = ret.replace(/([^a-zA-Z0-9_])+/g, '_');
+    if(!ignoreNewLines) ret = ret.replace(/(\n|\r)+/g, '_');
+    return trimRegexp(ret.toLowerCase(), "_");
+}
