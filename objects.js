@@ -108,3 +108,29 @@ export function onPropertyChange(this_object, key, callback) {
     },
   });
 }
+
+/**
+ * Fuse two objects together, combining all their properties. If the objects have properties with the same name, the value of the property in the second object is used.
+ * If the value of the property in either object is an object itself, the objects are fused again recursively.
+ * @param {Object} this_object - The first object to fuse
+ * @param {Object} other - The second object to fuse
+ * @return {Object} The fused object
+ * @prototype {Object}
+ */
+export function fuseObjects(this_object, other){
+  let ret = {};
+  if(Array.isArray(this_object) && Array.isArray(other)) return [...this_object,...other];
+  if(this_object instanceof Object && other instanceof Object){
+    (new Set([...Object.keys(this_object),...Object.keys(other)])).forEach((key) => {
+      if( this_object[key]  && this_object[key]  instanceof Object && other[key] && other[key] instanceof Object ){
+        ret[key] = fuse(this_object[key] , other[key] );
+      }
+      else {
+        if(this_object.hasOwnProperty(key))ret[key] = this_object[key];
+        if(other.hasOwnProperty(key))ret[key] = other[key];
+      }
+    });
+    return ret;
+  } 
+  return null;
+}

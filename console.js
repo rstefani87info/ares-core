@@ -55,29 +55,29 @@ const oldConsole = {
 
 
   
-  export function log(...messages) {
+  export function log(message,...messages) {
     const callerInfo = getCallerInfo();
-    oldConsole.log( ...messages);
+    oldConsole.log( message,...messages);
   }
   
-  export function error(...messages) {
+  export function error(message,...messages) {
     const callerInfo = getCallerInfo();
-    oldConsole.error(`[${callerInfo}]`, ...messages);
+    oldConsole.error(`[${callerInfo}]`, message,...messages);
   }
   
-  export function warn(...messages) {
+  export function warn(message,...messages) {
     const callerInfo = getCallerInfo();
-    oldConsole.warn(`[${callerInfo}]`, ...messages);
+    oldConsole.warn(`[${callerInfo}]`, message,...messages);
   }
   
-  export function info(...messages) {
+  export function info(message,...messages) {
     const callerInfo = getCallerInfo();
-    oldConsole.info(  ...messages);
+    oldConsole.info(  message,...messages);
   }
   
-  export function debug(...messages) {
+  export function debug(message,...messages) {
     const callerInfo = '';
-    oldConsole.debug(`[${callerInfo}]`, ...messages);
+    oldConsole.debug(`[${callerInfo}]`, message,...messages);
   }
   
   console.log = log;
