@@ -64,6 +64,7 @@ export const regexMap = {
     pattern:
       /^(\d{4})-(\d{2})-(\d{2})T?(\d{2}):(\d{2}):(\d{2})(\.\d{1,3})?.*?/,
   },
+  countdown: { id: /countdown/ },
   time: { id: /time/ },
   isotime: {
     id: /iso([+\s\-_]*)?time/,
