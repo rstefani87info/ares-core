@@ -28,7 +28,7 @@ export class XHRWrapper {
         ...(method.match(/POST|PATCH/i) && {
           "Content-Type": "application/json",
         }),
-        ...(options.headers || {}),
+        ...(options?.headers || {}),
       },
       validateStatus: function (status) {
         return true;

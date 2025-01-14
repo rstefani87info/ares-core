@@ -522,11 +522,11 @@ export class RESTConnection extends DBConnection {
     else this.xhrWrapper.setToken(null);
     return await this.executeNativeQueryAsync(
       {url:command, method:mapper.method},
-      params
+      params, req.options
     );
   }
 
-  async executeNativeQueryAsync(command, params) {
+  async executeNativeQueryAsync(command, params, options=null) {
     command = typeof command === "string" ? JSON.parse(command) : command;
     if (!(command instanceof Object)) {
       throw new Error("Command must be an object or a stringified object");
@@ -539,7 +539,8 @@ export class RESTConnection extends DBConnection {
     };
     const responseValue = await this.xhrWrapper[command.method?.toLowerCase()||'get'](
       command.url,
-      params
+      params,
+      options
     );
     response.data.push(responseValue);
     return response;
