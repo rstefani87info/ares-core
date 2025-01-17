@@ -1,4 +1,4 @@
-//TODO: import numeral from 'numeral';
+//TODO: cambiare la logica;
 
 /**
  * @prototype {Object}
@@ -10,19 +10,15 @@
 export function findPropKeyByAlias(
   this_object,
   alias,
-  regexMask = '/^\\s*\\$content\\s*$/im',
 ) {
   for (const k in this_object) {
     let regexK = null;
-    if (typeof k === 'string') regexK = new RegExp(k);
-    else if (k instanceof RegExp) regexK = k;
-    if (regexK) {
-      if (regexMask.includes('$content'))
-        regexK = new RegExp(regexMask.replace('$content', regexK.source));
-      if (alias.match(regexK)) return k;
+      if (alias.match(k)) {
+        return k;
+      }
     }
-  }
-  return undefined;
+  // }
+  // return undefined;
 }
 /**
  * @prototype {Object}
@@ -33,12 +29,10 @@ export function findPropKeyByAlias(
  */
 export function findPropValueByAlias(
   this_object,
-  alias,
-  regexMask = '/^\\s*\\$content\\s*$/im',
+  alias
 ) {
-  return (
-    this_object[findPropKeyByAlias(this_object, alias, regexMask)] ?? undefined
-  );
+  const key = findPropKeyByAlias(this_object, alias, regexMask);
+  return (  Object.entries(this_object).find(([k, v]) =>  k+'' == key+'' ) || [])[1];
 }
 
 /**

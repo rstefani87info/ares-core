@@ -1,301 +1,300 @@
 import numeral from "numeral";
-import { findPropValueByAlias } from "./objects.js";
-import { stringTokenizer, capitalizeTokens } from "./text.js";
+import { capitalizeTokens } from "./text.js";
 
 export const regexMap = {
   text: { 
-    id: /plain|(plain[+\s\-_]*)?t[e]?xt|t[e]?xt([+\s\-_]*plain)?$/, 
+    id: "text", 
     tokenizer: /[a-zA-Z]+|[^0-9a-zA-Z\s\r\n]+|[0-9]+|\s+|[\r\n]+/ 
   },
   personalName: {
-    id: /(proper|person(al)?|sur|first|last|family)[+\s\-_]*name/,
+    id: "personal_name",
     pattern: /\s*[a-z]{3,}(\s[a-z]{2,})*\s*/,
   },
   commonName: {
-    id: /common[+\s\-_]*name/,
+    id: "name",
     pattern: /\s*[a-z]{3,}(\s[a-z]{3,})*\s*/,
     pattern: /\s*([a-z]{1}\.)+|([\s\-_]*[a-z]{3,})*\s*/,
   },
   email: {
-    id: /(@|email)([+\s\-_]*address)?/,
+    id: "email",
     pattern: /[a-zA-Z0-9\._%+-]+@[a-zA-Z0-9\.-]+\.[a-zA-Z]{2,}/,
   },
   username: {
-    id: /user([+\s\-_]*(name))?|handle|nik([+\s\-_]*(name))?/,
+    id: "username",
     pattern: /[a-zA-Z0-9\._%+-]+/,
   },
   password: {
-    id: /password|pwd/,
+    id: "password",
     pattern:
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}/,
   },
   zipCode: {
-    id: /(zip|cap|location)([+\s\-_]*code)?/,
+    id: "zip_code",
     pattern: /\d{5}(-\d{4})?/,
   },
-  countryCode: { id: /country[+\s\-_]*(code)?/, pattern: /[A-Z]{2}/ },
+  countryCode: { id: "country_code", pattern: /[A-Z]{2}/, default: "US" },
   languageCode: {
-    id: /language[+\s\-_]*(code)?/,
+    id: "language_code",
     pattern: /[A-Z]{2}([-_][A-Z]{2})?/,
   },
-  currencyCode: { id: /currency[+\s\-_]*(code)?/, pattern: /[A-Z]{3}/ },
+  currencyCode: { id: "currency_code", pattern: /[A-Z]{3}/ },
   boolean: {
-    id: /bool(ean)?|y(es)([+\s\-_]*or)([+\s\-_]*n(o(t)?)?)|binary[+\s\-_]*digit|true([+\s\-_]*or)([+\s\-_]*false)|switch|on([+\s\-_]*or)([+\s\-_]*off)/,
+    id: "boolean",
     pattern: /(true|false|on|off|1|0|yes|no||y|n|null|not)/,
   },
   nullableBoolean: {
-    id: /(null(able)?|\?)[+\s\-_]*bool(ean)?|y(es)([+\s\-_]*or)([+\s\-_]*n(o(t)?)?)|binary[+\s\-_]*digit|true([+\s\-_]*or)([+\s\-_]*false)|switch|on([+\s\-_]*or)([+\s\-_]*off)$/,
+    id: "nullable_boolean",
     pattern: /(true|false|on|off|1|0|yes|no||y|n|null|not|undefined)/,
   },
-  number: { id: /number|°|#/, pattern: /[+-]?[0-9]+([\.]?[0-9])?/ },
-  date: { id: /date/ },
+  number: { id: "number", pattern: /[+-]?[0-9]+([\.]?[0-9])?/ },
+  date: { id: "date" },
   isodate: {
-    id: /iso([+\s\-_]*)?date/,
+    id: "iso_date",
     pattern: /(\d{4})-(\d{2})-(\d{2})/,
   },
-  datetime: { id: /date([+\s\-_]*)?time/ },
+  datetime: { id: "date_time" },
   sqldatetime: {
-    id: /sql([+\s\-_]*)?date([+\s\-_]*)?time/,
+    id: "sql_date_time",
     pattern:
       /^(\d{4})-(\d{2})-(\d{2})T?(\d{2}):(\d{2}):(\d{2})(\.\d{1,3})?.*?/,
   },
   isodatetime: {
-    id: /iso([+\s\-_]*)?date([+\s\-_]*)?time/,
+    id: "iso_date_time",
     pattern:
       /^(\d{4})-(\d{2})-(\d{2})T?(\d{2}):(\d{2}):(\d{2})(\.\d{1,3})?.*?/,
   },
-  countdown: { id: /countdown/ },
-  time: { id: /time/ },
+  countdown: { id: "countdown" },
+  time: { id: "time" },
   isotime: {
-    id: /iso([+\s\-_]*)?time/,
+    id: "iso_time",
     pattern: /(\d{2}):(\d{2}):(\d{2})(\.\d{1,3})?.*?/,
   },
-  datetimeoffset: { id: /date(([+\s\-_]*)?time)?([+]|[+\s\-_]offset)?/ },
+  datetimeoffset: { id: "date_time_offset" },
   phoneNumber: {
-    id: /((tele)?phone|tel)([+\s\-_]*(number|#))?/,
+    id: "phone_number",
     pattern: /(\+?\d{2,3})?[.-\s\/\\0-9]{10,}/,
   },
   gpsCoordinate: {
-    id: /ps[+\s\-_]*coordinates/,
+    id: "gps_coordinate",
     pattern: /[+-]?[0-9]+(\.[0-9]+)?$/,
   },
   gpsCoordinates: {
-    id: /ps[+\s\-_]*coordinates/,
+    id: "gps_coordinates",
     pattern: /[+-]?[0-9]+(\.[0-9]+),[+-]?[0-9]+(\.[0-9]+)?$/,
   },
   hashtag: {
-    id: /hashtag/,
+    id: "hashtag",
     pattern: /#[a-zA-Z0-9_]+$/,
   },
-  mimeType: { id: /e([+s\-_]*type)?/, pattern: /[a-zA-Z0-9_]+\/[a-zA-Z0-9_+-. ]+$/},
+  mimeType: { id: "mime_type", pattern: /[a-zA-Z0-9_]+\/[a-zA-Z0-9_+-. ]+$/},
   imageFileExtension: {
-    id: /age[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "image_file_extension",
     pattern: /\.(jpg|jpeg|png|gif|bmp|tiff|svg|webp|heic|heif|ico|psd|raw|cr2|nef|orf|sr2|raf|dng|arw|3fr|ai|arw|bay|bpg|cap|cin|crw|cs1|cur|dc2|dcr|dds|djvu|erf|exr|fff|fits|fpx|gbr|hrd|iff|iiq|j2k|jng|jp2|jpe|jpf|jpx|k25|kdc|mef|mng|mrw|nrw|ora|pbm|pcd|pct|pcx|pef|pgf|pgm|pnm|ppm|psb|ptx|pxn|r3d|rle|rw2|rwl|sct|sfw|srw|tga|webp|x3f|xcf|yuv)/,
   },
   videoFileExtension: {
-    id: /video[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "video_file_extension",
     pattern: /\.(mp4|m4v|mov|avi|wmv|flv|f4v|mkv|webm|mpeg|mpg|3gp|3g2|ogg|ogv|mts|m2ts|ts|vob|mxf|rm|rmvb|asf|swf|dv|divx|xvid|h264|hevc|avchd|mpe|mpv|m2v|amv|bik|drc|fli|flic|ivf|mjpg|mjpeg|roq|svi|yuv)/,
   },
   audioFileExtension: {
-    id: /audio[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "audio_file_extension",
     pattern: /\.(mp3|wav|aac|flac|alac|ogg|oga|opus|wma|m4a|m4b|m4p|aiff|aif|aifc|au|ra|rm|mid|midi|mpa|mpc|amr|dss|dvf|gsm|iklax|ivs|m3u|m3u8|pls|xspf|tta|voc|vox|wv)/,
   },
   documentFileExtension: {
-    id: /document[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "document_file_extension",
     pattern: /\.(pdf|doc|docx|odt|rtf|txt|tex|wpd|wps|ppt|pptx|odp|xls|xlsx|ods|csv|tsv|epub|mobi|azw|azw3|ibooks|fb2|djvu|ps|md|rst|rtfd|pages|key|numbers|xml|xps|oxps|sdw|sgm|sgml|wks|wp|gdoc|gsheet|gslides)/,
   },
   textFileExtension: {
-    id: /(plain|(plain[+s\-_]*)?t[e]?xt|t[e]?xt([+s\-_]*plain)?)[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "text_file_extension",
     pattern: /\.(txt|wps|vb|vbs|php|js|css|html|xml|xsl|xslt|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|tsx|vue|jsx)/,
   },
   markupLanguageFileExtension: {
-    id: /arkup[+s\-_]*lang(uage)?[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "markup_language_file_extension",
     pattern: /\.(xml|html|xhtml|xht|svg|rss|atom|kml|gpx|xsd|xslt|xsl|xul|xaml|xlf|xliff|svgz|wsdl|opf|ncx|plist|rdf|smil|mathml|collada|scxml|sitemap|xbrl|cxml|dita|ditamap|x3d|sldx|docx|pptx|xlsx|odt|ods|odp|gml|ebxml|rvt|lvproj)/,
   },
   dataFileExtension: {
-    id: /data[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "data_file_extension",
     pattern: /\.(csv|tsv|xml|json|yaml|yml|toml|ini|sql|ts|scss|sass|properties|init|conf|cfg|json5|jsonc|jsonl|jsonml|json5l|jsonmlc|css|scss|sass|js|ejs|cjs)/,
   },
   oopFileExtension: {
-    id: /oop[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "oop_file_extension",
     pattern: /\.(js|jsx|ts|tsx|json|java|php|cs|cpp|c|py|rb|go|ts|scss|sass|ejs|cjs)/,
   },
   programmingLanguageFileExtension: {
-    id: /prog(r(amming)?)?[+s\-_]*lang(uage)?[+s\-_]*file[+s\-_]*ext(ension)?/,
+    id: "programming_language_file_extension",
     pattern: /\.(vb|vbs|php|js|css|cjs|ejs|html|xhtml|xht|shtm|xml|xsl|xslt|json|csv|md|yml|yaml|cs|c|cpp|java|py|rb|sh|pl|go|sql|ini|toml|ts|scss|sass|tsx|vue|jsx)/,
   },
   jwt: {
-    id: /jwt|json[+s\-_]*web[+s\-_]*token/,
+    id: "jwt",
     pattern: /[A-Za-z0-9-_]{36,64}\.[A-Za-z0-9-_]{50,200}\.[A-Za-z0-9-_]{43,86}$/,
   },
   identity: {
-    id: /d(enti(fier|ty)?)?|(primary[+s\-_]*)?key|index|idx/,
+    id: "identity",
     pattern: /[a-f0-9]{128}/,
   },
   ip: {
-    id: /p([+\s\-_]*v4)?([+\s\-_]*address)?/,
+    id: "ip",
     pattern:
       /^(([0-9]{1,2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]{1,2}|2[0-4][0-9]|25[0-5])/,
   },
   ipv6: {
-    id: /p([+\s\-_]*v6){1}([+\s\-_]*address)?/,
+    id: "ipv6",
     pattern:
       /^((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){1,7}:)|(([0-9A-Fa-f]{1,4}:){1,6}:[0-9A-Fa-f]{1,4})|(([0-9A-Fa-f]{1,4}:){1,5}((:[0-9A-Fa-f]{1,4}){1,2}))|(([0-9A-Fa-f]{1,4}:){1,4}((:[0-9A-Fa-f]{1,4}){1,3}))|(([0-9A-Fa-f]{1,4}:){1,3}((:[0-9A-Fa-f]{1,4}){1,4}))|(([0-9A-Fa-f]{1,4}:){1,2}((:[0-9A-Fa-f]{1,4}){1,5}))|([0-9A-Fa-f]{1,4}:)((:[0-9A-Fa-f]{1,4}){1,6})|:((:[0-9A-Fa-f]{1,4}){1,7}|:)|((([0-9A-Fa-f]{1,4}:){6}|:):((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))|::([fF]{4}:(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?){1,4}))/,
   },
   urls: {
     url: {
-      id: /url/,
+      id: "url",
       pattern:
         /^((([a-zA-Z0-9+.-]+):\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?)(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     httpUrl: {
-      id: /http[s]?([+\s\-_]*url)?/,
+      id: "http_url",
       pattern:
         /^(https?:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     httpsUrl: {
-      id: /https([+\s\-_]*url)?/,
+      id: "https_url",
       pattern:
         /^(https:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     ftpUrl: {
-      id: /ftp[s]?([+\s\-_]*url)?/,
+      id: "ftp_url",
       pattern:
         /^(ftp(s)?:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     ftpsUrl: {
-      id: /ftps?([+\s\-_]*url)?/,
+      id: "ftps_url",
       pattern:
         /^(ftps:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     smtpUrl: {
-      id: /smtp?([+\s\-_]*url)?/,
+      id: "smtp_url",
       pattern:
         /^(smtp:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     pop3Url: {
-      id: /pop3?([+\s\-_]*url)?/,
+      id: "pop3_url",
       pattern:
         /^(pop3:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     sshUrl: {
-      id: /ssh?([+\s\-_]*url)?/,
+      id: "ssh_url",
       pattern:
         /^(ssh:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     blobUrl: {
-      id: /blob?([+\s\-_]*url)?/,
+      id: "blob_url",
       pattern:
         /^(blob:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     fileUrl: {
-      id: /file?([+\s\-_]*url)?/,
+      id: "file_url",
       pattern:
         /^(file:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     imapUrl: {
-      id: /ap?([+\s\-_]*url)?/,
+      id: "imap_url",
       pattern:
         /^(imap:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     ldapUrl: {
-      id: /ldap?([+\s\-_]*url)?/,
+      id: "ldap_url",
       pattern:
         /^(ldap:\/\/)?(([^:@\/\s]+)(:[^:@\/\s]*)?@)?(([a-zA-Z0-9-_]{1,256}\.)+[a-zA-Z]{2,63}|(\[[0-9a-fA-F:.]+\])|(([0-9]{1,3}\.){3}[0-9]{1,3}))(:[0-9]{1,5})?(\/[a-zA-Z0-9@:%._+~#=/-]*)?(\?[a-zA-Z0-9&=_-]*)?(#[a-zA-Z0-9-_]*)?/,
     },
     
   },
   uuid: {
-      id: /uuid|unique([+\s\-_]*id)?/,
+      id: "uuid",
       pattern:
         /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}/,
     },
   hashes: {
-    md5: { id: /hash[+\s\-_]*md5/, pattern: /[a-fA-F0-9]{32}/ },
-    sha1: { id: /hash[+\s\-_]*sha1/, pattern: /[a-fA-F0-9]{40}/ },
-    sha256: { id: /hash[+\s\-_]*sha256/, pattern: /[a-fA-F0-9]{64}/ },
-    sha512: { id: /hash[+\s\-_]*sha512/, pattern: /[a-fA-F0-9]{128}/ },
-    sha3_224: { id: /hash[+\s\-_]*sha3_224/, pattern: /[a-fA-F0-9]{56}/ },
-    sha3_256: { id: /hash[+\s\-_]*sha3_256/, pattern: /[a-fA-F0-9]{64}/ },
-    sha3_384: { id: /hash[+\s\-_]*sha3_384/, pattern: /[a-fA-F0-9]{96}/ },
+    md5: { id: "hash_md5", pattern: /[a-fA-F0-9]{32}/ },
+    sha1: { id: "hash_sha1", pattern: /[a-fA-F0-9]{40}/ },
+    sha256: { id: "hash_sha256", pattern: /[a-fA-F0-9]{64}/ },
+    sha512: { id: "hash_sha512", pattern: /[a-fA-F0-9]{128}/ },
+    sha3_224: { id: "hash_sha3_224", pattern: /[a-fA-F0-9]{56}/ },
+    sha3_256: { id: "hash_sha3_256", pattern: /[a-fA-F0-9]{64}/ },
+    sha3_384: { id: "hash_sha3_384", pattern: /[a-fA-F0-9]{96}/ },
     sha3_512: {
-      id: /hash[+\s\-_]*sha3_512/,
+      id: "hash_sha3_512",
       pattern: /[a-fA-F0-9]{128}/,
     },
     blake2b_256: {
-      id: /hash[+\s\-_]*blake2b_256/,
+      id: "hash_blake2b_256",
       pattern: /[a-fA-F0-9]{64}/,
     },
     blake2b_384: {
-      id: /hash[+\s\-_]*blake2b_384/,
+      id: "hash_blake2b_384",
       pattern: /[a-fA-F0-9]{96}/,
     },
     blake2b_512: {
-      id: /hash[+\s\-_]*blake2b_512/,
+      id: "hash_blake2b_512",
       pattern: /[a-fA-F0-9]{128}/,
     },
     blake2s_256: {
-      id: /hash[+\s\-_]*blake2s_256/,
+      id: "hash_blake2s_256",
       pattern: /[a-fA-F0-9]{32}/,
     },
     blake2s_384: {
-      id: /hash[+\s\-_]*blake2s_384/,
+      id: "hash_blake2s_384",
       pattern: /[a-fA-F0-9]{48}/,
     },
     blake2s_512: {
-      id: /hash[+\s\-_]*blake2s_512/,
+      id: "hash_blake2s_512",
       pattern: /[a-fA-F0-9]{64}/,
     },
     keccak_256: {
-      id: /hash[+\s\-_]*keccak_256/,
+      id: "hash_keccak_256",
       pattern: /[a-fA-F0-9]{64}/,
     },
     keccak_384: {
-      id: /hash[+\s\-_]*keccak_384/,
+      id: "hash_keccak_384",
       pattern: /[a-fA-F0-9]{96}/,
     },
     keccak_512: {
-      id: /hash[+\s\-_]*keccak_512/,
+      id: "hash_keccak_512",
       pattern: /[a-fA-F0-9]{128}/,
     },
     ripemd_128: {
-      id: /hash[+\s\-_]*ripemd_128/,
+      id: "hash_ripemd_128",
       pattern: /[a-fA-F0-9]{32}/,
     },
     ripemd_160: {
-      id: /hash[+\s\-_]*ripemd_160/,
+      id: "hash_ripemd_160",
       pattern: /[a-fA-F0-9]{40}/,
     },
     ripemd_256: {
-      id: /hash[+\s\-_]*ripemd_256/,
+      id: "hash_ripemd_256",
       pattern: /[a-fA-F0-9]{64}/,
     },
     ripemd_320: {
-      id: /hash[+\s\-_]*ripemd_320/,
+      id: "hash_ripemd_320",
       pattern: /[a-fA-F0-9]{80}/,
     },
     ripemd_384: {
-      id: /hash[+\s\-_]*ripemd_384/,
+      id: "hash_ripemd_384",
       pattern: /[a-fA-F0-9]{96}/,
     },
     ripemd_512: {
-      id: /hash[+\s\-_]*ripemd_512/,
+      id: "hash_ripemd_512",
       pattern: /[a-fA-F0-9]{128}/,
     },
-    crc32: { id: /hash[+\s\-_]*crc32/, pattern: /[a-fA-F0-9]{8}/ },
-    crc32c: { id: /hash[+\s\-_]*crc32c/, pattern: /[a-fA-F0-9]{8}/ },
-    crc64: { id: /hash[+\s\-_]*crc64/, pattern: /[a-fA-F0-9]{16}/ },
+    crc32: { id: "hash_crc32", pattern: /[a-fA-F0-9]{8}/ },
+    crc32c: { id: "hash_crc32c", pattern: /[a-fA-F0-9]{8}/ },
+    crc64: { id: "hash_crc64", pattern: /[a-fA-F0-9]{16}/ },
     crc64ecma: {
-      id: /hash[+\s\-_]*crc64ecma/,
+      id: "hash_crc64ecma",
       pattern: /[a-fA-F0-9]{16}/,
     },
-    crc64x: { id: /hash[+\s\-_]*crc64x/, pattern: /[a-fA-F0-9]{16}/ },
+    crc64x: { id: "hash_crc64x", pattern: /[a-fA-F0-9]{16}/ },
     crc64xmod: {
-      id: /hash[+\s\-_]*crc64xmod/,
+      id: "hash_crc64xmod",
       pattern: /[a-fA-F0-9]{16}/,
     },
     crc64ecma: {
-      id: /hash[+\s\-_]*crc64ecma/,
+      id: "hash_crc64ecma",
       pattern: /[a-fA-F0-9]{16}/,
     },
   },
@@ -393,10 +392,9 @@ export async function format(this_object, descriptor, db) {
     ) {
       ret[k] = db.hashKeyMap[ret[k]];
     }
-    const objectDescriptorDefinition = findPropValueByAlias(
-      objectDescriptorDefinitions,
-      objectDescriptorDefinitionKey
-    );
+    const objectDescriptorDefinition =  
+      objectDescriptorDefinitions[objectDescriptorDefinitionKey]
+    || objectDescriptorDefinitions.text;
     if (descriptor[k].normalization) {
       ret[k] = await descriptor[k].normalization(ret[k]);
     }
@@ -523,9 +521,6 @@ function setRequestError(requestParams, property, cause) {
  * Data descriptors
  */
 export const dataDescriptors = {
-  '@get':function(name){
-    return findPropValueByAlias(this, name);
-  },
   [regexMap.personalName.id]: {
     type: "text",
     normalization: capitalizeTokens,
