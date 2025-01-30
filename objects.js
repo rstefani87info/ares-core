@@ -31,7 +31,7 @@ export function findPropValueByAlias(
   this_object,
   alias
 ) {
-  const key = findPropKeyByAlias(this_object, alias, regexMask);
+  const key = findPropKeyByAlias(this_object, alias);
   return (  Object.entries(this_object).find(([k, v]) =>  k+'' == key+'' ) || [])[1];
 }
 
@@ -112,6 +112,11 @@ export function onPropertyChange(this_object, key, callback) {
  * @prototype {Object}
  */
 export function fuseObjects(this_object, other){
+  if(!this_object && !other) return null;
+  if(!this_object && Array.isArray(other)) return [...other];
+  if(!other && Array.isArray(this_object)) return [...this_object];
+  if(!this_object && other) return {...other};
+  if(!other && this_object) return {...this_object};
   let ret = {};
   if(Array.isArray(this_object) && Array.isArray(other)) return [...this_object,...other];
   if(this_object instanceof Object && other instanceof Object){

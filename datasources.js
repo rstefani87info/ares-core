@@ -235,7 +235,6 @@ export class Datasource {
       return {results:ret};
     } catch (err) {
       console.error('aReS Error:',err);
-      console.error("Stack trace:", err.stack);
       if (isTransaction) {
         console.log(
           "rollback database transaction: " +
@@ -518,7 +517,7 @@ export class RESTConnection extends DBConnection {
   async _executeNativeQueryAsync(command, params, mapper, req) {
     if(mapper.isJWTSensible && mapper.getRESTApiToken)
       this.xhrWrapper.setToken(mapper.getRESTApiToken(req,this.datasource,this.datasource.aReS));
-    else if(mapper.isJWTSensible && !mapper.getRESTApiToken) throw new Error('When a mapper has isJWTSensible = true, it needs to implement getRESTApiToken(req, datasource, aReS) function');
+    else if(mapper.isJWTSensible && !mapper.getRESTApiToken) throw new Error(`For Mapper: ${mapper.name} When a mapper has isJWTSensible = true, it needs to implement getRESTApiToken(req, datasource, aReS) function`);
     else this.xhrWrapper.setToken(null);
     return await this.executeNativeQueryAsync(
       {url:command, method:mapper.method},
