@@ -521,6 +521,10 @@ function setRequestError(requestParams, property, cause) {
  * Data descriptors
  */
 export const dataDescriptors = {
+  [regexMap.text.id]: {
+    type: "text",
+    pattern: regexMap.text.pattern,  
+  },
   [regexMap.personalName.id]: {
     type: "text",
     normalization: capitalizeTokens,

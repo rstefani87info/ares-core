@@ -111,25 +111,31 @@ export function onPropertyChange(this_object, key, callback) {
  * @return {Object} The fused object
  * @prototype {Object}
  */
-export function fuseObjects(this_object, other){
-  if(!this_object && !other) return null;
-  if(!this_object && Array.isArray(other)) return [...other];
-  if(!other && Array.isArray(this_object)) return [...this_object];
-  if(!this_object && other) return {...other};
-  if(!other && this_object) return {...this_object};
-  let ret = {};
-  if(Array.isArray(this_object) && Array.isArray(other)) return [...this_object,...other];
-  if(this_object instanceof Object && other instanceof Object){
-    (new Set([...Object.keys(this_object),...Object.keys(other)])).forEach((key) => {
-      if( this_object[key]  && this_object[key]  instanceof Object && other[key] && other[key] instanceof Object ){
-        ret[key] = fuse(this_object[key] , other[key] );
-      }
-      else {
-        if(this_object.hasOwnProperty(key))ret[key] = this_object[key];
-        if(other.hasOwnProperty(key))ret[key] = other[key];
-      }
-    });
-    return ret;
-  } 
-  return null;
+export function fuseObjects(this_object, other, ...others){
+  const doIt = () => {
+    if(!this_object && !other) return null;
+    if(!this_object && Array.isArray(other)) return [...other];
+    if(!other && Array.isArray(this_object)) return [...this_object];
+    if(!this_object && other) return {...other};
+    if(!other && this_object) return {...this_object};
+    let ret = {};
+    if(Array.isArray(this_object) && Array.isArray(other)) return [...this_object,...other];
+    if(this_object instanceof Object && other instanceof Object){
+      (new Set([...Object.keys(this_object),...Object.keys(other)])).forEach((key) => {
+        if( this_object[key]  && this_object[key]  instanceof Object && other[key] && other[key] instanceof Object ){
+          ret[key] = fuse(this_object[key] , other[key] );
+        }
+        else {
+          if(this_object.hasOwnProperty(key))ret[key] = this_object[key];
+          if(other.hasOwnProperty(key))ret[key] = other[key];
+        }
+      });
+      return ret;
+    } 
+    return null;
+  }
+
+  const results = doIt();
+  if(!others || !others.length) return results;
+  return fuseObjects(results, ...others);
 }

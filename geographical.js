@@ -36,8 +36,7 @@ export function getDistanceInMeters(lat1, lng1, lat2, lng2) {
     return R * c * 1000;
 }
 
-
-const Geocoders = {
+export const Geocoders = {
     OpenCage: {
       encode: async (address, apiKey) => {
         const url = `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(address)}&key=${apiKey}`;

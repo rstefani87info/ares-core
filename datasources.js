@@ -79,8 +79,9 @@ export class DatasourceRequestMapper {
     this.datasource = datasource;
     this.aReS = aReS;
     if (!settings.name) this.name = nanoid();
-    if (!this.mapParameters) this.mapParameters = mapRequestOrResult;
-    if (!this.mapResult) this.mapResult = mapRequestOrResult;
+    if (!this.mapParameters && !this.mapParameters instanceof Function ) this.mapParameters = mapRequestOrResult;
+    if (!this.mapResult && !this.mapResult instanceof Function) this.mapResult = mapRequestOrResult;
+    if (!this.onEmptyResult && !this.onEmptyResult instanceof Function) this.onEmptyResult = (res)=>{};
     if (!this.methods) this.methods = ".*";
   }
 
@@ -119,17 +120,20 @@ export class DatasourceRequestMapper {
         if(this.objectify){
           throw new Error('TODO:  implement me!');
         }
-        if (Array.isArray(response.results)) {
+        if(!response.results || (Array.isArray(response.results) && response.results.length === 0)){
+          this.onEmptyResult(response,request,this.aReS);
+        }else if (Array.isArray(response.results) && response.results.length > 0) {
           for(i=0; i<response.results.length; i++){
             if (this.mapResult && this.mapResult instanceof Function) {
-              response.results[i] = await this.mapResult(response.results[i], i);
+              response.results[i] = await this.mapResult(response.results[i],  i, request,this.aReS);
             }
             if (this.transformToDTO && this.transformToDTO instanceof Function) {
-              response.results[i] = await this.transformToDTO(response.results[i]);
+              response.results[i] = await this.transformToDTO(response.results[i], i, request,this.aReS);
             }
           }
-        } else {
-          response.results = this.mapResult(response.results);
+        }
+        else if(response.results){
+          response.results = this.mapResult(response.results, 0, request, this.aReS);
         }
       }
     }
@@ -143,7 +147,17 @@ export class DatasourceRequestMapper {
       response.query = this.query;
     }
     
-    console.log("Mapped results:", response);
+    response.getResultsData = () => {
+      if(response?.results?.data?.length > 0){
+        if(response.results.data[0]["@type"]==="ares-rest-response"){
+          return response.results.data[0].results.results;
+        }
+        return response.results.data;
+      }
+      return response.results;
+    }
+    console.log("Mapped results:", response.getResultsData());
+
     return response;
   }
 }

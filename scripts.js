@@ -298,6 +298,20 @@ export function getByPropertyPath(object, path) {
  *
  * Check if a function is async
  */
-function isAsyncFunction(this_function) {
+export function isAsyncFunction(this_function) {
   return this_function.constructor.name === 'AsyncFunction';
+}
+
+
+/**
+ * Checks if a given value is a primitive.
+ * 
+ * @param {*} this_value - The value to check.
+ * @returns {boolean} - Returns true if the value is a primitive, otherwise false.
+ * 
+ * @prototype {function}
+ */
+
+export function isPrimitive(this_value) {
+  return this_value !== Object(this_value);
 }
