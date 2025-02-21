@@ -168,8 +168,13 @@ export class Datasource {
     this.sessions = {};
     this.hashKeyMap = {};
     this.idKeyMap = {};
+    this.pools={}
   }
 
+  async getPool(id,onCreate){
+    this.pools[id] = this.pools[id] ?? await onCreate();
+    return this.pools[id];
+  }
   async getConnection(req, mapper, force = false) {
     console.log(
       "Datasource: " + this.name + " - connecting: " + mapper.connectionSetting,this.aReS.permissions.isResourceAllowed(this.name, req)
