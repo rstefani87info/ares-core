@@ -1,5 +1,7 @@
 import numeral from "numeral";
 import { capitalizeTokens } from "./text.js";
+import { min } from "moment";
+import { all } from "axios";
 
 export const regexMap = {
   text: { 
@@ -306,7 +308,7 @@ export const regexMap = {
  */
 export const objectDescriptorDefinitions = {
   text: {
-    parse: (s) => s + "",
+    parse: (s, f) => (f instanceof Function ? f(s) : s + ""),
     minLength: (v, m) => (m > 0 ? v.length >= m : true),
     maxLength: (v, m) => (m > 0 ? v.length <= m : true),
     minValue: (v, m) => (m ? v >= m : true),
@@ -317,7 +319,7 @@ export const objectDescriptorDefinitions = {
     },
   },
   number: {
-    parse: (s) => new Number(s + ""),
+    parse: (s, f) => (f instanceof Function ? f(s) : new Number(s + "")) ,
     minLength: (v, m) => (m > 0 ? ("" + v).length >= m : true),
     maxLength: (v, m) => (m > 0 ? ("" + v).length <= m : true),
     minDecimalLength: (v, m) =>
@@ -347,7 +349,7 @@ export const objectDescriptorDefinitions = {
   },
 
   [regexMap.datetime.id]: {
-    parse: (s, f) => (f ? moment(v, f) : moment(v)),
+    parse: (s, f) => f instanceof Function ? f(s) :(f instanceof String ? moment(v, f) : moment(v)),
     minValue: (v, m, f) =>
       m
         ? f
@@ -370,6 +372,158 @@ export const objectDescriptorDefinitions = {
       else return true;
     },
   },
+  array: {
+    parse: (v,f) => {
+      if ( f instanceof Function) return v.map(f);
+      if( v instanceof String) return JSON.parse(v);
+      else return v;},
+    minLength: (v, m) => (m > 0 ? v.length >= m : true),
+    maxLength: (v, m) => (m > 0 ? v.length <= m : true),
+    filter: (v, f) => {
+      if ( Array.isArray(v) && f instanceof Function) return v.filter(f);
+      else return v;
+    },
+    sort: (v, s) => {
+      if ( Array.isArray(v) && s instanceof Function) return v.sort(s);
+      else return v;
+    },
+    map: (v, m) => {
+      if ( Array.isArray(v) && m instanceof Function) return v.map(m);
+      else return v;
+    },
+    reduce: (v, r) => {
+      if ( Array.isArray(v) && r instanceof Function) return v.reduce(r);
+      else return v;
+    },
+    join: (v, j) => {
+      if (Array.isArray(j) && Array.isArray(v)) return v.join(j);
+      else return v;
+    },
+    slice: (v, {start, end}) => {
+      if ( Array.isArray(v) && s instanceof Function) return v.slice(start, end);
+      else return v;
+    },
+    groupBy: (v,  criteria) => {
+      return v.reduce((acc, item) => {
+          const key = typeof criteria === 'function' ? criteria(item) : item[criteria];
+          acc[key] = acc[key] || [];
+          acc[key].push(item);
+          return acc;
+      }, {});
+    },
+    some: (v, f) => {
+      if ( Array.isArray(v) && f instanceof Function) return v.some(f);
+      else return false;
+    },
+    all: (v, f) => {
+      if ( Array.isArray(v) && f instanceof Function) return v.every(f);
+      else return false;
+    },
+    noOne: (v, f) => {
+      if ( Array.isArray(v) && f instanceof Function) return !v.some(f);
+      else return false;
+    },
+  },
+  object: {
+
+    parse: (v, f) => {
+      if (f instanceof Function) return f(v);
+      if (v instanceof String) return JSON.parse(v);
+      else return v;
+    },
+    filterKeys: (v, f) => {
+      if (v instanceof Object) 
+        {
+          const keys = Object.keys(v).filter(f);
+          return keys.reduce((acc, key) => {
+            acc[key] = v[key];
+            return acc;
+          });
+        }
+      else return v;
+  },
+  mapKeys: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return keys.reduce((acc, key) => {
+          acc[f(key)] = v[key];
+          return acc;
+        });
+      }
+    else return v;
+  },
+  someKeys: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return keys.some(f);
+      }
+    else return false;
+  },
+  allKeys: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return keys.every(f);
+      }
+    else return false;
+  },
+  noKeys: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return !keys.some(f);
+      }
+    else return false;
+  },
+  mapValues: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return keys.reduce((acc, key) => {
+          acc[key] = f(v[key]);
+          return acc;
+        });
+      }
+    else return v;
+  },
+  filterValues: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return keys.reduce((acc, key) => {
+          if (f(v[key])) acc[key] = v[key];
+          return acc;
+        });
+      }
+    else return v;
+  },
+  noValues: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return !keys.some(f);
+      }
+    else return false;
+  },
+  someValues: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return keys.some(f);
+      }
+    else return false;
+  },
+  allValues: (v, f) => {
+    if (v instanceof Object) 
+      {
+        const keys = Object.keys(v);
+        return keys.every(f);
+      }
+    else return false;
+  },
+}
 };
 
 /**
@@ -388,9 +542,9 @@ export async function format(this_object, descriptor, db) {
     const objectDescriptorDefinitionKey = descriptor[k]?.type || "text";
     console.log("objectDescriptorDefinitionKey:", k, descriptor[k]);
     if (
-      objectDescriptorDefinitionKey.match(regexMap.identity.id)
+      objectDescriptorDefinitionKey === regexMap.identity.id
     ) {
-      ret[k] = db.hashKeyMap[ret[k]];
+      ret[k] = db.getHashKeyMap(ret[k]);
     }
     const objectDescriptorDefinition =  
       objectDescriptorDefinitions[objectDescriptorDefinitionKey]
@@ -486,10 +640,8 @@ export async function format(this_object, descriptor, db) {
     }
     if (descriptor[k].exists) {
       if (
-        (typeof descriptor[k].exists === "function" &&
-          !(await descriptor[k].exists(ret[k]))) ||
-        (Array.isArray(descriptor[k].exists) &&
-          !descriptor[k].exists.includes(ret[k]))
+        typeof descriptor[k].exists === "function" &&
+          await descriptor[k].exists(ret[k])
       ) {
         setRequestError(ret, k, "exists");
       }
@@ -497,9 +649,7 @@ export async function format(this_object, descriptor, db) {
     if (
       (descriptor[k].notExists &&
         typeof descriptor[k].notExists === "function" &&
-        !(await descriptor[k].notExists(ret[k]))) ||
-      (Array.isArray(descriptor[k].notExists) &&
-        !descriptor[k].notExists.includes(ret[k]))
+        !(await descriptor[k].notExists(ret[k])))
     ) {
       setRequestError(ret, k, "notExists");
     }
@@ -1022,5 +1172,12 @@ export const dataDescriptors = {
   [regexMap.jwt.id]: {
     type: "text",
     pattern: regexMap.jwt.pattern,  
+  },
+  array:{
+    type:"array",
+  },
+  object: {
+    type: "object",
+    mapping:{},
   },
 };

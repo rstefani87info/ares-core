@@ -79,10 +79,10 @@ export class DatasourceRequestMapper {
     this.datasource = datasource;
     this.aReS = aReS;
     if (!settings.name) this.name = nanoid();
-    if (!this.mapParameters && !this.mapParameters instanceof Function ) this.mapParameters = mapRequestOrResult;
-    if (!this.mapResult && !this.mapResult instanceof Function) this.mapResult = mapRequestOrResult;
-    if (!this.onEmptyResult && !this.onEmptyResult instanceof Function) this.onEmptyResult = (res)=>{};
-    if (!this.methods) this.methods = ".*";
+    if (!this.mapParameters instanceof Function ) this.mapParameters = mapRequestOrResult;
+    if (!this.mapResult instanceof Function) this.mapResult = mapRequestOrResult;
+    if (!this.onEmptyResult instanceof Function) this.onEmptyResult = (res)=>{};
+    if (!this.methods) this.methods = "GET";
   }
 
   async execute(request) {
@@ -92,7 +92,7 @@ export class DatasourceRequestMapper {
         "[" +
         request.session.id +
         "] : <<" +
-        this.query +
+        this.query.toString() +
         ">>"
     );
     let params = {};
@@ -111,19 +111,16 @@ export class DatasourceRequestMapper {
       request = cloneWithMethods(request);
       request.parameters = params;
       console.log("in query");
-      response = await this.datasource.query(
+      response = this.query instanceof String ? await this.datasource.query(
         request,
         this.query,
         this
-      );
+      ): (this.query instanceof Function ? await this.query(request, this.aReS): {});
       if (response.results) {
-        if(this.objectify){
-          throw new Error('TODO:  implement me!');
-        }
         if(!response.results || (Array.isArray(response.results) && response.results.length === 0)){
           this.onEmptyResult(response,request,this.aReS);
         }else if (Array.isArray(response.results) && response.results.length > 0) {
-          for(i=0; i<response.results.length; i++){
+          for(let i=0; i<response.results.length; i++){
             if (this.mapResult && this.mapResult instanceof Function) {
               response.results[i] = await this.mapResult(response.results[i],  i, request,this.aReS);
             }
@@ -132,12 +129,15 @@ export class DatasourceRequestMapper {
             }
           }
         }
-        else if(response.results){
-          response.results = this.mapResult(response.results, 0, request, this.aReS);
+        else if(response.mapResult && response.mapResult instanceof Function){
+          response.results = await this.mapResult(response.results, 0, request, this.aReS);
+          if (this.transformToDTO && this.transformToDTO instanceof Function) {
+            response.results = await this.transformToDTO(response.results, i, request,this.aReS);
+          }
         }
       }
     }
-    if (this.postExecute && this.mapResult instanceof Function) {
+    if (this.postExecute && this.postExecute instanceof Function) {
       this.postExecute(request, this.datasource, response);
     }
     
@@ -196,6 +196,7 @@ export class Datasource {
             req.session.id,
             mapper.connectionSetting
           );
+        
       }
       await this.sessions[req.session.id][
         mapper.connectionSetting
@@ -269,13 +270,17 @@ export class Datasource {
   }
 
   getKeyHash(key) {
-    if (!this.idKeyMap[key]) {
+    if (!this.idKeyMap[`_${key}`]) {
       const hash = getSHA256Hash(key);
-      this.hashKeyMap = { hash: key };
-      this.idKeyMap = { key: hash };
+      this.hashKeyMap = { [`_${hash}`]: key};
+      this.idKeyMap = { [`_${key}`]: hash };
       return hash;
     }
     return this.idKeyMap[key];
+  }
+
+  getHashKey(hash) {
+    return this.idKeyMap[`_${hash}`];
   }
 
   close(req) {
@@ -330,6 +335,15 @@ class DBConnection {
   async nativeConnect(callback = defaultConnectionCallback) {
     throw new Error(
       "Missing " + this.constructor.name + " nativeConnect implementation!"
+    );
+  }
+  async setPool() {
+    const thisInstance = this;
+    this.pool = await thisInstance.datasource.getPool(thisInstance.connectionSettingName, () => thisInstance.createPool());
+  }
+  async createPool() {
+    throw new Error(
+      "Missing " + this.constructor.name + " createPool implementation!"
     );
   }
 }
@@ -408,11 +422,12 @@ export class SQLDBConnection extends DBConnection {
   }
 
   delete(type, parameters) {
-    const newParams = [];
-
     let command = `DELETE FROM ${type}`;
+    return executeFilteredAction(command, parameters);
+  }
 
-    // Gestione della clausola WHERE
+  executeFilteredAction(command, parameters) {
+    const newParams = [];
     if (parameters.filter) {
       command += " WHERE ";
       if (typeof parameters.filter === "object") {
@@ -431,11 +446,10 @@ export class SQLDBConnection extends DBConnection {
         command += parameters.filter;
       }
     }
-
     return {
       command,
       parameters: newParams,
-    };
+    }
   }
 
   filterBy(...filters) {

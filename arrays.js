@@ -75,3 +75,15 @@ export function convertArrayToObject(this_array, keys) {
     map[keys[i]] = this_array[i] ?? undefined;
   }
 }
+
+/**
+ * Determines if the provided data is iterable.
+ *
+ * @param {any} data - The data to be checked for iterability.
+ * @return {function} - A function that checks if a value is non-null
+ *                      and has a valid iterator function.
+ */
+
+export function isIterable(data) {
+  return valore => valore != null && typeof valore[Symbol.iterator] === 'function';
+}
