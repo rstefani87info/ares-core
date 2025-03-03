@@ -1,7 +1,5 @@
 import numeral from "numeral";
 import { capitalizeTokens } from "./text.js";
-import { min } from "moment";
-import { all } from "axios";
 
 export const regexMap = {
   text: { 
@@ -558,7 +556,7 @@ export async function format(this_object, descriptor, db) {
         ret[k] = JSON.parse(JSON.stringify(ret[k]));
       }
     }
-    if (descriptor[k].required && !ret[k]) {
+    if (descriptor[k].required && ( descriptor[k].required instanceof Function ? descriptor[k].required(ret[k]) : !ret[k])) {
       setRequestError(ret, k, "required");
     }
     if (
