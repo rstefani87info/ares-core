@@ -99,7 +99,7 @@ export class DatasourceRequestMapper {
     let response = {};
     params = await format(
       request,
-      this.parametersValidationRoles? await this.parametersValidationRoles(request, this.aReS): {},
+      this.parametersValidationRoles instanceof Function? await this.parametersValidationRoles(request, this.aReS): {},
       this.datasource
     );
     if (params["€rror"]) {
