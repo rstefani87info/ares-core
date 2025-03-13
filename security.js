@@ -1,26 +1,34 @@
 import crypto from "crypto";
-import dataDescriptors from "./dataDescriptors.js";
+import {dataDescriptors, regexMap, format} from "./dataDescriptors.js";
 
 const PASSWORD_DESCRIPTOR = {
-  type: dataDescriptors.regexMap.password.id,
-  pattern: dataDescriptors.regexMap.password.pattern,
+  type: dataDescriptors[regexMap.password.id],
+  pattern: regexMap.password.pattern,
   minLength: 8,
   maxLength: 100,
+  required: true,
+  parametersValidationRoles: function (request) {
+    return {
+      password: {...PASSWORD_DESCRIPTOR, source:(req)=>req.password },
+    }
+  }
 };
 
 const ALGORITHM = "aes-256-cbc";
 const IV_LENGTH = 16; // AES blocco IV a 16 byte
 
+
 function deriveKey(password, passwordDescriptor = PASSWORD_DESCRIPTOR) {
   if (passwordDescriptor) {
-    const validated = dataDescriptors.format({ password }, descriptor, null);
+    const req ={ password };
+    const validated = format(req, passwordDescriptor.parametersValidationRoles(req), null);
     if (validated["€rror"]) {
       throw new Error(
         `Password descriptor ${passwordDescriptor.type} not supported`,
         validated["€rror"]
       );
     }
-    return crypto.createHash("sha256").update(password).digest();
+    return crypto.pbkdf2Sync(password, "aReS-salt", 100000, 32, "sha256");
   }
 }
 
@@ -45,8 +53,8 @@ export function decryptText(text, key) {
 function encryptObject(obj, key) {
     if (typeof obj !== "object" || !obj) return obj;
     const encryptedObj = {};
-    for (let [key, value] of Object.entries(obj)) {
-      const encryptedKey = encryptText(key, key);
+    for (let [objkey, value] of Object.entries(obj)) {
+      const encryptedKey = encryptText(objkey, key);
       encryptedObj[encryptedKey] =  encryptByKey(value, key);
     }
      
@@ -83,41 +91,40 @@ export function decrypt(data, password) {
   return decryptByKey(data, key);
 }
 
-
-function encryptByKey (data, key){
-  if (typeof data === "number" || typeof data === "boolean" || data instanceof Date || data instanceof RegExp || data instanceof Function) {
-    return data;
+function encryptByKey(data, key) {
+  if (typeof data === "string") {
+    return encryptText(data, key); // Ora cifra correttamente le stringhe!
   }
 
-  if (data && data instanceof String) {
-    return encryptText(data, key);
-  }
-
-  if (data && Array.isArray(data)) {
+  if (Array.isArray(data)) {
     return encryptArray(data, key);
   }
 
-  if (data && typeof data === "object") {
+  if (typeof data === "number" || typeof data === "boolean" || data instanceof Date || data instanceof RegExp || data instanceof Function) {
+    return data; // Non cifrare questi tipi
+  }
+
+  if (typeof data === "object" && data !== null) {
     return encryptObject(data, key);
   }
 
   return data;
 }
 
-function decryptByKey (data, key){
-  if (typeof data === "number" || typeof data === "boolean" || data instanceof Date || data instanceof RegExp || data instanceof Function) {
-    return data;
+function decryptByKey(data, key) {
+  if (typeof data === "string") {
+    return decryptText(data, key); // Ora decifra correttamente le stringhe!
   }
 
-  if (data && data instanceof String) {
-    return decryptText(data, key);
-  }
-
-  if (data && Array.isArray(data)) {
+  if (Array.isArray(data)) {
     return decryptArray(data, key);
   }
 
-  if (data && typeof data === "object") {
+  if (typeof data === "number" || typeof data === "boolean" || data instanceof Date || data instanceof RegExp || data instanceof Function) {
+    return data; // Non cifrare questi tipi
+  }
+
+  if (typeof data === "object" && data !== null) {
     return decryptObject(data, key);
   }
 
