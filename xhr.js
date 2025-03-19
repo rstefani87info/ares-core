@@ -65,15 +65,39 @@ export class XHRWrapper {
   }
 
   async patch(url, originalData, dataUpload, options = {}) {
+    const isDifferent = (original, updated) => {
+      if (original === updated) return false;
+      if (typeof original !== 'object' || typeof updated !== 'object') return true;
+      if (original === null || updated === null) return true;
+      
+      if (Array.isArray(original) && Array.isArray(updated)) {
+        if (original.length !== updated.length) return true;
+        return original.some((val, idx) => isDifferent(val, updated[idx]));
+      }
+      
+      const keys = Object.keys(updated);
+      return keys.some(key => isDifferent(original[key], updated[key]));
+    };
+    
     const data = {};
     for (const key in dataUpload) {
       if (
         dataUpload[key] !== undefined &&
-        dataUpload[key] !== originalData[key]
+        isDifferent(originalData[key], dataUpload[key])
       ) {
         data[key] = dataUpload[key];
       }
     }
+    
+    if (Object.keys(data).length === 0) {
+      return {
+        status: 304, // Not Modified
+        message: "No changes detected",
+        url: this.baseURL + url,
+        data: originalData
+      };
+    }
+    
     return await this.getXHR("PATCH", url, data, options);
   }
 

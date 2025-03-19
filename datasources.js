@@ -79,10 +79,10 @@ export class DatasourceRequestMapper {
     this.datasource = datasource;
     this.aReS = aReS;
     if (!settings.name) this.name = nanoid();
-    if (!this.mapParameters instanceof Function ) this.mapParameters = mapRequestOrResult;
-    if (!this.mapResult instanceof Function) this.mapResult = mapRequestOrResult;
-    if (!this.onEmptyResult instanceof Function) this.onEmptyResult = (res)=>{};
-    if (!this.methods) this.methods = "GET";
+    if (!typeof this?.mapParameters === 'function' ) this.mapParameters = mapRequestOrResult;
+    if (!typeof this?.mapResult === 'function') this.mapResult = mapRequestOrResult;
+    if (!typeof this?.onEmptyResult === 'function') this.onEmptyResult = (res)=>{};
+    if (!this?.methods) this.methods = "GET";
   }
 
   async execute(request) {
@@ -132,7 +132,7 @@ export class DatasourceRequestMapper {
         else if(response.mapResult && response.mapResult instanceof Function){
           response.results = await this.mapResult(response.results, 0, request, this.aReS);
           if (this.transformToDTO && this.transformToDTO instanceof Function) {
-            response.results = await this.transformToDTO(response.results, i, request,this.aReS);
+            response.results = await this.transformToDTO(response.results, 0, request,this.aReS);
           }
         }
       }
@@ -506,11 +506,11 @@ export class SQLDBConnection extends DBConnection {
       annotations.forEach((x) => {
         if (this[x.annotation] && typeof this[x.annotation] === "function") {
           const resolvedAnnotation = this[x.annotation](parameters);
-          newParameters.join(resolvedAnnotation.parameters);
+          newParameters.push(...resolvedAnnotation.parameters);
         }
         command = command.replace(
           docklet,
-          docklet + "\n-- docklet generated\n" + resolvedAnnotation.command
+          docklet + "\n-- docklet generated\n" + (resolvedAnnotation?.command ??'')
         );
       });
     }

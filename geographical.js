@@ -139,13 +139,12 @@ export const Geocoders = {
       getCoordinatesInfo:  `https://maps.googleapis.com/maps/api/geocode/json?latlng={latitude},{longitude}&key={apiKey}`,
 
       canCall: async (config) => {
-        const url = `https://billing.googleapis.com/v1/billingAccounts/${config.billingAccountID}/credits`;
+        const url = `https://billing.googleapis.com/v1/billingAccounts/${config.billingAccountID}/credits?key=${configapiKey}`;
         try {
           const response = await axios.get(url, {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
+            headers: { },
           });
+          console.log('Crediti disponibili:', response.data);
           return response.data;
         } catch (error) {
           console.error('Errore durante il recupero dei crediti:', error);
