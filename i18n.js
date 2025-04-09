@@ -33,3 +33,11 @@ export const i18n = {
 }
 
 export default i18n;
+
+export function chooseMessage(language, dictionary, key) {
+    // ritorna il valore della chiave key in dizionario dictionary per la lingua language
+    // se non esiste, ritorna la chiave key
+    if (dictionary[language] && dictionary[language][key]) {
+        return dictionary[language][key][language]; 
+    } 
+}
