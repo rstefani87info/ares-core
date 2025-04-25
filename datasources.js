@@ -156,7 +156,7 @@ export class DatasourceRequestMapper {
       }
       return response.results;
     }
-    console.log("Mapped results:", response.getResultsData());
+    console.log("Mapped results:", response);
 
     return response;
   }
@@ -252,7 +252,7 @@ export class Datasource {
         );
         connection.commit(transactionName);
       }
-      return {results:ret};
+      return ret;
     } catch (err) {
       console.error('aReS Error:',err);
       if (isTransaction) {
@@ -567,14 +567,14 @@ export class RESTConnection extends DBConnection {
     const response = { 
       executionTime: date.getTime(), 
       executionDateTime: date,
-      data: []
     };
     const responseValue = await this.xhrWrapper[command.method?.toLowerCase()||'get'](
       command.url,
       params,
       options
     );
-    response.data.push(responseValue);
+    response.response = responseValue;
+    response.results = responseValue.results;
     return response;
   }
 }

@@ -47,8 +47,9 @@ export class XHRWrapper {
         status: response.status,
         message: response.statusText,
         url: fullUrl,
+        results: response.data,
+        message:response.status >= 400? { message: response.statusMessage || "Something went wrong" }:null,
       };
-      ret = Object.assign({}, ret, response.data || (response.status >= 400? { message: response.statusMessage || "Something went wrong" }:null));
       return ret;
     } catch (error) {
       console.error('Error:', error);
