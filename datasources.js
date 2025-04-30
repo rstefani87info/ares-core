@@ -111,15 +111,15 @@ export class DatasourceRequestMapper {
       request = cloneWithMethods(request);
       request.parameters = params;
       console.log("in query");
-      response = this.query instanceof String ? await this.datasource.query(
+      response = typeof this.query === "string" ? await this.datasource.query(
         request,
         this.query,
         this
-      ): (this.query instanceof Function ? await this.query(request, this.aReS): {});
-      if (response.results) {
-        if(!response.results || (Array.isArray(response.results) && response.results.length === 0)){
-          this.onEmptyResult(response,request,this.aReS);
-        }else if (Array.isArray(response.results) && response.results.length > 0) {
+      ): (typeof this.query === "function" ? await this.query(request, this.aReS): this.query);
+      if(!response.results || (Array.isArray(response.results) && response.results.length === 0)){
+        this.onEmptyResult(response,request,this.aReS);
+      }else if (response.results) {
+        if (Array.isArray(response.results) && response.results.length > 0) {
           for(let i=0; i<response.results.length; i++){
             if (this.mapResult && this.mapResult instanceof Function) {
               response.results[i] = await this.mapResult(response.results[i],  i, request,this.aReS);
@@ -198,6 +198,11 @@ export class Datasource {
           );
         
       }
+      if(! this.sessions[req.session.id][
+        mapper.connectionSetting
+      ].pool) {await this.sessions[req.session.id][
+        mapper.connectionSetting
+      ].setPool();}
       await this.sessions[req.session.id][
         mapper.connectionSetting
       ].nativeConnect(defaultConnectionCallback);
@@ -213,11 +218,16 @@ export class Datasource {
     mapper
   ) {
     let connection = this.sessions[req.session.id]? this.sessions[req.session.id][mapper.connectionSetting] : undefined;
+    console.log("verifying connection");
     const thisInstance = this;
     if (!connection || !connection.isOpen) {
       connection = await this.getConnection(req, mapper);
-      if (!connection.isOpen) throw new Error("connection is not open");
+      if (!connection.isOpen) {
+        console.error("connection is not open");
+        throw new Error("connection is not open");
+      }
     }
+    console.log("verified connection", true);
     const isTransaction =
       (mapper.transaction === true || mapper.transaction === 1) &&
       connection.startTransaction &&
@@ -331,6 +341,7 @@ class DBConnection {
     this.datasource = datasource;
     this.sessionId = sessionId;
     this.name = connectionSettingName;
+    
   }
   async nativeConnect(callback = defaultConnectionCallback) {
     throw new Error(
@@ -341,7 +352,7 @@ class DBConnection {
     const thisInstance = this;
     this.pool = await thisInstance.datasource.getPool(thisInstance.connectionSettingName, () => thisInstance.createPool());
   }
-  async createPool() {
+  async createPool(connectionSettingName) {
     throw new Error(
       "Missing " + this.constructor.name + " createPool implementation!"
     );

@@ -636,20 +636,13 @@ export async function format(this_object, descriptor, db) {
     ) {
       ret[k] = await descriptor[k].transform(ret[k]);
     }
-    if (descriptor[k].exists) {
+    if (descriptor[k].validate) {
       if (
-        typeof descriptor[k].exists === "function" &&
-          await descriptor[k].exists(ret[k])
+        typeof descriptor[k].validate === "function" &&
+          await descriptor[k].validate(ret[k])
       ) {
-        setRequestError(ret, k, "exists");
+        setRequestError(ret, k, "validate");
       }
-    }
-    if (
-      (descriptor[k].notExists &&
-        typeof descriptor[k].notExists === "function" &&
-        !(await descriptor[k].notExists(ret[k])))
-    ) {
-      setRequestError(ret, k, "notExists");
     }
   }
   return ret;
