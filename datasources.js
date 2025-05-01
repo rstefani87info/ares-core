@@ -117,7 +117,7 @@ export class DatasourceRequestMapper {
         this
       ): (typeof this.query === "function" ? await this.query(request, this.aReS): this.query);
       if(!response.results || (Array.isArray(response.results) && response.results.length === 0)){
-        this.onEmptyResult(response,request,this.aReS);
+        this.onEmptyResult?.(response,request,this.aReS);
       }else if (response.results) {
         if (Array.isArray(response.results) && response.results.length > 0) {
           for(let i=0; i<response.results.length; i++){
