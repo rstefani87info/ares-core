@@ -3,7 +3,11 @@ import axios from "axios";
 export function getGeocoder(aReS, language) {
   aReS.geocoder= aReS.geocoder ?? {};
   aReS.geocoder[language] = aReS.geocoder[language] ?? new Geocoder(aReS,language);
-  
+  return aReS.geocoder[language];
+}
+
+export function aReSInitialize(aReS){
+  aReS.getGeocoder = (language) => getGeocoder(aReS, language);
 }
 
 class Geocoder{

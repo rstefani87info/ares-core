@@ -3,49 +3,46 @@
  * @license MIT
  * A collection of base utilities of aReS framework.
  */
-import * as arrays from "./arrays.js";
-import * as console from "./console.js";
-import * as crypto from "./crypto.js";
-import * as dataDescriptor from "./dataDescriptors.js";
-import * as datasources from "./datasources.js";
-import * as dates from "./dates.js";
-import * as i18n from "./i18n.js";
-import * as numbers from "./numbers.js";
-import * as objects from "./objects.js";
-import * as permissions from "./permissions.js";
-// import * as prototype from "./prototype.js";
-import * as regex from "./regex.js";
-import * as scripts from "./scripts.js";
-import * as text from "./text.js";
-import * as url from "./url.js";
-import * as xhr from "./xhr.js";
 
-import appSetup from "../../../app.js";
+export class ARES {
+    static instances = {};
+    constructor(setup){
+        this.appSetup = setup ?? { environments: [] };
+        this.idMap = { idKeyMap:{}, hashKeyMap:{} };
+        ARES.instances[this._appSetup.name] = this;
+    }
 
-const idMap = { idKeyMap:{}, hashKeyMap:{} };
-const aReS =  {
-  arrays,
-  console,
-  crypto,
-  dataDescriptor,
-  datasources,
-  dates,
-  i18n,
-  numbers,
-  objects,
-  permissions,
-  regex,
-  scripts,
-  text,
-  url,
-  xhr,
-  appSetup,
-  isProduction: function() {
-    return appSetup.environments.find(x=>x.type.toLowerCase()=='production' && x.selected)!== undefined;
-  },
-  getIdMap:function(){
-    return idMap;
-  }
-};
+    set appSetup(setup){
+        this._appSetup = setup;
+    }
 
-export default aReS;
+    get appSetup() { return this._appSetup; }
+
+    set idMap(idMap){
+        this._idMap = idMap;
+    }
+   
+    get idMap(){
+      return this._idMap;
+    }
+
+    get isProduction(){
+        return this._appSetup.environments.find(x=>x.type.toLowerCase()=='production' && x.selected)!== undefined;
+    }
+
+    include(module){
+        return module.aReSInitialize(this);
+    }
+    
+    static getInstance(name){
+        return ARES.instances[name];
+    }
+}
+
+export default function aReSInitialize(setup){
+    const aReS = new ARES(setup);
+    return aReS;
+}
+
+
+

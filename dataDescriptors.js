@@ -556,7 +556,7 @@ export async function format(this_object, descriptor, db) {
         ret[k] = JSON.parse(JSON.stringify(ret[k]));
       }
     }
-    if (descriptor[k].required && ( descriptor[k].required instanceof Function ? descriptor[k].required(ret[k]) : !ret[k])) {
+    if (descriptor[k].required && ( descriptor[k].required instanceof Function ? !descriptor[k].required(ret[k]) : !ret[k])) {
       setRequestError(ret, k, "required");
     }
     if (
@@ -639,7 +639,7 @@ export async function format(this_object, descriptor, db) {
     if (descriptor[k].validate) {
       if (
         typeof descriptor[k].validate === "function" &&
-          await descriptor[k].validate(ret[k])
+          !(await descriptor[k].validate(ret[k]))
       ) {
         setRequestError(ret, k, "validate");
       }

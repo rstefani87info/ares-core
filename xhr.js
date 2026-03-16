@@ -1,9 +1,10 @@
 import axios from "axios";
 
 export class XHRWrapper {
-  constructor(baseURL, token = null) {
+  constructor(baseURL, token = null, isProduction = false) {
     this.baseURL = baseURL;
     this.token = token;
+    this.isProduction = isProduction;
   }
 
   static objectToQueryString(obj) {
@@ -18,7 +19,7 @@ export class XHRWrapper {
   setToken(token) {
     this.token = token;
   }
-  async getXHR(method, url, data = null, options = {}) {
+  async getXHR(method, url, data = null, options = {} ) {
     const fullUrl = this.baseURL + url;
     const config = {
       method: method.toLowerCase(),
@@ -52,8 +53,10 @@ export class XHRWrapper {
       };
       return ret;
     } catch (error) {
-      console.error('Error:', error);
-      return { "€rror": error.message || "Something went wrong" };
+      let message = error.message;
+      if(!isProduction()) message+= error.stack;
+      console.error('Error:', message);
+      return { "€rror": message || "Something went wrong" };
     }
   }
 

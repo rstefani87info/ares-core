@@ -3,12 +3,13 @@
  * @license MIT
  */
 
-import { nanoid  } from "nanoid";
+import { nanoid } from "nanoid";
 import { format } from "./dataDescriptors.js";
 import { cloneWithMethods } from "./objects.js";
 import { XHRWrapper } from "./xhr.js";
-import { getDocklet, getDockletAnnotations } from "./scripts.js";
+import { getDockletAnnotations } from "./scripts.js";
 import { getSHA256Hash } from "./crypto.js";
+import * as advancedConsole from "./console.js";
 
 const mapRequestOrResult = function (request) {
   return request;
@@ -33,25 +34,36 @@ export async function loadDatasource(
   onMapperLoaded,
   force = false
 ) {
-  aReS.console.asyncConsole.log("datasource ", JSON.stringify(datasourceSettings));
+  advancedConsole.asyncConsole.log(
+    "datasource ",
+    JSON.stringify(datasourceSettings)
+  );
   const datasourceName = datasourceSettings.name.toLowerCase();
   aReS.datasourceMap = aReS.datasourceMap ?? {};
   force = force || !(datasourceName in aReS.datasourceMap);
   if (force) {
-    aReS.console.asyncConsole.log("datasources", 'init db "' + datasourceName + '" {');
+    advancedConsole.asyncConsole.log(
+      "datasources",
+      'init db "' + datasourceName + '" {'
+    );
     aReS.datasourceMap[datasourceName] = new Datasource(
       aReS,
       datasourceSettings
     );
     aReS.datasourceMap[datasourceName].onMapperLoaded = onMapperLoaded;
     aReS.datasourceMap[datasourceName].loadQueries();
-    aReS.console.asyncConsole.log("datasources", "}");
+    advancedConsole.asyncConsole.log("datasources", "}");
   }
   return aReS.datasourceMap[datasourceName];
 }
 
+export function aReSInitialize(aReS) {
+  aReS.loadDatasource = (datasourceSettings, onMapperLoaded, force = false) =>
+    loadDatasource(aReS, datasourceSettings, onMapperLoaded, force);
+}
+
 export function exportAsAresMethod(aReS, mapper, datasource) {
-  aReS.console.asyncConsole.log(
+  advancedConsole.asyncConsole.log(
     "datasources",
     " - open REST: " + mapper.name + ":  " + mapper.path
   );
@@ -63,7 +75,7 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
         return result;
       }
     };
-    aReS.console.asyncConsole.log("datasources", " - }");
+  advancedConsole.asyncConsole.log("datasources", " - }");
 }
 
 export class ValidationError extends Error {
@@ -79,86 +91,143 @@ export class DatasourceRequestMapper {
     this.datasource = datasource;
     this.aReS = aReS;
     if (!settings.name) this.name = nanoid();
-    if (!typeof this?.mapParameters === 'function' ) this.mapParameters = mapRequestOrResult;
-    if (!typeof this?.mapResult === 'function') this.mapResult = mapRequestOrResult;
-    if (!typeof this?.onEmptyResult === 'function') this.onEmptyResult = (res)=>{};
+    if (typeof this.mapParameters !== "function")
+      this.mapParameters = mapRequestOrResult;
+    if (typeof this.mapResult !== "function")
+      this.mapResult = mapRequestOrResult;
+    if (typeof this.onEmptyResult !== "function")
+      this.onEmptyResult = (res) => {};
     if (!this?.methods) this.methods = "GET";
   }
 
   async execute(request) {
-    console.log(
-      "called database: " +
-        this.datasource.name +
-        "[" +
-        request.session.id +
-        "] : <<" +
-        this.query.toString() +
-        ">>"
-    );
-    let params = {};
-    let response = {};
-    params = await format(
-      request,
-      this.parametersValidationRoles instanceof Function? await this.parametersValidationRoles(request, this.aReS): {},
-      this.datasource
-    );
-    if (params["€rror"]) {
-      console.error('aReS Error:',params["€rror"]);
-      throw new ValidationError(
-        "Formatting and validation error: " + JSON.stringify(params["€rror"]),params["€rror"]
-      );
-    } else {
-      request = cloneWithMethods(request);
-      request.parameters = params;
-      console.log("in query");
-      response = typeof this.query === "string" ? await this.datasource.query(
-        request,
-        this.query,
-        this
-      ): (typeof this.query === "function" ? await this.query(request, this.aReS): this.query);
-      if(!response.results || (Array.isArray(response.results) && response.results.length === 0)){
-        this.onEmptyResult?.(response,request,this.aReS);
-      }else if (response.results) {
-        if (Array.isArray(response.results) && response.results.length > 0) {
-          for(let i=0; i<response.results.length; i++){
-            if (this.mapResult && this.mapResult instanceof Function) {
-              response.results[i] = await this.mapResult(response.results[i],  i, request,this.aReS);
-            }
-            if (this.transformToDTO && this.transformToDTO instanceof Function) {
-              response.results[i] = await this.transformToDTO(response.results[i], i, request,this.aReS);
-            }
-          }
-        }
-        else if(response.mapResult && response.mapResult instanceof Function){
-          response.results = await this.mapResult(response.results, 0, request, this.aReS);
-          if (this.transformToDTO && this.transformToDTO instanceof Function) {
-            response.results = await this.transformToDTO(response.results, 0, request,this.aReS);
-          }
-        }
-      }
-    }
+    advancedConsole.log(`[DEBUG] execute: start - ${this.name}`);
+    const params = await this._prepareParams(request);
+
+    request = cloneWithMethods(request);
+    request.parameters = params;
+    advancedConsole.log("in query");
+
+    const response = await this._runQuery(request);
+
+    await this._processResponse(response, request);
+
     if (this.postExecute && this.postExecute instanceof Function) {
+      advancedConsole.log(`[DEBUG] execute: postExecute - ${this.name}`);
       this.postExecute(request, this.datasource, response);
     }
-    
-    if (!this.aReS.isProduction()) {
+
+    this._addDebugInfo(response);
+    this._attachHelpers(response);
+
+    advancedConsole.log("Mapped results:", response);
+    advancedConsole.log(`[DEBUG] execute: end - ${this.name}`);
+
+    return response;
+  }
+
+  async _prepareParams(request) {
+    advancedConsole.log(`[DEBUG] _prepareParams: start - ${this.name}`);
+    const validationRoles =
+      this.parametersValidationRoles instanceof Function
+        ? await this.parametersValidationRoles(request, this.aReS)
+        : {};
+
+    const params = await format(request, validationRoles, this.datasource);
+    advancedConsole.log(`[DEBUG] _prepareParams: format - ${this.name}`, params);
+    if (params["€rror"]) {
+      advancedConsole.error("aReS Error:", params["€rror"], request.query);
+      throw new ValidationError(
+        "Formatting and validation error: " + JSON.stringify(params["€rror"]),
+        params["€rror"]
+      );
+    }
+    advancedConsole.log(`[DEBUG] _prepareParams: end - ${this.name}`, params);
+    return params;
+  }
+
+  async _runQuery(request) {
+    advancedConsole.log(`[DEBUG] _runQuery: start - ${this.name}`);
+    let response = {results:[]};
+    if (typeof this.query === "string") {
+      response = await this.datasource.query(request, this.query, this);
+    }
+    else if (typeof this.query === "function") {
+      response = await this.datasource.query(request, await this.query(request,this), this);
+    } 
+    if (!response) {
+      throw new Error("Query returned no response");
+    }
+    advancedConsole.log(`[DEBUG] _runQuery: end - ${this.name}`, response);
+    return response;
+  }
+
+  async _processResponse(response, request) {
+    advancedConsole.log(`[DEBUG] _processResponse: start - ${this.name}`);
+    if (response["€rror"]) {
+      advancedConsole.log(`[DEBUG] _processResponse: error found - ${this.name}`);
+      return;
+    }
+
+    if (
+      !response.results ||
+      (Array.isArray(response.results) && response.results.length === 0)
+    ) {
+      advancedConsole.log(`[DEBUG] _processResponse: empty result - ${this.name}`);
+      this.onEmptyResult?.(response, request, this.aReS);
+      return;
+    }
+
+    if (Array.isArray(response.results)) {
+      advancedConsole.log(`[DEBUG] _processResponse: mapping array (${response.results.length}) - ${this.name}`);
+      for (let i = 0; i < response.results.length; i++) {
+        response.results[i] = await this._mapSingleResult(
+          response.results[i],
+          i,
+          request
+        );
+      }
+    } else {
+      advancedConsole.log(`[DEBUG] _processResponse: mapping single object - ${this.name}`);
+      response.results = await this._mapSingleResult(
+        response.results,
+        0,
+        request
+      );
+    }
+    advancedConsole.log(`[DEBUG] _processResponse: end - ${this.name}`);
+  }
+
+  async _mapSingleResult(item, index, request) {
+     advancedConsole.log(`[DEBUG] _mapSingleResult: start - ${this.name} [${index}]`);
+    let result = item;
+    if (this.mapResult && this.mapResult instanceof Function) {
+      result = await this.mapResult(result, index, request, this.aReS);
+    }
+    if (this.transformToDTO && this.transformToDTO instanceof Function) {
+      result = await this.transformToDTO(result, index, request, this.aReS);
+    }
+    return result;
+  }
+
+  _addDebugInfo(response) {
+    if (!this.aReS.isProduction) {
       response.datasourceName = this.datasource.name;
       response.queryName = this.name;
       response.query = this.query;
     }
-    
+  }
+
+  _attachHelpers(response) {
     response.getResultsData = () => {
-      if(response?.results?.data?.length > 0){
-        if(response.results.data[0]["@type"]==="ares-rest-response"){
+      if (response?.results?.data?.length > 0) {
+        if (response.results.data[0]["@type"] === "ares-rest-response") {
           return response.results.data[0].results.results;
         }
         return response.results.data;
       }
       return response.results;
-    }
-    console.log("Mapped results:", response);
-
-    return response;
+    };
   }
 }
 export class Datasource {
@@ -168,121 +237,165 @@ export class Datasource {
     this.sessions = {};
     this.hashKeyMap = {};
     this.idKeyMap = {};
-    this.pools={}
+    this.pools = {};
   }
 
-  async getPool(id,onCreate){
-    this.pools[id] = this.pools[id] ?? await onCreate();
+  async getPool(id, onCreate) {
+    this.pools[id] = this.pools[id] ?? (await onCreate());
     return this.pools[id];
   }
   async getConnection(req, mapper, force = false) {
-    console.log(
-      "Datasource: " + this.name + " - connecting: " + mapper.connectionSetting,this.aReS.permissions.isResourceAllowed(this.name, req)
-    )
-    if (this.aReS.permissions.isResourceAllowed(this.name, req)) {
+    advancedConsole.log(
+      "Datasource: " + this.name + " - connecting: " + mapper.connectionSetting,
+      this.aReS.isResourceAllowed(this.name, req)
+    );
+    if (this.aReS.isResourceAllowed(this.name, req)) {
       const env =
-        this.environments[this.aReS.isProduction() ? "production" : "test"];
+        this.environments[this.aReS.isProduction ? "production" : "test"];
       const connectionSetting = env[mapper.connectionSetting];
       if (force || !this.sessions[req.session.id]) {
         this.sessions[req.session.id] = this.sessions[req.session.id] ?? {};
       }
       if (force || !this.sessions[req.session.id][mapper.connectionSetting]) {
-        
         const driverConstructor = connectionSetting.driver;
         this.sessions[req.session.id][mapper.connectionSetting] =
           new driverConstructor(
             connectionSetting,
             this,
             req.session.id,
-            mapper.connectionSetting
+            mapper.connectionSetting,
+            this.aReS.isProduction
           );
-        
       }
-      if(! this.sessions[req.session.id][
-        mapper.connectionSetting
-      ].pool) {await this.sessions[req.session.id][
-        mapper.connectionSetting
-      ].setPool();}
+      if (!this.sessions[req.session.id][mapper.connectionSetting].pool) {
+        await this.sessions[req.session.id][mapper.connectionSetting].setPool();
+      }
       await this.sessions[req.session.id][
         mapper.connectionSetting
       ].nativeConnect(defaultConnectionCallback);
       this.sessions[req.session.id][mapper.connectionSetting].isOpen = true;
       return this.sessions[req.session.id][mapper.connectionSetting];
     }
-    throw new Error('Can not establish connection!');
+    throw new Error("Can not establish connection!");
   }
 
-  async query(
-    req,
-    command,
-    mapper
-  ) {
-    let connection = this.sessions[req.session.id]? this.sessions[req.session.id][mapper.connectionSetting] : undefined;
-    console.log("verifying connection");
-    const thisInstance = this;
+  async query(req, command, mapper) {
+    const connection = await this._ensureConnection(req, mapper);
+    const { isTransaction, transactionName } = this._setupTransaction(
+      req,
+      mapper,
+      connection
+    );
+
+    try {
+      const ret = await this._executeQuery(req, command, mapper, connection);
+
+      if (isTransaction) {
+        this._commitTransaction(req, connection, transactionName);
+      }
+      return ret;
+    } catch (err) {
+      advancedConsole.error("aReS Error:", err);
+      if (isTransaction) {
+        this._rollbackTransaction(req, connection, transactionName);
+      }
+      return { "€rror": err };
+    }
+  }
+
+  async _ensureConnection(req, mapper) {
+    let connection = this.sessions[req.session.id]
+      ? this.sessions[req.session.id][mapper.connectionSetting]
+      : undefined;
+    advancedConsole.log("verifying connection");
+
     if (!connection || !connection.isOpen) {
       connection = await this.getConnection(req, mapper);
       if (!connection.isOpen) {
-        console.error("connection is not open");
+        advancedConsole.error("connection is not open");
         throw new Error("connection is not open");
       }
     }
-    console.log("verified connection", true);
+    advancedConsole.log("verified connection", true);
+    return connection;
+  }
+
+  _setupTransaction(req, mapper, connection) {
     const isTransaction =
       (mapper.transaction === true || mapper.transaction === 1) &&
       connection.startTransaction &&
       connection.commit &&
       connection.rollback;
+
     req.transactionIndex = req.transactionIndex ? req.transactionIndex + 1 : 0;
     req.executedTransactionSteps = req.executedTransactionSteps ?? [];
     const transactionName = mapper.name + "[" + req.transactionIndex + "]";
     req.executedTransactionSteps.push(transactionName);
+
     if (isTransaction) {
-      console.log(
+      advancedConsole.log(
         "called database transaction: " +
-          thisInstance.name +
+          this.name +
           "[" +
           req.session.id +
           "]"
       );
       connection.startTransaction(transactionName);
     }
-    try {
-      const params = mapper.mapParameters? await mapper.mapParameters(req, thisInstance.aReS, connection) : {};
-      console.log("executing query", command, params);
-      const ret = await connection._executeNativeQueryAsync(command, params,mapper,req);
-      console.log("query results", ret);
-      if (isTransaction) {
-        console.log(
-          "commit database transaction: " +
-            thisInstance.name +
-            "[" +
-            req.session.id +
-            "]"
-        );
-        connection.commit(transactionName);
-      }
-      return ret;
-    } catch (err) {
-      console.error('aReS Error:',err);
-      if (isTransaction) {
-        console.log(
-          "rollback database transaction: " +
-            thisInstance.name +
-            "[" +
-            req.session.id +
-            "]"
-        );
-        connection.rollback(transactionName);
-      }
-      return { "€rror": err };
-    }
+    return { isTransaction, transactionName };
+  }
+
+  async _executeQuery(req, command, mapper, connection) {
+    advancedConsole.log(
+      "executing query: " +
+        this.name +
+        "[" +
+        req.session.id.substring(0, 10) +
+        "...]",req.params,req.parameters
+    );
+    const params = mapper.mapParameters
+      ? await mapper.mapParameters(req, this.aReS, connection)
+      : {};
+    advancedConsole.log(
+      "executing query with params: ",
+      JSON.stringify(params)
+    );
+    const ret = await connection._executeNativeQueryAsync(
+      command,
+      params,
+      mapper,
+      req
+    );
+    advancedConsole.log("query results", ret);
+    return ret;
+  }
+
+  _commitTransaction(req, connection, transactionName) {
+    advancedConsole.log(
+      "commit database transaction: " +
+        this.name +
+        "[" +
+        req.session.id.substring(0, 10) +
+        "...]"
+    );
+    connection.commit(transactionName);
+  }
+
+  _rollbackTransaction(req, connection, transactionName) {
+    advancedConsole.log(
+      "rollback database transaction: " +
+        this.name +
+        "[" +
+        req.session.id.substring(0, 10) +
+        "...]"
+    );
+    connection.rollback(transactionName);
   }
 
   getKeyHash(key) {
     if (!this.idKeyMap[`_${key}`]) {
       const hash = getSHA256Hash(key);
-      this.hashKeyMap = { [`_${hash}`]: key};
+      this.hashKeyMap = { [`_${hash}`]: key };
       this.idKeyMap = { [`_${key}`]: hash };
       return hash;
     }
@@ -316,11 +429,15 @@ export class Datasource {
 
   async loadQuery(queryObject) {
     if (typeof queryObject === "object") {
-      this.aReS.console.asyncConsole.log(
+      advancedConsole.asyncConsole.log(
         "datasources",
         ' - init mapperCase "' + queryObject.name + '" {'
       );
-      this[queryObject.name] = new DatasourceRequestMapper(this.aReS, this, queryObject);
+      this[queryObject.name] = new DatasourceRequestMapper(
+        this.aReS,
+        this,
+        queryObject
+      );
       if (this.onMapperLoaded && typeof this.onMapperLoaded === "function") {
         await this.onMapperLoaded(this.aReS, this[queryObject.name], this);
       }
@@ -335,13 +452,14 @@ class DBConnection {
     connectionParameters,
     datasource,
     sessionId,
-    connectionSettingName
+    connectionSettingName,
+    isProduction = false  
   ) {
     Object.assign(this, connectionParameters);
     this.datasource = datasource;
     this.sessionId = sessionId;
     this.name = connectionSettingName;
-    
+    this.isProduction = isProduction;
   }
   async nativeConnect(callback = defaultConnectionCallback) {
     throw new Error(
@@ -350,7 +468,10 @@ class DBConnection {
   }
   async setPool() {
     const thisInstance = this;
-    this.pool = await thisInstance.datasource.getPool(thisInstance.connectionSettingName, () => thisInstance.createPool());
+    this.pool = await thisInstance.datasource.getPool(
+      thisInstance.connectionSettingName,
+      () => thisInstance.createPool()
+    );
   }
   async createPool(connectionSettingName) {
     throw new Error(
@@ -364,9 +485,10 @@ export class SQLDBConnection extends DBConnection {
     connectionParameters,
     datasource,
     sessionId,
-    connectionSettingName
+    connectionSettingName,
+    isProduction = false
   ) {
-    super(connectionParameters, datasource, sessionId, connectionSettingName);
+    super(connectionParameters, datasource, sessionId, connectionSettingName, isProduction);
   }
 
   insert(type, parameters) {
@@ -460,7 +582,7 @@ export class SQLDBConnection extends DBConnection {
     return {
       command,
       parameters: newParams,
-    }
+    };
   }
 
   filterBy(...filters) {
@@ -503,30 +625,38 @@ export class SQLDBConnection extends DBConnection {
   }
 
   checkInnerQuery(parameter) {
-    if (typeof parameter === "object" && "query" in parameter) {
-      return "(" + query + ")";
+    if (parameter && typeof parameter === "object" && "query" in parameter) {
+      return "(" + parameter.query + ")";
     }
     return "?";
   }
 
   handleAnnotationTransformations(command, parameters) {
-    let docklet = "";
+    let dockletMatch;
     let newParameters = [];
-    while ((docklet = getDocklet(command) ?? "") !== "") {
-      const annotations = getDockletAnnotations(docklet);
+    const dockletRegex = /\/\*\*([\s\S]*?)\*\//;
+
+    while ((dockletMatch = command.match(dockletRegex))) {
+      const fullMatch = dockletMatch[0];
+      const dockletContent = dockletMatch[1];
+      const annotations = getDockletAnnotations(dockletContent);
+      let generatedCommand = "";
+
       annotations.forEach((x) => {
         if (this[x.annotation] && typeof this[x.annotation] === "function") {
           const resolvedAnnotation = this[x.annotation](parameters);
           newParameters.push(...resolvedAnnotation.parameters);
+          generatedCommand += (resolvedAnnotation?.command ?? "") + "\n";
         }
-        command = command.replace(
-          docklet,
-          docklet + "\n-- docklet generated\n" + (resolvedAnnotation?.command ??'')
-        );
       });
+
+      // Replace with single-star comment to avoid infinite matching
+      command = command.replace(
+        fullMatch,
+        "/* [PROCESSED] " + dockletContent + " */\n" + generatedCommand
+      );
     }
-    if(newParameters.length===0) newParameters = parameters;
-    console.log("new command:", command);
+    if (newParameters.length === 0) newParameters = parameters;
     return {
       command,
       parameters: newParameters,
@@ -534,7 +664,6 @@ export class SQLDBConnection extends DBConnection {
   }
   async _executeNativeQueryAsync(command, params, mapper, req) {
     const newCommand = this.handleAnnotationTransformations(command, params);
-    console.log("newCommand:", newCommand);
     return await this.executeNativeQueryAsync(
       newCommand.command,
       newCommand.parameters
@@ -547,10 +676,15 @@ export class RESTConnection extends DBConnection {
     connectionParameters,
     datasource,
     sessionId,
-    connectionSettingName
+    connectionSettingName,
+    isProduction = false
   ) {
-    super(connectionParameters, datasource, sessionId, connectionSettingName);
-    this.xhrWrapper = new XHRWrapper(this.host,sessionId);
+    super(connectionParameters, datasource, sessionId, connectionSettingName, isProduction);
+    this.xhrWrapper = new XHRWrapper(this.host, sessionId, isProduction);
+  }
+
+  async createPool() {
+    return null;
   }
 
   async nativeConnect(callback) {
@@ -559,31 +693,35 @@ export class RESTConnection extends DBConnection {
   }
 
   async _executeNativeQueryAsync(command, params, mapper, req) {
-    if(mapper.isJWTSensible && mapper.getRESTApiToken)
-      this.xhrWrapper.setToken(mapper.getRESTApiToken(req,this.datasource,this.datasource.aReS));
-    else if(mapper.isJWTSensible && !mapper.getRESTApiToken) throw new Error(`For Mapper: ${mapper.name} When a mapper has isJWTSensible = true, it needs to implement getRESTApiToken(req, datasource, aReS) function`);
+    if (mapper.isJWTSensible && mapper.getRESTApiToken)
+      this.xhrWrapper.setToken(
+        mapper.getRESTApiToken(req, this.datasource, this.datasource.aReS)
+      );
+    else if (mapper.isJWTSensible && !mapper.getRESTApiToken)
+      throw new Error(
+        `For Mapper: ${mapper.name} When a mapper has isJWTSensible = true, it needs to implement getRESTApiToken(req, datasource, aReS) function`
+      );
     else this.xhrWrapper.setToken(null);
     return await this.executeNativeQueryAsync(
-      {url:command, method:mapper.method},
-      params, req.options
+      { url: command, method: mapper.method },
+      params,
+      req.options
     );
   }
 
-  async executeNativeQueryAsync(command, params, options=null) {
+  async executeNativeQueryAsync(command, params, options = null) {
     command = typeof command === "string" ? JSON.parse(command) : command;
     if (!(command instanceof Object)) {
       throw new Error("Command must be an object or a stringified object");
     }
     const date = new Date();
-    const response = { 
-      executionTime: date.getTime(), 
+    const response = {
+      executionTime: date.getTime(),
       executionDateTime: date,
     };
-    const responseValue = await this.xhrWrapper[command.method?.toLowerCase()||'get'](
-      command.url,
-      params,
-      options
-    );
+    const responseValue = await this.xhrWrapper[
+      command.method?.toLowerCase() || "get"
+    ](command.url, params, options);
     response.response = responseValue;
     response.results = responseValue.results;
     return response;

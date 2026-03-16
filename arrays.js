@@ -13,7 +13,7 @@ export function indexOfFilter(this_array, filter) {
   if (element) return this_array.indexOf(element);
   return null;
 }
-// PIPPO
+
 /**
  * Splits an array into subarrays based on a specified delimiter.
  *
@@ -74,6 +74,7 @@ export function convertArrayToObject(this_array, keys) {
   for (let i = 0; i < keys.length; i++) {
     map[keys[i]] = this_array[i] ?? undefined;
   }
+  return map
 }
 
 /**
@@ -86,4 +87,223 @@ export function convertArrayToObject(this_array, keys) {
 
 export function isIterable(data) {
   return valore => valore != null && typeof valore[Symbol.iterator] === 'function';
+}
+
+
+export class DynamicArray {
+  
+  constructor(...sources) {
+    this.sources = sources;
+    this.arrayOperations = [];
+    this.params = [];
+  }
+
+  setParam(...params) {
+    this.params = params;
+    return this;
+  }
+
+  filter(filter) {
+    this.arrayOperations.push(a=>a.filter(filter));
+    return this;
+  }
+
+  map(mapper) {
+    this.arrayOperations.push(a=>a.map(mapper));
+    return this;
+  }
+
+  push(pusher) {
+    this.arrayOperations.push(a=>a.push(pusher));
+    return this;
+  }
+  async pop() {
+    const arr = await this.toArray();
+    return arr.pop();
+  }
+  unshift(unshifter) {
+    this.arrayOperations.push(a=>a.unshift(unshifter));
+    return this;
+  }
+
+  copyWithin(target, start, end) {
+    this.arrayOperations.push(a=>a.copyWithin(target, start, end));
+    return this;
+  }
+
+  
+  concat(arrays) {
+    this.arrayOperations.push(a=>a.concat(...arrays));
+    return this;
+  }
+
+ async join(separator) {
+    return  (await this.toArray()).join(separator);
+  }
+
+
+  slice(start, end) {
+    this.arrayOperations.push(a => a.slice(start, end));
+    return this;
+  }
+
+  reverse() {
+    this.arrayOperations.push(a => a.reverse());
+    return this;
+  }
+
+  async reduce(reducer, initialValue) {
+    const arr = await this.toArray();
+    return arr.reduce(reducer, initialValue);
+  }
+
+  async forEach(callback) {
+    const arr = await this.toArray();
+    return arr.forEach(callback);
+  }
+
+  async find(predicate) {
+    const arr = await this.toArray();
+    return arr.find(predicate);
+  }
+
+  async findIndex(predicate) {
+    const arr = await this.toArray();
+    return arr.findIndex(predicate);
+  }
+
+  findLast(predicate) {
+    this.arrayOperations.push(a => a.findLast(predicate));
+    return this;
+  }
+
+  findLastIndex(predicate) {
+    this.arrayOperations.push(a => a.findLastIndex(predicate));
+    return this;
+  }
+
+  every(predicate) {
+    this.arrayOperations.push(a => a.every(predicate));
+    return this;
+  }
+
+  some(predicate) {
+    this.arrayOperations.push(a => a.some(predicate));
+    return this;
+  }
+
+  
+  includes(element) {
+    this.arrayOperations.push(a => a.includes(element));
+    return this;
+  }
+
+  async indexOf(element) {
+    const arr = await this.toArray();
+    return arr.indexOf(element);
+  }
+
+  async lastIndexOf(element) {
+    return (await this.toArray()).lastIndexOf(element);
+  }
+
+  
+  async flatMap(callback) {
+    return (await this.toArray()).flatMap(callback);
+  }
+  
+  flat() {
+    this.arrayOperations.push(a => a.flat());
+    return this;
+  }
+
+  fill(element, start, end) {
+    this.arrayOperations.push(a => a.fill(element, start, end));
+    return this;
+  }
+
+  async first() {
+    return (await this.toArray()).at(0);
+  }
+
+  async last() {
+    return (await this.toArray()).at(-1);
+  }
+  
+  async at(index) {
+    return (await this.toArray()).at(index);
+  }
+  
+  sort(comparator) {
+    this.arrayOperations.push(a => a.sort(comparator));
+    return this;
+  }
+  
+  splice(start, deleteCount, ...items) {
+    this.arrayOperations.push(a => a.splice(start, deleteCount, ...items));
+    return this;
+  }
+
+  keys() {
+    this.arrayOperations.push(a => a.keys());
+    return this;
+  }
+
+  values() {
+    this.arrayOperations.push(a => a.values());
+    return this;
+  }
+
+  entries() {
+    this.arrayOperations.push(a => a.entries());
+    return this;
+  }
+
+  [Symbol.iterator]() {
+    let promise = this.toArray();
+    let i = 0;
+    return {
+      next:  () => {
+        const arr =  promise;
+        if (i < arr.length) {
+          return { value: arr[i++], done: false };
+        }
+        return { done: true };
+      }
+    };
+  }
+
+  // use for await (const item of dynamicArray)
+  [Symbol.asyncIterator]() {
+    let promise = this.toArray();
+    let i = 0;
+    return {
+      next: async () => {
+        const arr = await promise;
+        if (i < arr.length) {
+          return { value: arr[i++], done: false };
+        }
+        return { done: true };
+      }
+    };
+  }
+
+  async toArray() {
+    let ret = await Promise.all(this.sources.map( x=> {
+      if(x instanceof DynamicArray) return x.toArray();
+      if(typeof x === "function"){console.debug('FUNCTION::::::', x.toString()); return x(...(this.params??[]))};
+
+      if(isIterable(x)) return Promise.resolve(Array.from(x));
+      return x;
+    }));
+    
+    ret=ret?.flat();
+    for (const op of this.arrayOperations) {
+      const res = op(ret);
+      if(Array.isArray(res)) ret = res;
+    }
+    console.debug('------------ret:', ret);
+
+    return ret;
+  }
 }
