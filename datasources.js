@@ -4,8 +4,6 @@
  */
 
 import { nanoid } from "nanoid";
-import { format } from "./dataDescriptors.js";
-import { cloneWithMethods } from "./objects.js";
 import { getSHA256Hash } from "./crypto.js";
 import * as advancedConsole from "./console.js";
 import {
@@ -16,6 +14,7 @@ import {
 import { defaultConnectionCallback, DBConnection } from "./db-connection.js";
 import { SQLDBConnection } from "./sql-db-connection.js";
 import { RESTConnection } from "./rest-connection.js";
+import { executeDatasourceRequestMapper } from "./datasource-mapper-executor.js";
 
 const mapRequestOrResult = function (request) {
   return request;
@@ -81,13 +80,7 @@ export function exportAsAresMethod(aReS, mapper, datasource) {
   advancedConsole.asyncConsole.log("datasources", " - }");
 }
 
-export class ValidationError extends Error {
-  constructor(message, params) {
-    super(message);
-    this.name = "ValidationError";
-    this.parameters = params;
-  }
-}
+export { ValidationError } from "./datasource-errors.js";
 export class DatasourceRequestMapper {
   constructor(aReS, datasource, settings) {
     if (typeof settings === "object") Object.assign(this, settings);
@@ -104,133 +97,7 @@ export class DatasourceRequestMapper {
   }
 
   async execute(request) {
-    advancedConsole.log(`[DEBUG] execute: start - ${this.name}`);
-    const params = await this._prepareParams(request);
-
-    request = cloneWithMethods(request);
-    request.parameters = params;
-    advancedConsole.log("in query");
-
-    const response = await this._runQuery(request);
-
-    await this._processResponse(response, request);
-
-    if (this.postExecute && this.postExecute instanceof Function) {
-      advancedConsole.log(`[DEBUG] execute: postExecute - ${this.name}`);
-      this.postExecute(request, this.datasource, response);
-    }
-
-    this._addDebugInfo(response);
-    this._attachHelpers(response);
-
-    advancedConsole.log("Mapped results:", response);
-    advancedConsole.log(`[DEBUG] execute: end - ${this.name}`);
-
-    return response;
-  }
-
-  async _prepareParams(request) {
-    advancedConsole.log(`[DEBUG] _prepareParams: start - ${this.name}`);
-    const validationRoles =
-      this.parametersValidationRoles instanceof Function
-        ? await this.parametersValidationRoles(request, this.aReS)
-        : {};
-
-    const params = await format(request, validationRoles, this.datasource);
-    advancedConsole.log(`[DEBUG] _prepareParams: format - ${this.name}`, params);
-    if (params["€rror"]) {
-      advancedConsole.error("aReS Error:", params["€rror"], request.query);
-      throw new ValidationError(
-        "Formatting and validation error: " + JSON.stringify(params["€rror"]),
-        params["€rror"]
-      );
-    }
-    advancedConsole.log(`[DEBUG] _prepareParams: end - ${this.name}`, params);
-    return params;
-  }
-
-  async _runQuery(request) {
-    advancedConsole.log(`[DEBUG] _runQuery: start - ${this.name}`);
-    let response = {results:[]};
-    if (typeof this.query === "string") {
-      response = await this.datasource.query(request, this.query, this);
-    }
-    else if (typeof this.query === "function") {
-      response = await this.datasource.query(request, await this.query(request,this), this);
-    } 
-    if (!response) {
-      throw new Error("Query returned no response");
-    }
-    advancedConsole.log(`[DEBUG] _runQuery: end - ${this.name}`, response);
-    return response;
-  }
-
-  async _processResponse(response, request) {
-    advancedConsole.log(`[DEBUG] _processResponse: start - ${this.name}`);
-    if (response["€rror"]) {
-      advancedConsole.log(`[DEBUG] _processResponse: error found - ${this.name}`);
-      return;
-    }
-
-    if (
-      !response.results ||
-      (Array.isArray(response.results) && response.results.length === 0)
-    ) {
-      advancedConsole.log(`[DEBUG] _processResponse: empty result - ${this.name}`);
-      this.onEmptyResult?.(response, request, this.aReS);
-      return;
-    }
-
-    if (Array.isArray(response.results)) {
-      advancedConsole.log(`[DEBUG] _processResponse: mapping array (${response.results.length}) - ${this.name}`);
-      for (let i = 0; i < response.results.length; i++) {
-        response.results[i] = await this._mapSingleResult(
-          response.results[i],
-          i,
-          request
-        );
-      }
-    } else {
-      advancedConsole.log(`[DEBUG] _processResponse: mapping single object - ${this.name}`);
-      response.results = await this._mapSingleResult(
-        response.results,
-        0,
-        request
-      );
-    }
-    advancedConsole.log(`[DEBUG] _processResponse: end - ${this.name}`);
-  }
-
-  async _mapSingleResult(item, index, request) {
-     advancedConsole.log(`[DEBUG] _mapSingleResult: start - ${this.name} [${index}]`);
-    let result = item;
-    if (this.mapResult && this.mapResult instanceof Function) {
-      result = await this.mapResult(result, index, request, this.aReS);
-    }
-    if (this.transformToDTO && this.transformToDTO instanceof Function) {
-      result = await this.transformToDTO(result, index, request, this.aReS);
-    }
-    return result;
-  }
-
-  _addDebugInfo(response) {
-    if (!this.aReS.isProduction) {
-      response.datasourceName = this.datasource.name;
-      response.queryName = this.name;
-      response.query = this.query;
-    }
-  }
-
-  _attachHelpers(response) {
-    response.getResultsData = () => {
-      if (response?.results?.data?.length > 0) {
-        if (response.results.data[0]["@type"] === "ares-rest-response") {
-          return response.results.data[0].results.results;
-        }
-        return response.results.data;
-      }
-      return response.results;
-    };
+    return executeDatasourceRequestMapper(this, request);
   }
 }
 export class Datasource {

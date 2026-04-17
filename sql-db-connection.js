@@ -81,7 +81,7 @@ export class SQLDBConnection extends DBConnection {
 
   delete(type, parameters) {
     let command = `DELETE FROM ${type}`;
-    return executeFilteredAction(command, parameters);
+    return this.executeFilteredAction(command, parameters);
   }
 
   executeFilteredAction(command, parameters) {
