@@ -9,6 +9,7 @@ import { format, regexMap } from "@ares/core/dataDescriptors.js";
 import { Datasource } from "@ares/core/datasources.js";
 import { Geocoders } from "@ares/core/geographical.js";
 import { encrypt, decrypt, encryptText } from "@ares/core/security.js";
+import { tryToDo } from "../errorHandling.js";
 import {
   configureScriptsRuntime,
   getTypeByName,
@@ -406,6 +407,18 @@ test("data descriptors resolve identity hashes through datasource getHashKey", a
   );
 
   assert.equal(formatted.identity, originalValue);
+});
+
+test("tryToDo executes function actions regardless of onError presence", () => {
+  let called = false;
+  const result = tryToDo(() => {
+    called = true;
+    return 42;
+  });
+
+  assert.equal(called, true);
+  assert.equal(result.response, 42);
+  assert.equal(result.error, undefined);
 });
 
 test("legacy setup keys are still normalized into runtime config and policies", () => {
