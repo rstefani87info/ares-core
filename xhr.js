@@ -1,10 +1,56 @@
 import axios from "axios";
 
+const DEFAULT_HTTP_RUNTIME_CONFIG = Object.freeze({
+  timeout: 0,
+  retries: 0,
+  retryDelayMs: 0,
+  retryOnStatuses: [408, 425, 429, 500, 502, 503, 504],
+  headers: {},
+});
+
+function delay(ms) {
+  if (!ms) return Promise.resolve();
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function normalizeHTTPRuntimeConfig(config = {}) {
+  return {
+    ...DEFAULT_HTTP_RUNTIME_CONFIG,
+    ...config,
+    retryOnStatuses: Array.isArray(config.retryOnStatuses)
+      ? [...new Set(config.retryOnStatuses.map((value) => Number(value)).filter(Number.isFinite))]
+      : [...DEFAULT_HTTP_RUNTIME_CONFIG.retryOnStatuses],
+    headers: typeof config.headers === "object" && config.headers !== null
+      ? { ...config.headers }
+      : {},
+  };
+}
+
+function shouldRetryStatus(status, retryOnStatuses = []) {
+  return retryOnStatuses.includes(Number(status));
+}
+
+function buildXHRResponse({ status = 500, message = "Something went wrong", url = null, results = null, error = null }) {
+  const response = {
+    status,
+    message,
+    url,
+    results,
+  };
+
+  if (error) {
+    response["€rror"] = error;
+  }
+
+  return response;
+}
+
 export class XHRWrapper {
-  constructor(baseURL, token = null, isProduction = false) {
+  constructor(baseURL, token = null, isProduction = false, runtimeConfig = {}) {
     this.baseURL = baseURL;
     this.token = token;
     this.isProduction = isProduction;
+    this.runtimeConfig = normalizeHTTPRuntimeConfig(runtimeConfig);
   }
 
   static objectToQueryString(obj) {
@@ -19,22 +65,38 @@ export class XHRWrapper {
   setToken(token) {
     this.token = token;
   }
-  async getXHR(method, url, data = null, options = {} ) {
+
+  setRuntimeConfig(runtimeConfig = {}) {
+    this.runtimeConfig = normalizeHTTPRuntimeConfig(runtimeConfig);
+  }
+
+  async getXHR(method, url, data = null, options = {}) {
     const fullUrl = this.baseURL + url;
+    const requestRuntimeConfig = normalizeHTTPRuntimeConfig({
+      ...this.runtimeConfig,
+      ...(options?.networking ?? {}),
+      headers: {
+        ...this.runtimeConfig.headers,
+        ...(options?.networking?.headers ?? {}),
+      },
+    });
     const config = {
       method: method.toLowerCase(),
       url: fullUrl,
       headers: {
+        ...requestRuntimeConfig.headers,
         ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...(method.match(/POST|PATCH/i) && {
+        ...(method.match(/POST|PATCH|PUT/i) && {
           "Content-Type": "application/json",
         }),
         ...(options?.headers || {}),
       },
-      validateStatus: function (status) {
+      timeout: requestRuntimeConfig.timeout,
+      validateStatus() {
         return true;
       },
     };
+
     if (method.match(/GET|DELETE/i) && data) {
       config.params = data;
     }
@@ -42,22 +104,68 @@ export class XHRWrapper {
     if (method.match(/POST|PATCH|PUT/i) && data) {
       config.data = data;
     }
+
     try {
-      const response = await axios(config);
-      let ret = {
-        status: response.status,
-        message: response.statusText,
-        url: fullUrl,
-        results: response.data,
-        message:response.status >= 400? { message: response.statusMessage || "Something went wrong" }:null,
-      };
-      return ret;
+      for (let attempt = 0; attempt <= requestRuntimeConfig.retries; attempt++) {
+        const response = await axios(config);
+        if (
+          response.status >= 400 &&
+          attempt < requestRuntimeConfig.retries &&
+          shouldRetryStatus(response.status, requestRuntimeConfig.retryOnStatuses)
+        ) {
+          await delay(requestRuntimeConfig.retryDelayMs);
+          continue;
+        }
+        const message = response.statusText || (response.status >= 400 ? "Something went wrong" : null);
+
+        return buildXHRResponse({
+          status: response.status,
+          message,
+          url: fullUrl,
+          results: response.data,
+          error: response.status >= 400 ? message : null,
+        });
+      }
     } catch (error) {
-      let message = error.message;
-      if(!isProduction()) message+= error.stack;
-      console.error('Error:', message);
-      return { "€rror": message || "Something went wrong" };
+      if (
+        shouldRetryStatus(error?.response?.status, requestRuntimeConfig.retryOnStatuses) &&
+        requestRuntimeConfig.retries > 0
+      ) {
+        for (let attempt = 0; attempt < requestRuntimeConfig.retries; attempt++) {
+          await delay(requestRuntimeConfig.retryDelayMs);
+          try {
+            const response = await axios(config);
+            const message = response.statusText || (response.status >= 400 ? "Something went wrong" : null);
+            return buildXHRResponse({
+              status: response.status,
+              message,
+              url: fullUrl,
+              results: response.data,
+              error: response.status >= 400 ? message : null,
+            });
+          } catch (retryError) {
+            error = retryError;
+          }
+        }
+      }
+      const baseMessage = error?.response?.statusText || error.message || "Something went wrong";
+      const message = this.isProduction || !error?.stack ? baseMessage : `${baseMessage}\n${error.stack}`;
+
+      return buildXHRResponse({
+        status: error?.response?.status ?? 500,
+        message,
+        url: fullUrl,
+        results: error?.response?.data ?? null,
+        error: message,
+      });
     }
+    return buildXHRResponse({
+      status: 500,
+      message: "Something went wrong",
+      url: fullUrl,
+      results: null,
+      error: "Something went wrong",
+    });
   }
 
   async get(url, data, options = {}) {
@@ -94,12 +202,12 @@ export class XHRWrapper {
     }
     
     if (Object.keys(data).length === 0) {
-      return {
-        status: 304, // Not Modified
+      return buildXHRResponse({
+        status: 304,
         message: "No changes detected",
         url: this.baseURL + url,
-        data: originalData
-      };
+        results: originalData,
+      });
     }
     
     return await this.getXHR("PATCH", url, data, options);

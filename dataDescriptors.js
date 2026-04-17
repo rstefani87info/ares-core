@@ -1,5 +1,6 @@
 import numeral from "numeral";
 import { capitalizeTokens } from "./text.js";
+import { debug } from "./console.js";
 
 export const regexMap = {
   text: { 
@@ -538,11 +539,11 @@ export async function format(this_object, descriptor, db) {
       ? descriptor[k].source(this_object, k)
       : this_object[k];
     const objectDescriptorDefinitionKey = descriptor[k]?.type || "text";
-    console.log("objectDescriptorDefinitionKey:", k, descriptor[k]);
+    debug("objectDescriptorDefinitionKey:", k, descriptor[k]);
     if (
       objectDescriptorDefinitionKey === regexMap.identity.id
     ) {
-      ret[k] = db.getHashKeyMap(ret[k]);
+      ret[k] = db?.getHashKey instanceof Function ? db.getHashKey(ret[k]) : ret[k];
     }
     const objectDescriptorDefinition =  
       objectDescriptorDefinitions[objectDescriptorDefinitionKey]

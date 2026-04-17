@@ -11,14 +11,14 @@ export function findPropKeyByAlias(
   this_object,
   alias,
 ) {
+  if (!this_object || alias == null) return undefined;
+  const matcher = alias instanceof RegExp ? alias : new RegExp(String(alias));
   for (const k in this_object) {
-    let regexK = null;
-      if (alias.match(k)) {
-        return k;
-      }
+    if (matcher.test(k)) {
+      return k;
     }
-  // }
-  // return undefined;
+  }
+  return undefined;
 }
 /**
  * @prototype {Object}
@@ -32,7 +32,7 @@ export function findPropValueByAlias(
   alias
 ) {
   const key = findPropKeyByAlias(this_object, alias);
-  return (  Object.entries(this_object).find(([k, v]) =>  k+'' == key+'' ) || [])[1];
+  return key !== undefined ? this_object?.[key] : undefined;
 }
 
 /**
@@ -43,16 +43,24 @@ export function findPropValueByAlias(
  * Setup a property alias for the object property that match the alias regexp
  */
 export function setupPropertyAlias(this_object, alias) {
-  if (!obj.prototype.hasOwnProperty(alias)) {
-    Object.defineProperty(obj.prototype, alias, {
-      get: function () {
-        return findPropValueByAlias(this, alias);
-      },
-      set: function (value) {
-        this[findPropKeyByAlias(this, alias)] = value;
-      },
-    });
+  if (!this_object || !alias) return null;
+  if (Object.prototype.hasOwnProperty.call(this_object, alias)) {
+    return this_object;
   }
+  Object.defineProperty(this_object, alias, {
+    configurable: true,
+    enumerable: false,
+    get() {
+      return findPropValueByAlias(this, alias);
+    },
+    set(value) {
+      const key = findPropKeyByAlias(this, alias);
+      if (key !== undefined) {
+        this[key] = value;
+      }
+    },
+  });
+  return this_object;
 }
 
 
@@ -91,16 +99,31 @@ export function fieldsMatch(this_object, other) {
 }
 
 export function onPropertyChange(this_object, key, callback) {
-	Object.defineProperty(this_object, key,{
-	get: () => this_object[key],
-    set: (value) => {
-		console.warn('Property Change::', key, value);
-		this_object[key] = value;
-		if (callback && typeof callback === 'function') {
-			callback(value,key,this_object);
-		}
+  if (!this_object || !key) return null;
+  const descriptor = Object.getOwnPropertyDescriptor(this_object, key);
+  const originalGetter = descriptor?.get;
+  const originalSetter = descriptor?.set;
+  let currentValue = descriptor && "value" in descriptor ? descriptor.value : this_object[key];
+
+  Object.defineProperty(this_object, key, {
+    configurable: true,
+    enumerable: descriptor?.enumerable ?? true,
+    get() {
+      return originalGetter ? originalGetter.call(this) : currentValue;
+    },
+    set(value) {
+      const previousValue = originalGetter ? originalGetter.call(this) : currentValue;
+      if (originalSetter) {
+        originalSetter.call(this, value);
+      } else {
+        currentValue = value;
+      }
+      if (typeof callback === "function") {
+        callback(value, key, this_object, previousValue);
+      }
     },
   });
+  return this_object;
 }
 
 /**
@@ -123,7 +146,7 @@ export function fuseObjects(this_object, other, ...others){
     if(this_object instanceof Object && other instanceof Object){
       (new Set([...Object.keys(this_object),...Object.keys(other)])).forEach((key) => {
         if( this_object[key]  && this_object[key]  instanceof Object && other[key] && other[key] instanceof Object ){
-          ret[key] = fuse(this_object[key] , other[key] );
+          ret[key] = fuseObjects(this_object[key] , other[key] );
         }
         else {
           if(this_object.hasOwnProperty(key))ret[key] = this_object[key];

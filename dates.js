@@ -1,3 +1,5 @@
+import { error } from "./console.js";
+
 /**
  * 
  * @returns {Date}
@@ -203,7 +205,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    */
   export function forTimeSequence(min, max, minutesStep, callback) {
       if (min >= max || minutesStep <= 0) {
-          console.error("Invalid input parameters. Please ensure min is less than max and minutesStep is greater than 0.");
+          error("Invalid input parameters. Please ensure min is less than max and minutesStep is greater than 0.");
       }
       var current = convertTimeToMinutes(min);
       var maxInt = convertTimeToMinutes(max);
@@ -240,7 +242,7 @@ export function getFirstAndLastDayOfMonth(this_date) {
    */
     export function convertMinutesToTime(minutes) {
       if (isNaN(minutes) || minutes < 0) {
-          console.error("Invalid input. Please provide a non-negative integer.");
+          error("Invalid input. Please provide a non-negative integer.");
           return null;
       }
   

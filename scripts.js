@@ -3,6 +3,70 @@
  * @license MIT
  */
 
+const BUILTIN_TYPES = {
+  string: String,
+  number: Number,
+  boolean: Boolean,
+  array: Array,
+  object: Object,
+  function: Function,
+  date: Date,
+  regexp: RegExp,
+};
+
+const DEFAULT_SCRIPTS_RUNTIME_CONFIG = Object.freeze({
+  allowGlobalTypeLookup: false,
+  allowedGlobalTypes: [],
+});
+
+const registeredTypes = new Map();
+let runtimeScriptsConfig = createScriptsRuntimeConfig();
+
+function createScriptsRuntimeConfig(overrides = {}) {
+  return {
+    ...DEFAULT_SCRIPTS_RUNTIME_CONFIG,
+    ...overrides,
+    allowedGlobalTypes: Array.isArray(overrides.allowedGlobalTypes)
+      ? [...new Set(overrides.allowedGlobalTypes.map((value) => String(value).trim()).filter(Boolean))]
+      : [...DEFAULT_SCRIPTS_RUNTIME_CONFIG.allowedGlobalTypes],
+  };
+}
+
+export function configureScriptsRuntime(overrides = {}) {
+  runtimeScriptsConfig = createScriptsRuntimeConfig(overrides);
+  return getScriptsRuntimeConfig();
+}
+
+export function getScriptsRuntimeConfig() {
+  return {
+    ...runtimeScriptsConfig,
+    allowedGlobalTypes: [...runtimeScriptsConfig.allowedGlobalTypes],
+  };
+}
+
+export function resetScriptsRuntime() {
+  runtimeScriptsConfig = createScriptsRuntimeConfig();
+  registeredTypes.clear();
+}
+
+export function registerType(name, type) {
+  const normalizedName = typeof name === "string" ? name.trim() : "";
+  if (!normalizedName) {
+    throw new TypeError("registerType requires a non-empty type name");
+  }
+  if (typeof type !== "function") {
+    throw new TypeError(`Registered type "${normalizedName}" must be a constructor or function`);
+  }
+  registeredTypes.set(normalizedName, type);
+  return type;
+}
+
+export function unregisterType(name) {
+  const normalizedName = typeof name === "string" ? name.trim() : "";
+  if (!normalizedName) return false;
+  return registeredTypes.delete(normalizedName);
+}
+
 
 /**
  * @prototype {function}
@@ -86,26 +150,29 @@ export function getDockletAnnotations(this_string) {
  *
  */
 export function getFunctionParameters(this_function) {
-  if(!this_function && !this_function instanceof Function) return null;
-  const parameters = [];
-  const s = f.toString();
-  const { params } = s.match(
-    /^\s*function\s*\w+\s*\((?<params>.*)\)\s*\{.*$/gm
-  ).groups;
-  const tokens = params.split(params);
-  for (t of tokens) {
-    const { commentLeft, multiple, name, value, commentRight } = t.match(
-      /(?<commentLeft>\/\*.*\*\/)*\s*(?<multiple>[.]{3}){0,1}\s*(?<name>\w+)\s*(=\s*(?<value>".*"|'.*'|(\w)+))(?<commentRight>\/\*.*\*\/)*\s*/i
-    ).groups;
-    parameters.push({
-      name: name,
-      defaultValue: value,
-      multiple: multiple,
-      commentLeft: commentLeft,
-      commentRight: commentRight,
+  if (!(this_function instanceof Function)) return null;
+  const fnString = this_function.toString().trim();
+  const match =
+    fnString.match(/^(?:async\s+)?function(?:\s+\w+)?\s*\((?<params>[\s\S]*?)\)/) ??
+    fnString.match(/^(?:async\s*)?\((?<params>[\s\S]*?)\)\s*=>/) ??
+    fnString.match(/^(?:async\s*)?(?<params>[A-Za-z_$][\w$]*)\s*=>/);
+  const paramsString = match?.groups?.params?.trim() ?? "";
+  if (!paramsString) return [];
+  return paramsString
+    .split(",")
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .map((token) => {
+      const paramMatch = token.match(/^(?<multiple>\.\.\.)?(?<name>[A-Za-z_$][\w$]*)(?:\s*=\s*(?<value>[\s\S]+))?$/);
+      const { multiple, name, value } = paramMatch?.groups ?? {};
+      return {
+        name: name ?? token,
+        defaultValue: value?.trim(),
+        multiple: Boolean(multiple),
+        commentLeft: null,
+        commentRight: null,
+      };
     });
-  }
-  return parameters;
 }
 
 /**
@@ -117,31 +184,28 @@ export function getFunctionParameters(this_function) {
  *
  */
 export function facade(this_function, alias = null) {
-  const functionName = getFunctionName(this_function);
-  if (functionName) {
-    const params = getFunctionParameters(this_function);
-    return new Function(
-      "(" +
-        params
-          .filter((p) => !p.name.match(/^this_[\w]+$/))
-          .map(
-            (p) =>
-              p.commentLeft ??
-              "" + " " + p.multiple ??
-              "" +
-                p.name +
-                (p.defaultValue ? "=" + p.defaultValue : "") +
-                " " +
-                p.commentRight
-          )
-          .join(",") +
-        ")=>" +
-        functionName +
-        "(" +
-        params.join(",") +
-        ")"
-    );
-  }
+  if (!(this_function instanceof Function)) return null;
+  const params = getFunctionParameters(this_function) ?? [];
+  const facadeFunction = function (...args) {
+    const invocationArgs = [];
+    let argIndex = 0;
+    for (const param of params) {
+      if (/^this_[\w]+$/.test(param.name)) {
+        invocationArgs.push(this);
+      } else if (param.multiple) {
+        invocationArgs.push(...args.slice(argIndex));
+        argIndex = args.length;
+      } else {
+        invocationArgs.push(args[argIndex++]);
+      }
+    }
+    return this_function.apply(this, invocationArgs);
+  };
+  Object.defineProperty(facadeFunction, "name", {
+    value: alias || getFunctionName(this_function) || "facade",
+    configurable: true,
+  });
+  return facadeFunction;
 }
 
 /**
@@ -155,11 +219,9 @@ export function facade(this_function, alias = null) {
  *
  */
 export function facadeOnPrototype(this_function, type, alias = null) {
-  return facadeOnObject(
-    this_function,
-    scriptsUtility.getTypeByName(pa.type).prototype,
-    alias
-  );
+  const targetType = typeof type === "string" ? getTypeByName(type) : type;
+  if (!targetType?.prototype) return null;
+  return facadeOnObject(this_function, targetType.prototype, alias);
 }
 
 /**
@@ -190,7 +252,28 @@ export function facadeOnObject(this_function, object, alias = null) {
  *
  */
 export function getTypeByName(this_string) {
-  return global[this_string] || window[this_string];
+  if (typeof this_string !== "string" || !this_string.trim()) return null;
+  const typeName = this_string.trim();
+  const builtinType = BUILTIN_TYPES[typeName.toLowerCase()];
+  if (builtinType) return builtinType;
+
+  if (registeredTypes.has(typeName)) {
+    return registeredTypes.get(typeName);
+  }
+
+  if (!runtimeScriptsConfig.allowGlobalTypeLookup) {
+    return null;
+  }
+
+  if (
+    runtimeScriptsConfig.allowedGlobalTypes.length > 0 &&
+    !runtimeScriptsConfig.allowedGlobalTypes.includes(typeName)
+  ) {
+    return null;
+  }
+
+  const globalType = globalThis?.[typeName];
+  return typeof globalType === "function" ? globalType : null;
 }
 
 /**
@@ -201,8 +284,8 @@ export function getTypeByName(this_string) {
  * Get function name
  */
 export function getFunctionName(this_function) {
-  const f = this_function.toString().match(/function\s*([^\s(]+)\s*\(/);
-  return f && f.length > 0 ? f[1] : null;
+  if (!(this_function instanceof Function)) return null;
+  return this_function.name?.trim() || null;
 }
 
 /**

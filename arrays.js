@@ -1,4 +1,5 @@
 import lodash from 'lodash';
+import { debug } from "./console.js";
 /**
  * Get the index of an element in an array
  *
@@ -291,7 +292,7 @@ export class DynamicArray {
   async toArray() {
     let ret = await Promise.all(this.sources.map( x=> {
       if(x instanceof DynamicArray) return x.toArray();
-      if(typeof x === "function"){console.debug('FUNCTION::::::', x.toString()); return x(...(this.params??[]))};
+      if(typeof x === "function"){debug("FUNCTION::::::", x.toString()); return x(...(this.params??[]))};
 
       if(isIterable(x)) return Promise.resolve(Array.from(x));
       return x;
@@ -302,7 +303,7 @@ export class DynamicArray {
       const res = op(ret);
       if(Array.isArray(res)) ret = res;
     }
-    console.debug('------------ret:', ret);
+    debug("------------ret:", ret);
 
     return ret;
   }

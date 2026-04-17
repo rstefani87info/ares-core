@@ -1,4 +1,6 @@
 
+import { error } from "./console.js";
+
 export class TreeNode {
      
     constructor(identifier,value) {
@@ -57,7 +59,7 @@ export class TreeNode {
             try {
                 if(p) delete p.getChildrenProperty()[this.identifier];
             } catch (error) {
-                console.error('Error removing child from parent:', error);
+                error("Error removing child from parent:", error);
             }
         }
         const child = clone? JSON.parse(JSON.stringify(this)):this;

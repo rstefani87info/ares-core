@@ -1,10 +1,11 @@
 import {isAsyncFunction} from "./scripts.js";
+import { warn } from "./console.js";
 export function tryToDo(action,  onError=null, onFinally=null) {
     const res = {};
     try{
         res.response=onError && onError instanceof Function ? action() : action;
     }catch(e){
-        console.warn(e);
+        warn(e);
         res.error = e;
         if(onError && onError instanceof Function)onError(e, res);
     }finally{
@@ -18,7 +19,7 @@ export async function tryToDoAsync(action,  onError=null, onFinally=null) {
     try{
         res.response=action && action instanceof Function ? (await action()) : action;
     }catch(e){
-        console.warn(e);
+        warn(e);
         res.error = e;
         if(onError && onError instanceof Function)onError(e, res);
     }finally{

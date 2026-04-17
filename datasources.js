@@ -14,6 +14,47 @@ import * as advancedConsole from "./console.js";
 const mapRequestOrResult = function (request) {
   return request;
 };
+const REQUEST_RUNTIME_CONTEXT_KEY = Symbol("aReS.datasource.requestContext");
+let fallbackSessionIdCounter = 0;
+
+function normalizeRequest(request) {
+  return request && typeof request === "object" ? request : {};
+}
+
+function resolveRequestRuntimeContext(request) {
+  const normalizedRequest = normalizeRequest(request);
+  const existingContext = normalizedRequest[REQUEST_RUNTIME_CONTEXT_KEY] ?? {};
+  const sessionIdCandidate =
+    normalizedRequest.session?.id ??
+    normalizedRequest.sessionId ??
+    normalizedRequest.headers?.["x-session-id"] ??
+    existingContext.sessionId;
+
+  const sessionId =
+    sessionIdCandidate !== undefined && sessionIdCandidate !== null && `${sessionIdCandidate}`.trim() !== ""
+      ? String(sessionIdCandidate)
+      : `anonymous-${++fallbackSessionIdCounter}`;
+
+  const context = {
+    ...existingContext,
+    sessionId,
+  };
+
+  normalizedRequest[REQUEST_RUNTIME_CONTEXT_KEY] = context;
+  return { request: normalizedRequest, sessionId };
+}
+
+function isDatasourceAllowed(aReS, datasourceName, request) {
+  if (typeof aReS?.isResourceAllowed !== "function") {
+    return true;
+  }
+
+  return aReS.isResourceAllowed(datasourceName, request);
+}
+
+function getSessionLogLabel(sessionId) {
+  return String(sessionId).substring(0, 10) + "...";
+}
 
 export const defaultConnectionCallback = (error) => {
   if (error) throw error;
@@ -35,8 +76,8 @@ export async function loadDatasource(
   force = false
 ) {
   advancedConsole.asyncConsole.log(
-    "datasource ",
-    JSON.stringify(datasourceSettings)
+    "datasource",
+    datasourceSettings
   );
   const datasourceName = datasourceSettings.name.toLowerCase();
   aReS.datasourceMap = aReS.datasourceMap ?? {};
@@ -245,36 +286,39 @@ export class Datasource {
     return this.pools[id];
   }
   async getConnection(req, mapper, force = false) {
-    advancedConsole.log(
+    const { request, sessionId } = resolveRequestRuntimeContext(req);
+    const canAccessDatasource = isDatasourceAllowed(this.aReS, this.name, request);
+
+    advancedConsole.debug(
       "Datasource: " + this.name + " - connecting: " + mapper.connectionSetting,
-      this.aReS.isResourceAllowed(this.name, req)
+      canAccessDatasource
     );
-    if (this.aReS.isResourceAllowed(this.name, req)) {
+    if (canAccessDatasource) {
       const env =
         this.environments[this.aReS.isProduction ? "production" : "test"];
       const connectionSetting = env[mapper.connectionSetting];
-      if (force || !this.sessions[req.session.id]) {
-        this.sessions[req.session.id] = this.sessions[req.session.id] ?? {};
+      if (force || !this.sessions[sessionId]) {
+        this.sessions[sessionId] = this.sessions[sessionId] ?? {};
       }
-      if (force || !this.sessions[req.session.id][mapper.connectionSetting]) {
+      if (force || !this.sessions[sessionId][mapper.connectionSetting]) {
         const driverConstructor = connectionSetting.driver;
-        this.sessions[req.session.id][mapper.connectionSetting] =
+        this.sessions[sessionId][mapper.connectionSetting] =
           new driverConstructor(
             connectionSetting,
             this,
-            req.session.id,
+            sessionId,
             mapper.connectionSetting,
             this.aReS.isProduction
           );
       }
-      if (!this.sessions[req.session.id][mapper.connectionSetting].pool) {
-        await this.sessions[req.session.id][mapper.connectionSetting].setPool();
+      if (!this.sessions[sessionId][mapper.connectionSetting].pool) {
+        await this.sessions[sessionId][mapper.connectionSetting].setPool();
       }
-      await this.sessions[req.session.id][
+      await this.sessions[sessionId][
         mapper.connectionSetting
       ].nativeConnect(defaultConnectionCallback);
-      this.sessions[req.session.id][mapper.connectionSetting].isOpen = true;
-      return this.sessions[req.session.id][mapper.connectionSetting];
+      this.sessions[sessionId][mapper.connectionSetting].isOpen = true;
+      return this.sessions[sessionId][mapper.connectionSetting];
     }
     throw new Error("Can not establish connection!");
   }
@@ -304,40 +348,42 @@ export class Datasource {
   }
 
   async _ensureConnection(req, mapper) {
-    let connection = this.sessions[req.session.id]
-      ? this.sessions[req.session.id][mapper.connectionSetting]
+    const { request, sessionId } = resolveRequestRuntimeContext(req);
+    let connection = this.sessions[sessionId]
+      ? this.sessions[sessionId][mapper.connectionSetting]
       : undefined;
-    advancedConsole.log("verifying connection");
+    advancedConsole.debug("verifying connection");
 
     if (!connection || !connection.isOpen) {
-      connection = await this.getConnection(req, mapper);
+      connection = await this.getConnection(request, mapper);
       if (!connection.isOpen) {
         advancedConsole.error("connection is not open");
         throw new Error("connection is not open");
       }
     }
-    advancedConsole.log("verified connection", true);
+    advancedConsole.debug("verified connection", true);
     return connection;
   }
 
   _setupTransaction(req, mapper, connection) {
+    const { request, sessionId } = resolveRequestRuntimeContext(req);
     const isTransaction =
       (mapper.transaction === true || mapper.transaction === 1) &&
       connection.startTransaction &&
       connection.commit &&
       connection.rollback;
 
-    req.transactionIndex = req.transactionIndex ? req.transactionIndex + 1 : 0;
-    req.executedTransactionSteps = req.executedTransactionSteps ?? [];
-    const transactionName = mapper.name + "[" + req.transactionIndex + "]";
-    req.executedTransactionSteps.push(transactionName);
+    request.transactionIndex = request.transactionIndex ? request.transactionIndex + 1 : 0;
+    request.executedTransactionSteps = request.executedTransactionSteps ?? [];
+    const transactionName = mapper.name + "[" + request.transactionIndex + "]";
+    request.executedTransactionSteps.push(transactionName);
 
     if (isTransaction) {
-      advancedConsole.log(
+      advancedConsole.debug(
         "called database transaction: " +
           this.name +
           "[" +
-          req.session.id +
+          sessionId +
           "]"
       );
       connection.startTransaction(transactionName);
@@ -346,48 +392,50 @@ export class Datasource {
   }
 
   async _executeQuery(req, command, mapper, connection) {
-    advancedConsole.log(
+    const { request, sessionId } = resolveRequestRuntimeContext(req);
+    advancedConsole.debug(
       "executing query: " +
         this.name +
         "[" +
-        req.session.id.substring(0, 10) +
-        "...]",req.params,req.parameters
+        getSessionLogLabel(sessionId) +
+        "]",
+      request.params,
+      request.parameters
     );
     const params = mapper.mapParameters
-      ? await mapper.mapParameters(req, this.aReS, connection)
+      ? await mapper.mapParameters(request, this.aReS, connection)
       : {};
-    advancedConsole.log(
-      "executing query with params: ",
-      JSON.stringify(params)
-    );
+    advancedConsole.debug("executing query with params:", params);
     const ret = await connection._executeNativeQueryAsync(
       command,
       params,
       mapper,
-      req
+      request
     );
-    advancedConsole.log("query results", ret);
+    advancedConsole.debug("query results", ret);
     return ret;
   }
 
   _commitTransaction(req, connection, transactionName) {
-    advancedConsole.log(
+    const { sessionId } = resolveRequestRuntimeContext(req);
+    advancedConsole.debug(
       "commit database transaction: " +
         this.name +
         "[" +
-        req.session.id.substring(0, 10) +
-        "...]"
+        getSessionLogLabel(sessionId) +
+        "]"
     );
     connection.commit(transactionName);
   }
 
   _rollbackTransaction(req, connection, transactionName) {
-    advancedConsole.log(
+    const { sessionId } = resolveRequestRuntimeContext(req);
+    advancedConsole.debug(
       "rollback database transaction: " +
         this.name +
         "[" +
-        req.session.id.substring(0, 10) +
-        "...]"
+        getSessionLogLabel(sessionId) +
+        "]"
     );
     connection.rollback(transactionName);
   }
@@ -395,15 +443,15 @@ export class Datasource {
   getKeyHash(key) {
     if (!this.idKeyMap[`_${key}`]) {
       const hash = getSHA256Hash(key);
-      this.hashKeyMap = { [`_${hash}`]: key };
-      this.idKeyMap = { [`_${key}`]: hash };
+      this.hashKeyMap[`_${hash}`] = key;
+      this.idKeyMap[`_${key}`] = hash;
       return hash;
     }
-    return this.idKeyMap[key];
+    return this.idKeyMap[`_${key}`];
   }
 
   getHashKey(hash) {
-    return this.idKeyMap[`_${hash}`];
+    return this.hashKeyMap[`_${hash}`];
   }
 
   close(req) {
@@ -680,7 +728,8 @@ export class RESTConnection extends DBConnection {
     isProduction = false
   ) {
     super(connectionParameters, datasource, sessionId, connectionSettingName, isProduction);
-    this.xhrWrapper = new XHRWrapper(this.host, sessionId, isProduction);
+    this.networkingConfig = this.datasource?.aReS?.getConfig?.("networking.http", {}) ?? {};
+    this.xhrWrapper = new XHRWrapper(this.host, sessionId, isProduction, this.networkingConfig);
   }
 
   async createPool() {
@@ -688,7 +737,7 @@ export class RESTConnection extends DBConnection {
   }
 
   async nativeConnect(callback) {
-    this.xhrWrapper = new XHRWrapper(this.host);
+    this.xhrWrapper = new XHRWrapper(this.host, null, this.isProduction, this.networkingConfig);
     return this;
   }
 
@@ -723,7 +772,13 @@ export class RESTConnection extends DBConnection {
       command.method?.toLowerCase() || "get"
     ](command.url, params, options);
     response.response = responseValue;
+    response.status = responseValue.status;
+    response.message = responseValue.message;
+    response.url = responseValue.url;
     response.results = responseValue.results;
+    if (responseValue["€rror"]) {
+      response["€rror"] = responseValue["€rror"];
+    }
     return response;
   }
 }
