@@ -10,51 +10,15 @@ import { XHRWrapper } from "./xhr.js";
 import { getDockletAnnotations } from "./scripts.js";
 import { getSHA256Hash } from "./crypto.js";
 import * as advancedConsole from "./console.js";
+import {
+  resolveRequestRuntimeContext,
+  isDatasourceAllowed,
+  getSessionLogLabel,
+} from "./datasource-execution-context.js";
 
 const mapRequestOrResult = function (request) {
   return request;
 };
-const REQUEST_RUNTIME_CONTEXT_KEY = Symbol("aReS.datasource.requestContext");
-let fallbackSessionIdCounter = 0;
-
-function normalizeRequest(request) {
-  return request && typeof request === "object" ? request : {};
-}
-
-function resolveRequestRuntimeContext(request) {
-  const normalizedRequest = normalizeRequest(request);
-  const existingContext = normalizedRequest[REQUEST_RUNTIME_CONTEXT_KEY] ?? {};
-  const sessionIdCandidate =
-    normalizedRequest.session?.id ??
-    normalizedRequest.sessionId ??
-    normalizedRequest.headers?.["x-session-id"] ??
-    existingContext.sessionId;
-
-  const sessionId =
-    sessionIdCandidate !== undefined && sessionIdCandidate !== null && `${sessionIdCandidate}`.trim() !== ""
-      ? String(sessionIdCandidate)
-      : `anonymous-${++fallbackSessionIdCounter}`;
-
-  const context = {
-    ...existingContext,
-    sessionId,
-  };
-
-  normalizedRequest[REQUEST_RUNTIME_CONTEXT_KEY] = context;
-  return { request: normalizedRequest, sessionId };
-}
-
-function isDatasourceAllowed(aReS, datasourceName, request) {
-  if (typeof aReS?.isResourceAllowed !== "function") {
-    return true;
-  }
-
-  return aReS.isResourceAllowed(datasourceName, request);
-}
-
-function getSessionLogLabel(sessionId) {
-  return String(sessionId).substring(0, 10) + "...";
-}
 
 export const defaultConnectionCallback = (error) => {
   if (error) throw error;
