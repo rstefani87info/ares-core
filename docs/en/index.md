@@ -8,12 +8,15 @@ The `core` package is the foundational runtime layer of the aReS framework: it c
 
 ## Suggested Reading Order
 
-1. Read `core.md` for a technical overview of the package and its actual API surface.
-2. Read `api-surface.md` to understand which modules and subpaths should be treated as stable, transitional, or internal.
+1. Read `quickstart.md` for install, bootstrap, and minimal configuration.
+2. Read `core.md` for a technical overview of the package and its actual API surface.
+3. Read `api-surface.md` to understand which modules and subpaths should be treated as stable, transitional, or internal.
 
 ## Available Documents
 
+- [Quickstart](./quickstart.md)
 - [Technical Overview](./core.md)
+- [Datasources](./datasources.md)
 - [API Surface Classification](./api-surface.md)
 
 ## When To Use This Documentation

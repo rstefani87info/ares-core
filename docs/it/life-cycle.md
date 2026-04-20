@@ -140,12 +140,12 @@ Questo e' il livello base di autorizzazione su cui altri moduli possono costruir
 
 ### Logging e Diagnostica
 
-`console.js` fornisce due concetti:
+`console.js` espone logging e diagnostica configurabili.
 
-- `asyncConsole`, che accumula messaggi e li stampa in un secondo momento;
-- un override del `console` globale per aggiungere contesto ai log.
-
-Nel ciclo di vita pratico, questo influenza tutto il runtime dopo l'import del modulo, perche' modifica il comportamento del logging di processo.
+Punti chiave:
+- `asyncConsole` accumula messaggi diagnostici e li stampa solo quando richiesto.
+- il logger del core non overridea piu' il `console` globale: i moduli del core usano esplicitamente le funzioni del logger.
+- il bootstrap espone `aReS.configureLogging()` e `aReS.getLoggingConfig()` per abilitare debug/diagnostica e per redigere campi sensibili nei payload.
 
 ### Scripting e Reflection
 

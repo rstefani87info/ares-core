@@ -20,7 +20,12 @@ import {
 import { XHRWrapper } from "@ares/core/xhr.js";
 import * as permissionsModule from "@ares/core/permissions.js";
 import * as geographicalModule from "@ares/core/geographical.js";
-import { setupPropertyAlias, onPropertyChange } from "@ares/core/objects.js";
+import {
+  setupPropertyAlias,
+  onPropertyChange,
+  findPropValueByAlias,
+} from "@ares/core/objects.js";
+import { createApp } from "../examples/minimal-host-app.mjs";
 
 function uniqueName(suffix) {
   return `core-smoke-${suffix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -407,6 +412,22 @@ test("data descriptors resolve identity hashes through datasource getHashKey", a
   );
 
   assert.equal(formatted.identity, originalValue);
+});
+
+test("findPropValueByAlias resolves by regex-like keys when alias is a string", () => {
+  const payload = {
+    "/^(word)?doc(ument|x|umentx)?$/i": "DOCUMENT",
+    document: "PLAIN",
+  };
+
+  assert.equal(findPropValueByAlias(payload, "docx"), "DOCUMENT");
+  assert.equal(findPropValueByAlias(payload, "wordDocument"), "DOCUMENT");
+});
+
+test("minimal host app can bootstrap and include core modules", () => {
+  const aReS = createApp();
+  assert.equal(typeof aReS.loadDatasource, "function");
+  assert.equal(typeof aReS.isResourceAllowed, "function");
 });
 
 test("tryToDo executes function actions regardless of onError presence", () => {

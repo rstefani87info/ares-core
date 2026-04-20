@@ -8,14 +8,17 @@ Il modulo `core` e' lo strato fondamentale del framework aReS: crea l'istanza ru
 
 ## Percorso di Lettura Consigliato
 
-1. Leggere `core.md` per una panoramica tecnica del package e della sua API reale.
-2. Leggere `api-surface.md` per capire quali moduli e sottopath del core sono da considerare stabili, transizionali o interni.
-3. Leggere `life-cycle.md` per capire bootstrap, stato runtime, inclusione moduli e cleanup.
-4. Leggere `strength.md` per il posizionamento del framework e gli elementi distintivi del core.
+1. Leggere `quickstart.md` per installazione, bootstrap e configurazione minima.
+2. Leggere `core.md` per una panoramica tecnica del package e della sua API reale.
+3. Leggere `api-surface.md` per capire quali moduli e sottopath del core sono da considerare stabili, transizionali o interni.
+4. Leggere `life-cycle.md` per capire bootstrap, stato runtime, inclusione moduli e cleanup.
+5. Leggere `strength.md` per il posizionamento del framework e gli elementi distintivi del core.
 
 ## Documenti Disponibili
 
+- [Quickstart](./quickstart.md)
 - [Panoramica Tecnica](./core.md)
+- [Datasource](./datasources.md)
 - [Classificazione API e Sottopath](./api-surface.md)
 - [Life Cycle](./life-cycle.md)
 - [Punti di Forza e Unicita'](./strength.md)

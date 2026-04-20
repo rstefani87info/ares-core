@@ -12,12 +12,83 @@ export function findPropKeyByAlias(
   alias,
 ) {
   if (!this_object || alias == null) return undefined;
-  const matcher = alias instanceof RegExp ? alias : new RegExp(String(alias));
-  for (const k in this_object) {
-    if (matcher.test(k)) {
-      return k;
+
+  const toMatcherFromKey = (key) => {
+    if (typeof key !== "string") return null;
+    const trimmed = key.trim();
+    if (!trimmed) return null;
+
+    if (trimmed.startsWith("/") && trimmed.lastIndexOf("/") > 0) {
+      const lastSlash = trimmed.lastIndexOf("/");
+      const source = trimmed.slice(1, lastSlash);
+      const flags = trimmed.slice(lastSlash + 1);
+      try {
+        return new RegExp(source, flags);
+      } catch {
+        return null;
+      }
     }
+
+    if (trimmed.startsWith("^") || trimmed.endsWith("$")) {
+      try {
+        return new RegExp(trimmed);
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  };
+
+  const normalizeRegex = (matcher) => {
+    if (!(matcher instanceof RegExp)) return null;
+    const flags =
+      matcher.flags.includes("g") || matcher.flags.includes("y")
+        ? matcher.flags.replace(/[gy]/g, "")
+        : matcher.flags;
+    if (flags === matcher.flags) return matcher;
+    try {
+      return new RegExp(matcher.source, flags);
+    } catch {
+      return matcher;
+    }
+  };
+
+  if (alias instanceof RegExp) {
+    const matcher = normalizeRegex(alias);
+    for (const k in this_object) {
+      matcher.lastIndex = 0;
+      if (matcher.test(k)) return k;
+    }
+    return undefined;
   }
+
+  const aliasString = String(alias);
+
+  for (const k in this_object) {
+    if (k === aliasString) return k;
+  }
+
+  for (const k in this_object) {
+    const keyMatcher = toMatcherFromKey(k);
+    if (!keyMatcher) continue;
+    keyMatcher.lastIndex = 0;
+    if (keyMatcher.test(aliasString)) return k;
+  }
+
+  const aliasLower = aliasString.toLowerCase();
+  for (const k in this_object) {
+    if (k.toLowerCase() === aliasLower) return k;
+  }
+
+  for (const k in this_object) {
+    if (k.startsWith(aliasString)) return k;
+  }
+
+  for (const k in this_object) {
+    if (k.includes(aliasString)) return k;
+  }
+
   return undefined;
 }
 /**

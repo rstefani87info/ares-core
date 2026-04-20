@@ -79,7 +79,7 @@ Recupera policy runtime da `appSetup.policies`, per esempio `permissions`.
 
 ### `aReS.isProduction`
 
-Restituisce `true` se negli ambienti configurati esiste un environment selezionato con `type === 'production'`.
+Restituisce `true` se negli ambienti configurati esiste un environment con `selected: true` e `type === 'production'` (case-insensitive).
 
 ### `aReS.include(module)`
 
@@ -123,6 +123,12 @@ Il modulo `core` e' composto da piu' file specializzati. I principali gruppi fun
 - `commandLine.js` per CLI interattiva;
 - `geographical.js` per geocoding e reverse geocoding;
 - `console.js` per logging e diagnostica.
+
+Il bootstrap dell'istanza espone anche:
+- `aReS.configureLogging(overrides?)`
+- `aReS.getLoggingConfig()`
+- `aReS.configureScriptsRuntime(overrides?)`
+- `aReS.getScriptsRuntimeConfig()`
 
 ### Utility generiche
 
@@ -174,7 +180,6 @@ Le dipendenze dichiarate in `package.json` sono coerenti con il ruolo del modulo
 - `crypto-js`
 - `json2xml`
 - `lodash`
-- `moment`
 - `moment-timezone`
 - `nanoid`
 - `numeral`

@@ -12,7 +12,7 @@ From the package root you currently get:
 
 - the `ARES` class;
 - the default function `aReSInitialize(setup, options?)`;
-- instance features such as `include()` and `isProduction`;
+- instance features such as `include()`, `getConfig(path)`, `getPolicy(name)`, and `isProduction`;
 - static instance management through `ARES.instances` and `ARES.getInstance(name)`.
 
 The package root does not automatically attach every utility to the `aReS` instance. Most core utilities live in dedicated module files and should be imported explicitly or made available through modules that extend the runtime instance.
@@ -53,6 +53,14 @@ Supported `onDuplicate` policies are:
 - `reuse` to return the existing instance.
 
 ## Main Instance API
+
+### `aReS.getConfig(path, fallback?)`
+
+Resolves runtime configuration from `appSetup.config` using dot-notation paths, for example `geocoders.enabled`.
+
+### `aReS.getPolicy(name, fallback?)`
+
+Resolves runtime policies from `appSetup.policies`, for example `permissions`.
 
 ### `aReS.appSetup`
 
@@ -159,7 +167,6 @@ The dependencies declared in `package.json` are aligned with the module responsi
 - `crypto-js`
 - `json2xml`
 - `lodash`
-- `moment`
 - `moment-timezone`
 - `nanoid`
 - `numeral`
