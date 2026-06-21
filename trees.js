@@ -1,13 +1,95 @@
-
-import { error } from "./console.js";
-
+import { randomUUID } from "crypto";
 export class TreeNode {
      
-    constructor(identifier,value) {
+    static isTreeNode(node) {
+      if (!node) return false;
+      if (node instanceof TreeNode) return true;
+      const isObjectLike = typeof node === "object" || typeof node === "function";
+      if (!isObjectLike) return false;
+
+      try {
+        const requiredMethods = [
+          "getChildrenProperty",
+          "setChildrenProperty",
+          "getChildrenAsArray",
+          "getChildren",
+          "setParent",
+          "getParent",
+          "getRoot",
+          "getPath",
+          "isLeaf",
+          "isRoot",
+          "isChildOf",
+          "isDescendantOf",
+          "getNodeFrom",
+          "forEach",
+        ];
+
+        const hasMethods = requiredMethods.every((m) => typeof node[m] === "function");
+        if (!hasMethods) return false;
+
+        const hasIdentifier =
+          typeof node.identifier === "string" ||
+          typeof node.identifier === "number" ||
+          typeof node.identifier === "bigint" ||
+          typeof node.identifier === "symbol";
+        if (!hasIdentifier) return false;
+
+        const isIterable = typeof node?.[Symbol.iterator] === "function";
+        return isIterable;
+      } catch {
+        return false;
+      }
+    }
+
+    constructor(identifier,value, driver={}) {
       Object.assign(this, value);
-      this.identifier=identifier;
+      this._parent = null;
+      this.identifier = identifier ?? randomUUID();
       const c =this.getChildrenProperty();
       this.setChildrenProperty(c);
+      this.driver = driver;
+    }
+
+    setType(value) {
+      this._type = value;
+      return this;
+    }
+
+    getType() {
+      return this._type;
+    }
+
+    setParentNode(parent) {
+      if (!(parent instanceof TreeNode) && parent !== null) {
+        throw new Error("Parent must be a TreeNode instance or null");
+      }
+      this._parent = parent;
+      return this;
+    }
+
+    getParentNode() {
+      return this._parent;
+    }
+
+    set parent(value) {
+      this.setParentNode(value);
+    }
+
+    get parent() {
+      return this.getParentNode();
+    }
+
+    set type(value) {
+      this.setType(value);
+    }
+
+    get type() {
+      return this.getType();
+    }
+
+    serialize() {
+      return this.driver.serialize(this);
     }
 
     /**
@@ -18,7 +100,7 @@ export class TreeNode {
      * @returns {TreeNode|null}
      */
     createChildInstance(identifier,value) {
-      return new TreeNode(identifier,value);
+      return new TreeNode(identifier,value, this.driver);
     }
 
     /*
@@ -41,7 +123,7 @@ export class TreeNode {
         this.children = children;
         Object.entries(children).forEach(([key, obj]) => {
             this.children[key] = this.createChildInstance(key, obj);
-            this.children[key].getParent = ()=>this;
+            this.children[key]._parent = this;
         });
     }
 
@@ -53,20 +135,27 @@ export class TreeNode {
         if (!(parent instanceof TreeNode) && parent !== null) {
             throw new Error('Parent must be a TreeNode instance or null');
         }
-        ;
-        if(!clone && this.getParent ) {
-            const p = this.getParent()
+        if(!clone) {
+            const p = this.getParent();
             try {
                 if(p) delete p.getChildrenProperty()[this.identifier];
             } catch (error) {
-                error("Error removing child from parent:", error);
+                console.error("Error removing child from parent:", error);
             }
         }
-        const child = clone? JSON.parse(JSON.stringify(this)):this;
+        const childValue = clone
+          ? JSON.parse(
+              JSON.stringify(this, (key, value) => {
+                if (key === "_parent" || key === "driver") return undefined;
+                return value;
+              })
+            )
+          : null;
+        const child = clone ? this.createChildInstance(this.identifier, childValue) : this;
         if(parent ) {
             parent.getChildrenProperty()[child.identifier]=child;
         }
-        child.getParent = ()=> parent;
+        child._parent = parent;
 
         return child;
     }
@@ -125,10 +214,10 @@ export class TreeNode {
   
     /**
      * Get the parent node of the current node
-     * @returns {GeoTreeNode|null} - The parent node or null if it's the root node
+     * @returns {TreeNode|null} - The parent node or null if it's the root node
      */
     getParent() {
-      return this.getParent();
+      return this.getParentNode();
     }
   
     /**
@@ -153,12 +242,15 @@ export class TreeNode {
   
     /**
      * Get the root node of the tree
-     * @returns {GeoTreeNode} - The root node
+     * @returns {TreeNode} - The root node
      */
     getRoot() {
       let node = this;
-      while (node.getParent()) {
-        node = node.getParent();
+      while (node) {
+        const parent =
+          typeof node.getParent === "function" ? node.getParent() : node._parent;
+        if (!parent) return node;
+        node = parent;
       }
       return node;
     }
@@ -194,7 +286,7 @@ export class TreeNode {
   
     /**
      * Check if the current node is a child of the specified node
-     * @param {GeoTreeNode} node - The parent node to check
+     * @param {TreeNode} node - The parent node to check
      * @returns {boolean} - True if the node is a child of the specified node, false otherwise
      */
     isChildOf(node) {
@@ -202,7 +294,7 @@ export class TreeNode {
     }
     /**
      * Check if the current node is a descendant of the specified node
-     * @param {GeoTreeNode} node - The parent node to check
+     * @param {TreeNode} node - The parent node to check
      * @returns {boolean} - True if the node is a descendant of the specified node, false otherwise
      */
     isDescendantOf(node) {

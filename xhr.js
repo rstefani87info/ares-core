@@ -92,6 +92,7 @@ export class XHRWrapper {
         ...(options?.headers || {}),
       },
       timeout: requestRuntimeConfig.timeout,
+      responseType: options?.responseType ?? options?.networking?.responseType,
       validateStatus() {
         return true;
       },

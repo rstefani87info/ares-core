@@ -292,7 +292,10 @@ export class DynamicArray {
   async toArray() {
     let ret = await Promise.all(this.sources.map( x=> {
       if(x instanceof DynamicArray) return x.toArray();
-      if(typeof x === "function"){debug("FUNCTION::::::", x.toString()); return x(...(this.params??[]))};
+      if(typeof x === "function"){
+        debug("FUNCTION::::::", x.toString()); 
+        return x(...(this.params??[]))
+      };
 
       if(isIterable(x)) return Promise.resolve(Array.from(x));
       return x;

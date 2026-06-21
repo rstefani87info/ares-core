@@ -1,4 +1,4 @@
-/**
+/**advancedConsole
  * @author Roberto Stefani
  * @license MIT
  */
@@ -52,6 +52,7 @@ export async function loadDatasource(
     aReS.datasourceMap[datasourceName].loadQueries();
     advancedConsole.asyncConsole.log("datasources", "}");
   }
+  advancedConsole.asyncConsole.output("datasources");
   return aReS.datasourceMap[datasourceName];
 }
 
@@ -93,7 +94,23 @@ export class DatasourceRequestMapper {
   }
 
   async execute(request) {
-    return executeDatasourceRequestMapper(this, request);
+    advancedConsole.log(
+      "datasources",
+      ` - execute: ${this.name}:  ${request.path ?? "unknown"}`
+    );
+    return executeDatasourceRequestMapper(this, request).then((result) => {
+      advancedConsole.log(
+        "datasources",
+        ` - execute: ${this.name}:  ${request.path ?? "unknown"}: ${result}`
+      );
+      return result;
+    }).catch((error) => {
+      advancedConsole.error(
+        "datasources",
+        ` - execute: ${this.name}:  ${request.path ?? "unknown"}: ${error}`
+      );
+      return error;
+    });
   }
 }
 export class Datasource {
