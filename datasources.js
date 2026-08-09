@@ -16,6 +16,43 @@ const mapRequestOrResult = function (request) {
   return request;
 };
 
+const INTERNAL_DATASOURCE_KEYS = new Set([
+  "aReS",
+  "sessions",
+  "hashKeyMap",
+  "idKeyMap",
+  "pools",
+  "onMapperLoaded",
+  "_mapperNames",
+]);
+
+function syncExistingMapper(existingMapper, nextMapper) {
+  for (const key of Object.keys(existingMapper)) {
+    if (!["datasource", "aReS"].includes(key) && !(key in nextMapper)) {
+      delete existingMapper[key];
+    }
+  }
+
+  Object.assign(existingMapper, nextMapper);
+  existingMapper.datasource = nextMapper.datasource;
+  existingMapper.aReS = nextMapper.aReS;
+  existingMapper.disabled = false;
+  return existingMapper;
+}
+
+function removeStaleDatasourceProperties(datasource, nextSettings) {
+  const nextKeys = new Set([
+    ...Object.keys(nextSettings ?? {}),
+    ...INTERNAL_DATASOURCE_KEYS,
+  ]);
+
+  for (const key of Object.keys(datasource)) {
+    if (!nextKeys.has(key)) {
+      delete datasource[key];
+    }
+  }
+}
+
 /**
  * @param {Object} aReS - The express framework object
  * @param {Object} datasourceSetting - Object representing the datasource description
@@ -38,8 +75,11 @@ export async function loadDatasource(
   );
   const datasourceName = datasourceSettings.name.toLowerCase();
   aReS.datasourceMap = aReS.datasourceMap ?? {};
-  force = force || !(datasourceName in aReS.datasourceMap);
-  if (force) {
+  const datasourceExists = datasourceName in aReS.datasourceMap;
+  if (force && datasourceExists) {
+    return refreshDatasource(aReS, datasourceSettings, onMapperLoaded);
+  }
+  if (!datasourceExists) {
     advancedConsole.asyncConsole.log(
       "datasources",
       'init db "' + datasourceName + '" {'
@@ -49,16 +89,60 @@ export async function loadDatasource(
       datasourceSettings
     );
     aReS.datasourceMap[datasourceName].onMapperLoaded = onMapperLoaded;
-    aReS.datasourceMap[datasourceName].loadQueries();
+    await aReS.datasourceMap[datasourceName].loadQueries();
     advancedConsole.asyncConsole.log("datasources", "}");
   }
   advancedConsole.asyncConsole.output("datasources");
   return aReS.datasourceMap[datasourceName];
 }
 
+export async function refreshDatasource(
+  aReS,
+  datasourceSettings,
+  onMapperLoaded
+) {
+  const datasourceName = datasourceSettings.name.toLowerCase();
+  aReS.datasourceMap = aReS.datasourceMap ?? {};
+  const datasource = aReS.datasourceMap[datasourceName];
+
+  if (!datasource) {
+    return loadDatasource(aReS, datasourceSettings, onMapperLoaded, false);
+  }
+
+  advancedConsole.asyncConsole.log(
+    "datasources",
+    'refresh db "' + datasourceName + '" {'
+  );
+
+  const previousMapperNames = new Set(datasource._mapperNames ?? []);
+  datasource.close();
+  datasource.sessions = {};
+  datasource.pools = {};
+  datasource.hashKeyMap = {};
+  datasource.idKeyMap = {};
+  removeStaleDatasourceProperties(datasource, datasourceSettings);
+  Object.assign(datasource, datasourceSettings);
+  datasource.aReS = aReS;
+  datasource.onMapperLoaded = onMapperLoaded ?? datasource.onMapperLoaded;
+  datasource._mapperNames = new Set();
+  await datasource.loadQueries({ reload: true });
+
+  for (const mapperName of previousMapperNames) {
+    if (!datasource._mapperNames.has(mapperName)) {
+      datasource.disableQuery(mapperName);
+    }
+  }
+
+  advancedConsole.asyncConsole.log("datasources", "}");
+  advancedConsole.asyncConsole.output("datasources");
+  return datasource;
+}
+
 export function aReSInitialize(aReS) {
   aReS.loadDatasource = (datasourceSettings, onMapperLoaded, force = false) =>
     loadDatasource(aReS, datasourceSettings, onMapperLoaded, force);
+  aReS.refreshDatasource = (datasourceSettings, onMapperLoaded) =>
+    refreshDatasource(aReS, datasourceSettings, onMapperLoaded);
 }
 
 export function exportAsAresMethod(aReS, mapper, datasource) {
@@ -94,20 +178,23 @@ export class DatasourceRequestMapper {
   }
 
   async execute(request) {
+    if (this.disabled) {
+      return { "€rror": new Error(`Datasource mapper "${this.name}" is disabled`) };
+    }
     advancedConsole.log(
       "datasources",
-      ` - execute: ${this.name}:  ${request.path ?? "unknown"}`
+      ` - execute: ${this.name}:  ${request.path ?? ""}`
     );
     return executeDatasourceRequestMapper(this, request).then((result) => {
       advancedConsole.log(
         "datasources",
-        ` - execute: ${this.name}:  ${request.path ?? "unknown"}: ${result}`
+        ` - execute: ${this.name}:  ${request.path ?? ""}:`,result['€rror'] ?? `found: ${result.results.length} items`
       );
       return result;
     }).catch((error) => {
       advancedConsole.error(
         "datasources",
-        ` - execute: ${this.name}:  ${request.path ?? "unknown"}: ${error}`
+        ` - execute: ${this.name}:  ${request.path ?? ""}:`, error
       );
       return error;
     });
@@ -121,6 +208,7 @@ export class Datasource {
     this.hashKeyMap = {};
     this.idKeyMap = {};
     this.pools = {};
+    this._mapperNames = new Set();
   }
 
   async getPool(id, onCreate) {
@@ -152,33 +240,50 @@ export class Datasource {
     datasourceRuntime.closeDatasource(this, req);
   }
 
-  loadQueries() {
-    const thisDatasource = this;
-    return this.queries
+  async loadQueries(options = {}) {
+    const tasks = this.queries
       ? Object.entries(this.queries).map(([key, value]) => {
           value.name = value.name ?? key;
-          return thisDatasource.loadQuery(value);
+          return this.loadQuery(value, options);
         })
       : [];
+    return Promise.all(tasks);
   }
 
-  async loadQuery(queryObject) {
+  async loadQuery(queryObject, options = {}) {
     if (typeof queryObject === "object") {
       advancedConsole.asyncConsole.log(
         "datasources",
         ' - init mapperCase "' + queryObject.name + '" {'
       );
-      this[queryObject.name] = new DatasourceRequestMapper(
+      const nextMapper = new DatasourceRequestMapper(
         this.aReS,
         this,
         queryObject
       );
-      if (this.onMapperLoaded && typeof this.onMapperLoaded === "function") {
+      const isNewMapper = !(this[queryObject.name] instanceof DatasourceRequestMapper);
+      this[queryObject.name] = isNewMapper
+        ? nextMapper
+        : syncExistingMapper(this[queryObject.name], nextMapper);
+      this._mapperNames = this._mapperNames ?? new Set();
+      this._mapperNames.add(queryObject.name);
+      if (
+        (isNewMapper || options.forceOnMapperLoaded === true) &&
+        this.onMapperLoaded &&
+        typeof this.onMapperLoaded === "function"
+      ) {
         await this.onMapperLoaded(this.aReS, this[queryObject.name], this);
       }
       return true;
     }
     return false;
+  }
+
+  disableQuery(queryName) {
+    if (!(this[queryName] instanceof DatasourceRequestMapper)) return false;
+    this[queryName].disabled = true;
+    this[queryName].query = undefined;
+    return true;
   }
 }
 

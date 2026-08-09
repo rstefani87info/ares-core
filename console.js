@@ -231,7 +231,8 @@ export function log(message, ...messages) {
 }
 
 export function error(message, ...messages) {
-  emit("error", [message, ...messages], { includeCaller: true });
+  const error = new Error(message);
+  emit("error", [error, ...messages], { includeCaller: true });
 }
 
 export function warn(message, ...messages) {

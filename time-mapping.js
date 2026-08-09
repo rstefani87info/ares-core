@@ -25,19 +25,31 @@ const TIME_UNIT_TO_MS = Object.freeze({
     days: 24 * 60 * 60 * 1000
 });
 
+/**
+ * Restituisce true quando il valore e un numero finito.
+ */
 function isFiniteNumber(value) {
     return typeof value === "number" && Number.isFinite(value);
 }
 
+/**
+ * Verifica che una proprieta appartenga direttamente all oggetto.
+ */
 function hasOwn(object, key) {
     return object != null && Object.prototype.hasOwnProperty.call(object, key);
 }
 
+/**
+ * Normalizza un input nullo, singolo o multiplo in un array.
+ */
 function ensureArray(value) {
     if (value == null) return [];
     return Array.isArray(value) ? value : [value];
 }
 
+/**
+ * Clona superficialmente gli item oggetto e lascia invariati i valori primitivi.
+ */
 function cloneItem(item) {
     if (item && typeof item === "object" && !Array.isArray(item)) {
         return { ...item };
@@ -46,6 +58,9 @@ function cloneItem(item) {
     return item;
 }
 
+/**
+ * Risolve il fattore di conversione in millisecondi per una unita supportata.
+ */
 function toUnitFactor(unit = "ms") {
     const factor = TIME_UNIT_TO_MS[String(unit).toLowerCase()];
     if (!factor) {
@@ -55,6 +70,9 @@ function toUnitFactor(unit = "ms") {
     return factor;
 }
 
+/**
+ * Converte un valore numerico tra unita temporali supportate.
+ */
 export function convertTimeUnit(value, fromUnit = "ms", toUnit = "ms") {
     if (!isFiniteNumber(value)) {
         throw new TypeError("convertTimeUnit(value) expects a finite number");
@@ -65,6 +83,9 @@ export function convertTimeUnit(value, fromUnit = "ms", toUnit = "ms") {
     return (value * fromFactor) / toFactor;
 }
 
+/**
+ * Normalizza un numero temporale in millisecondi usando le opzioni correnti.
+ */
 function normalizeNumericValue(value, options = {}) {
     if (!isFiniteNumber(value)) {
         throw new TypeError("Expected a finite numeric time value");
@@ -73,15 +94,24 @@ function normalizeNumericValue(value, options = {}) {
     return convertTimeUnit(value, options.unit ?? "ms", "ms");
 }
 
+/**
+ * Formatta un intero assoluto con padding a sinistra.
+ */
 function padInt(value, digits = 2) {
     return String(Math.trunc(Math.abs(value))).padStart(digits, "0");
 }
 
+/**
+ * Restituisce la frazione millesimale gia normalizzata per l output testuale.
+ */
 function formatFraction(milliseconds, digits = 3) {
     if (digits <= 0) return "";
     return String(Math.trunc(Math.abs(milliseconds))).padStart(3, "0").slice(0, digits);
 }
 
+/**
+ * Interpreta la notazione dei bordi e restituisce inclusivita di start ed end.
+ */
 function splitBounds(bounds = DEFAULT_BOUNDS) {
     const normalizedBounds = typeof bounds === "string" && bounds.length === 2 ? bounds : DEFAULT_BOUNDS;
     return {
@@ -90,6 +120,9 @@ function splitBounds(bounds = DEFAULT_BOUNDS) {
     };
 }
 
+/**
+ * Confronta due bordi temporali rispettando inclusivita e tolleranza.
+ */
 function compareBoundary(left, right, leftIncluded, rightIncluded, tolerance = 0) {
     if (left < right - tolerance) return true;
     if (Math.abs(left - right) <= tolerance) {
@@ -99,6 +132,9 @@ function compareBoundary(left, right, leftIncluded, rightIncluded, tolerance = 0
     return false;
 }
 
+/**
+ * Legge un valore da un accessor custom oppure da una lista di chiavi fallback.
+ */
 function resolveAccessor(item, accessor, fallbackKeys = []) {
     if (typeof accessor === "function") {
         return accessor(item);
@@ -114,10 +150,16 @@ function resolveAccessor(item, accessor, fallbackKeys = []) {
     return undefined;
 }
 
+/**
+ * Riconosce stringhe che assomigliano a date ISO.
+ */
 function looksLikeIsoDate(value) {
     return typeof value === "string" && /^\d{4}-\d{2}-\d{2}(?:[T\s].*)?$/.test(value.trim());
 }
 
+/**
+ * Converte una durata nel formato mm:ss o hh:mm:ss in millisecondi.
+ */
 function parseColonDuration(value) {
     const normalized = String(value).trim().replace(",", ".");
     const sign = normalized.startsWith("-") ? -1 : 1;
@@ -149,6 +191,9 @@ function parseColonDuration(value) {
     return sign * Math.round((((hours * 60) + minutes) * 60 + seconds) * 1000);
 }
 
+/**
+ * Converte un orario tipo HH:mm:ss(.SSS) in millisecondi relativi.
+ */
 export function parseClockTime(value) {
     if (isFiniteNumber(value)) return Math.trunc(value);
     if (value instanceof Date) {
@@ -168,6 +213,9 @@ export function parseClockTime(value) {
     return sign * Math.round((((hours * 60) + minutes) * 60 + seconds) * 1000 + milliseconds);
 }
 
+/**
+ * Formatta un valore temporale come orario HH:mm[:ss][.SSS].
+ */
 export function formatClockTime(value, options = {}) {
     const totalMs = normalizeTimeValue(value, options);
     const sign = totalMs < 0 ? "-" : "";
@@ -190,6 +238,9 @@ export function formatClockTime(value, options = {}) {
     return output;
 }
 
+/**
+ * Converte durate numeriche o testuali in millisecondi.
+ */
 export function parseDuration(value, options = {}) {
     if (isFiniteNumber(value)) return normalizeNumericValue(value, options);
     if (value == null) return 0;
@@ -235,6 +286,9 @@ export function parseDuration(value, options = {}) {
     throw new TypeError(`Unsupported duration "${value}"`);
 }
 
+/**
+ * Serializza una durata come clock oppure come lista compatta di unita.
+ */
 export function formatDuration(value, options = {}) {
     const totalMs = Math.round(normalizeTimeValue(value, options));
     const sign = totalMs < 0 ? "-" : "";
@@ -263,6 +317,9 @@ export function formatDuration(value, options = {}) {
     }).replace(/^/, sign);
 }
 
+/**
+ * Converte un timecode SRT nel corrispondente offset in millisecondi.
+ */
 export function parseSrtTime(value) {
     const match = /^(\d{2,3}):([0-5]\d):([0-5]\d),(\d{3})$/.exec(String(value).trim());
     if (!match) {
@@ -272,6 +329,9 @@ export function parseSrtTime(value) {
     return (((Number(match[1]) * 60) + Number(match[2])) * 60 + Number(match[3])) * 1000 + Number(match[4]);
 }
 
+/**
+ * Formatta un offset temporale nel formato SRT HH:mm:ss,SSS.
+ */
 export function formatSrtTime(value) {
     const totalMs = Math.round(normalizeTimeValue(value));
     const absoluteMs = Math.abs(totalMs);
@@ -282,6 +342,9 @@ export function formatSrtTime(value) {
     return `${totalMs < 0 ? "-" : ""}${padInt(hours, 2)}:${padInt(minutes, 2)}:${padInt(seconds, 2)},${formatFraction(milliseconds, 3)}`;
 }
 
+/**
+ * Converte un timecode SMPTE in millisecondi usando il frame rate indicato.
+ */
 export function parseSmpteTimecode(value, fps = 25) {
     const match = /^([+-])?(\d{2,3}):([0-5]\d):([0-5]\d):(\d{2})$/.exec(String(value).trim());
     if (!match) {
@@ -301,6 +364,9 @@ export function parseSmpteTimecode(value, fps = 25) {
     return sign * Math.round((((hours * 60) + minutes) * 60 + seconds) * 1000 + (frames * frameMs));
 }
 
+/**
+ * Formatta un tempo o un conteggio frame come timecode SMPTE.
+ */
 export function formatSmpteTimecode(value, fps = 25, options = {}) {
     const totalFrames = options.input === "frames"
         ? Math.round(value)
@@ -316,6 +382,9 @@ export function formatSmpteTimecode(value, fps = 25, options = {}) {
     return `${sign}${padInt(hours, 2)}:${padInt(minutes, 2)}:${padInt(seconds, 2)}:${padInt(frames, 2)}`;
 }
 
+/**
+ * Seleziona automaticamente il parser di timecode piu adatto all input.
+ */
 export function parseTimecode(value, options = {}) {
     if (options.format === "srt") return parseSrtTime(value);
     if (options.format === "smpte") return parseSmpteTimecode(value, options.fps ?? 25);
@@ -324,12 +393,18 @@ export function parseTimecode(value, options = {}) {
     return parseDuration(value, options);
 }
 
+/**
+ * Seleziona automaticamente il formatter di timecode richiesto dalle opzioni.
+ */
 export function formatTimecode(value, options = {}) {
     if (options.format === "srt") return formatSrtTime(value);
     if (options.format === "smpte") return formatSmpteTimecode(value, options.fps ?? 25, options);
     return formatDuration(value, options);
 }
 
+/**
+ * Converte millisecondi in frame applicando la strategia di arrotondamento scelta.
+ */
 export function msToFrames(ms, fps = 25, rounding = "round") {
     if (!isFiniteNumber(fps) || fps <= 0) {
         throw new TypeError("msToFrames(ms, fps) expects fps > 0");
@@ -341,6 +416,9 @@ export function msToFrames(ms, fps = 25, rounding = "round") {
     return Math.round(frameValue);
 }
 
+/**
+ * Converte un numero di frame in millisecondi.
+ */
 export function framesToMs(frames, fps = 25) {
     if (!isFiniteNumber(frames)) {
         throw new TypeError("framesToMs(frames, fps) expects a finite frame count");
@@ -349,6 +427,9 @@ export function framesToMs(frames, fps = 25) {
     return Math.round((frames * 1000) / fps);
 }
 
+/**
+ * Converte un numero di sample audio in millisecondi.
+ */
 export function samplesToMs(samples, sampleRate = 44100) {
     if (!isFiniteNumber(samples) || !isFiniteNumber(sampleRate) || sampleRate <= 0) {
         throw new TypeError("samplesToMs(samples, sampleRate) expects finite values and sampleRate > 0");
@@ -357,6 +438,9 @@ export function samplesToMs(samples, sampleRate = 44100) {
     return Math.round((samples * 1000) / sampleRate);
 }
 
+/**
+ * Converte millisecondi in sample audio.
+ */
 export function msToSamples(ms, sampleRate = 44100) {
     if (!isFiniteNumber(sampleRate) || sampleRate <= 0) {
         throw new TypeError("msToSamples(ms, sampleRate) expects sampleRate > 0");
@@ -365,10 +449,16 @@ export function msToSamples(ms, sampleRate = 44100) {
     return Math.round(normalizeTimeValue(ms) * sampleRate / 1000);
 }
 
+/**
+ * Aggancia un tempo al frame piu vicino secondo il frame rate fornito.
+ */
 export function snapToFrame(value, fps = 25, rounding = "round") {
     return framesToMs(msToFrames(value, fps, rounding), fps);
 }
 
+/**
+ * Normalizza un valore temporale eterogeneo in millisecondi.
+ */
 export function normalizeTimeValue(value, options = {}) {
     if (value == null) return 0;
     if (isFiniteNumber(value)) return normalizeNumericValue(value, options);
@@ -390,30 +480,48 @@ export function normalizeTimeValue(value, options = {}) {
     throw new TypeError(`Unsupported time value "${value}"`);
 }
 
+/**
+ * Estrae e normalizza il timestamp puntuale di un item.
+ */
 function resolveAt(item, options = {}) {
     const value = resolveAccessor(item, options.getAt, options.pointKeys ?? DEFAULT_POINT_KEYS);
     return value === undefined ? undefined : normalizeTimeValue(value, options);
 }
 
+/**
+ * Estrae e normalizza il valore di start di un item.
+ */
 function resolveStart(item, options = {}) {
     const value = resolveAccessor(item, options.getStart, options.startKeys ?? DEFAULT_START_KEYS);
     return value === undefined ? undefined : normalizeTimeValue(value, options);
 }
 
+/**
+ * Estrae e normalizza il valore di end di un item.
+ */
 function resolveEnd(item, options = {}) {
     const value = resolveAccessor(item, options.getEnd, options.endKeys ?? DEFAULT_END_KEYS);
     return value === undefined ? undefined : normalizeTimeValue(value, options);
 }
 
+/**
+ * Estrae e normalizza la durata di un item.
+ */
 function resolveDuration(item, options = {}) {
     const value = resolveAccessor(item, options.getDuration, options.durationKeys ?? DEFAULT_DURATION_KEYS);
     return value === undefined ? undefined : normalizeTimeValue(value, options);
 }
 
+/**
+ * Risolve il nome della track di un item tramite accessor o chiavi note.
+ */
 function resolveTrack(item, options = {}) {
     return resolveAccessor(item, options.getTrack, options.trackKeys ?? DEFAULT_TRACK_KEYS);
 }
 
+/**
+ * Ricava il tempo di riferimento principale usato per confronti e ordinamenti.
+ */
 function getItemReferenceTime(item, options = {}) {
     if (item != null && typeof item === "object") {
         const at = resolveAt(item, options);
@@ -425,6 +533,9 @@ function getItemReferenceTime(item, options = {}) {
     return normalizeTimeValue(item, options);
 }
 
+/**
+ * Converte un valore o un oggetto in una rappresentazione canonica di time point.
+ */
 export function normalizeTimePoint(item, options = {}) {
     if (item == null) {
         throw new TypeError("normalizeTimePoint(item) expects a value");
@@ -443,6 +554,9 @@ export function normalizeTimePoint(item, options = {}) {
     return { ...cloneItem(item), at };
 }
 
+/**
+ * Ricostruisce start, end e duration coerenti a partire dai dati disponibili.
+ */
 export function coerceStartEndDuration(item, options = {}) {
     if (item == null || typeof item !== "object" || Array.isArray(item)) {
         throw new TypeError("coerceStartEndDuration(item) expects an object");
@@ -483,6 +597,9 @@ export function coerceStartEndDuration(item, options = {}) {
     return { start, end, duration: duration ?? end - start };
 }
 
+/**
+ * Converte un input in una rappresentazione canonica di intervallo temporale.
+ */
 export function normalizeTimeRange(item, options = {}) {
     if (item == null || typeof item !== "object" || Array.isArray(item)) {
         const point = normalizeTimeValue(item, options);
@@ -493,6 +610,9 @@ export function normalizeTimeRange(item, options = {}) {
     return { ...cloneItem(item), ...normalized };
 }
 
+/**
+ * Normalizza una collezione eterogenea in point o range temporali coerenti.
+ */
 export function normalizeTimedItems(items, options = {}) {
     return ensureArray(items).map((item) => {
         try {
@@ -503,6 +623,9 @@ export function normalizeTimedItems(items, options = {}) {
     });
 }
 
+/**
+ * Normalizza una collezione temporale assicurando anche la presenza della track.
+ */
 export function normalizeTrackItems(items, options = {}) {
     return ensureArray(items).map((item) => {
         const normalized = hasOwn(item, "at")
@@ -516,11 +639,17 @@ export function normalizeTrackItems(items, options = {}) {
     });
 }
 
+/**
+ * Esegue un confronto stabile su chiave primaria e secondaria.
+ */
 function compareByPrimarySecondary(aPrimary, bPrimary, aSecondary, bSecondary) {
     if (aPrimary !== bPrimary) return aPrimary - bPrimary;
     return aSecondary - bSecondary;
 }
 
+/**
+ * Ordina gli item in base al loro tempo di riferimento principale.
+ */
 export function sortByTime(items, options = {}) {
     return [...ensureArray(items)].sort((left, right) =>
         compareByPrimarySecondary(
@@ -532,6 +661,9 @@ export function sortByTime(items, options = {}) {
     );
 }
 
+/**
+ * Ordina gli item per start e usa end come discriminante secondario.
+ */
 export function sortByStart(items, options = {}) {
     return [...ensureArray(items)].sort((left, right) =>
         compareByPrimarySecondary(
@@ -543,6 +675,9 @@ export function sortByStart(items, options = {}) {
     );
 }
 
+/**
+ * Ordina gli item per end e usa start come discriminante secondario.
+ */
 export function sortByEnd(items, options = {}) {
     return [...ensureArray(items)].sort((left, right) =>
         compareByPrimarySecondary(
@@ -554,6 +689,9 @@ export function sortByEnd(items, options = {}) {
     );
 }
 
+/**
+ * Restituisce una sequenza ordinata e opzionalmente aggiorna l array originale.
+ */
 export function ensureSorted(items, options = {}) {
     const sorted = sortByTime(items, options);
     if (options.inPlace === true && Array.isArray(items)) {
@@ -564,6 +702,9 @@ export function ensureSorted(items, options = {}) {
     return sorted;
 }
 
+/**
+ * Indicizza gli item normalizzati raggruppandoli per track.
+ */
 export function indexByTrack(items, options = {}) {
     return normalizeTrackItems(items, options).reduce((accumulator, item) => {
         const key = item.track ?? options.defaultTrack ?? "default";
@@ -573,6 +714,9 @@ export function indexByTrack(items, options = {}) {
     }, {});
 }
 
+/**
+ * Crea una struttura track minimale pronta a contenere item temporali.
+ */
 export function createTrack(name, options = {}) {
     return {
         name,
@@ -581,6 +725,9 @@ export function createTrack(name, options = {}) {
     };
 }
 
+/**
+ * Verifica se un istante cade dentro un intervallo secondo i bordi configurati.
+ */
 function containsTime(range, time, options = {}) {
     const { startInclusive, endInclusive } = splitBounds(options.bounds);
     const tolerance = options.tolerance ?? 0;
@@ -588,6 +735,9 @@ function containsTime(range, time, options = {}) {
         && compareBoundary(time, range.end, true, endInclusive, tolerance);
 }
 
+/**
+ * Verifica se due intervalli si sovrappongono.
+ */
 export function overlaps(left, right, options = {}) {
     const a = normalizeTimeRange(left, { ...options, allowPointLikeRange: true });
     const b = normalizeTimeRange(right, { ...options, allowPointLikeRange: true });
@@ -597,6 +747,9 @@ export function overlaps(left, right, options = {}) {
         && compareBoundary(b.start, a.end, startInclusive, endInclusive, tolerance);
 }
 
+/**
+ * Verifica se due intervalli si toccano entro la tolleranza indicata.
+ */
 export function touches(left, right, options = {}) {
     const a = normalizeTimeRange(left, { ...options, allowPointLikeRange: true });
     const b = normalizeTimeRange(right, { ...options, allowPointLikeRange: true });
@@ -604,6 +757,9 @@ export function touches(left, right, options = {}) {
     return Math.abs(a.end - b.start) <= tolerance || Math.abs(b.end - a.start) <= tolerance;
 }
 
+/**
+ * Verifica se un intervallo contiene un punto o un altro intervallo.
+ */
 export function contains(range, target, options = {}) {
     const source = normalizeTimeRange(range, { ...options, allowPointLikeRange: true });
 
@@ -616,6 +772,9 @@ export function contains(range, target, options = {}) {
     return containsTime(source, normalizeTimeValue(target, options), options);
 }
 
+/**
+ * Calcola il gap positivo tra due intervalli ordinati nel tempo.
+ */
 export function gapBetween(left, right, options = {}) {
     const [first, second] = sortByStart([left, right], { ...options, allowPointLikeRange: true }).map((item) =>
         normalizeTimeRange(item, { ...options, allowPointLikeRange: true })
@@ -624,6 +783,9 @@ export function gapBetween(left, right, options = {}) {
     return Math.max(0, second.start - first.end);
 }
 
+/**
+ * Restituisce l intersezione tra due intervalli oppure null se assente.
+ */
 export function intersection(left, right, options = {}) {
     if (!overlaps(left, right, options)) return null;
     const a = normalizeTimeRange(left, { ...options, allowPointLikeRange: true });
@@ -633,6 +795,9 @@ export function intersection(left, right, options = {}) {
     return { start, end, duration: Math.max(0, end - start) };
 }
 
+/**
+ * Restituisce l unione di due intervalli compatibili o null se disgiunti.
+ */
 export function union(left, right, options = {}) {
     const a = normalizeTimeRange(left, { ...options, allowPointLikeRange: true });
     const b = normalizeTimeRange(right, { ...options, allowPointLikeRange: true });
@@ -645,6 +810,9 @@ export function union(left, right, options = {}) {
     return { start, end, duration: end - start };
 }
 
+/**
+ * Sottrae un intervallo da un altro e restituisce i frammenti residui.
+ */
 export function subtractRange(source, excluded, options = {}) {
     const base = normalizeTimeRange(source, { ...options, allowPointLikeRange: true });
     const removed = normalizeTimeRange(excluded, { ...options, allowPointLikeRange: true });
@@ -661,6 +829,9 @@ export function subtractRange(source, excluded, options = {}) {
     return result;
 }
 
+/**
+ * Divide un intervallo in segmenti usando una lista di punti interni.
+ */
 export function splitRange(range, splitPoints, options = {}) {
     const source = normalizeTimeRange(range, { ...options, allowPointLikeRange: true });
     const points = [...new Set(ensureArray(splitPoints).map((value) => normalizeTimeValue(value, options)))]
@@ -677,6 +848,9 @@ export function splitRange(range, splitPoints, options = {}) {
     return chunks;
 }
 
+/**
+ * Trova gli item puntuali che cadono in corrispondenza del tempo richiesto.
+ */
 export function findAt(items, time, options = {}) {
     const target = normalizeTimeValue(time, options);
     const tolerance = options.tolerance ?? 0;
@@ -686,6 +860,9 @@ export function findAt(items, time, options = {}) {
     });
 }
 
+/**
+ * Trova gli item attivi in un certo istante.
+ */
 export function findActiveAt(items, time, options = {}) {
     const target = normalizeTimeValue(time, options);
     return ensureArray(items).filter((item) => {
@@ -697,6 +874,9 @@ export function findActiveAt(items, time, options = {}) {
     });
 }
 
+/**
+ * Trova gli item che intersecano una finestra temporale.
+ */
 export function findBetween(items, start, end, options = {}) {
     const window = normalizeTimeRange({ start, end }, options);
     return ensureArray(items).filter((item) => {
@@ -709,6 +889,9 @@ export function findBetween(items, start, end, options = {}) {
     });
 }
 
+/**
+ * Filtra solo gli item che overlapano con il range fornito.
+ */
 export function findOverlapping(items, range, options = {}) {
     return ensureArray(items).filter((item) => {
         try {
@@ -719,6 +902,9 @@ export function findOverlapping(items, range, options = {}) {
     });
 }
 
+/**
+ * Restituisce l item piu vicino al tempo di riferimento indicato.
+ */
 export function findNearest(items, time, options = {}) {
     const target = normalizeTimeValue(time, options);
     let nearest = null;
@@ -735,6 +921,9 @@ export function findNearest(items, time, options = {}) {
     return nearest;
 }
 
+/**
+ * Restituisce l ultimo item precedente al tempo dato.
+ */
 export function findPrevious(items, time, options = {}) {
     const target = normalizeTimeValue(time, options);
     return sortByTime(items, options)
@@ -742,16 +931,25 @@ export function findPrevious(items, time, options = {}) {
         .at(-1) ?? null;
 }
 
+/**
+ * Restituisce il primo item successivo al tempo dato.
+ */
 export function findNext(items, time, options = {}) {
     const target = normalizeTimeValue(time, options);
     return sortByTime(items, options)
         .find((item) => getItemReferenceTime(item, options) > target) ?? null;
 }
 
+/**
+ * Applica un offset temporale a un singolo valore normalizzato.
+ */
 export function shiftTime(value, delta, options = {}) {
     return normalizeTimeValue(value, options) + normalizeTimeValue(delta, options);
 }
 
+/**
+ * Scala un tempo rispetto a un origine configurabile.
+ */
 export function scaleTime(value, factor, options = {}) {
     if (!isFiniteNumber(factor)) {
         throw new TypeError("scaleTime(value, factor) expects a finite factor");
@@ -762,6 +960,9 @@ export function scaleTime(value, factor, options = {}) {
     return origin + ((numericValue - origin) * factor);
 }
 
+/**
+ * Prepara un item temporale e delega a un mapper la sua trasformazione.
+ */
 function mapTimedItem(item, mapper, options = {}) {
     if (item == null || typeof item !== "object" || Array.isArray(item) || item instanceof Date) {
         return mapper({ at: normalizeTimeValue(item, options) });
@@ -775,6 +976,9 @@ function mapTimedItem(item, mapper, options = {}) {
     return mapper({ clone, at, start, end, duration });
 }
 
+/**
+ * Applica uno shift temporale a tutti gli item della collezione.
+ */
 export function shiftItems(items, delta, options = {}) {
     const offset = normalizeTimeValue(delta, options);
     return ensureArray(items).map((item) => mapTimedItem(item, ({ clone, at, start, end }) => {
@@ -786,6 +990,9 @@ export function shiftItems(items, delta, options = {}) {
     }, options));
 }
 
+/**
+ * Scala start, end e point di una collezione temporale.
+ */
 export function scaleItems(items, factor, options = {}) {
     return ensureArray(items).map((item) => mapTimedItem(item, ({ clone, at, start, end }) => {
         if (!clone) return { at: scaleTime(at, factor, options) };
@@ -799,6 +1006,9 @@ export function scaleItems(items, factor, options = {}) {
     }, options));
 }
 
+/**
+ * Quantizza un valore temporale sulla griglia definita da step.
+ */
 export function quantizeTime(value, step, options = {}) {
     const numericValue = normalizeTimeValue(value, options);
     const normalizedStep = Math.abs(normalizeTimeValue(step, options));
@@ -813,6 +1023,9 @@ export function quantizeTime(value, step, options = {}) {
     return quantizedRatio * normalizedStep;
 }
 
+/**
+ * Quantizza tutti i riferimenti temporali presenti negli item.
+ */
 export function quantizeItems(items, step, options = {}) {
     return ensureArray(items).map((item) => mapTimedItem(item, ({ clone, at, start, end }) => {
         if (!clone) return { at: quantizeTime(at, step, options) };
@@ -826,11 +1039,17 @@ export function quantizeItems(items, step, options = {}) {
     }, options));
 }
 
+/**
+ * Ritaglia un intervallo ai limiti indicati e restituisce il range risultante.
+ */
 export function trimRange(item, bounds, options = {}) {
     const result = intersection(item, bounds, options);
     return result ? { ...normalizeTimeRange(item, { ...options, allowPointLikeRange: true }), ...result } : null;
 }
 
+/**
+ * Mantiene solo le parti di item contenute nei bounds richiesti.
+ */
 export function clipItems(items, bounds, options = {}) {
     return ensureArray(items).flatMap((item) => {
         const at = resolveAt(item, options);
@@ -848,11 +1067,17 @@ export function clipItems(items, bounds, options = {}) {
     });
 }
 
+/**
+ * Rifasa una collezione sottraendo un anchor comune.
+ */
 export function offsetFromAnchor(items, anchor, options = {}) {
     const normalizedAnchor = normalizeTimeValue(anchor, options);
     return shiftItems(items, -normalizedAnchor, options);
 }
 
+/**
+ * Implementa la logica comune di merge per intervalli ordinati.
+ */
 function mergeRangesInternal(items, shouldMerge, options = {}) {
     const sorted = sortByStart(items, options).map((item) => normalizeTimeRange(item, { ...options, allowPointLikeRange: true }));
     const merged = [];
@@ -877,6 +1102,9 @@ function mergeRangesInternal(items, shouldMerge, options = {}) {
     return merged;
 }
 
+/**
+ * Unisce intervalli adiacenti o separati da gap entro la tolleranza scelta.
+ */
 export function mergeAdjacentRanges(items, options = {}) {
     const gapTolerance = options.gapTolerance ?? 0;
     const shouldMatchTrack = options.matchTrack !== false;
@@ -887,6 +1115,9 @@ export function mergeAdjacentRanges(items, options = {}) {
     , options);
 }
 
+/**
+ * Unisce intervalli sovrapposti e opzionalmente quelli quasi contigui.
+ */
 export function mergeOverlappingRanges(items, options = {}) {
     const gapTolerance = options.gapTolerance ?? 0;
     const shouldMatchTrack = options.matchTrack !== false;
@@ -897,6 +1128,9 @@ export function mergeOverlappingRanges(items, options = {}) {
     , options);
 }
 
+/**
+ * Rimuove duplicati temporali usando una chiave derivata o custom.
+ */
 export function dedupeTimedItems(items, options = {}) {
     const seen = new Set();
     const result = [];
@@ -926,6 +1160,9 @@ export function dedupeTimedItems(items, options = {}) {
     return result;
 }
 
+/**
+ * Calcola il minimo start e il massimo end dell intera timeline.
+ */
 export function getTimelineBounds(items, options = {}) {
     const normalizedItems = ensureArray(items);
     if (normalizedItems.length === 0) return null;
@@ -948,6 +1185,9 @@ export function getTimelineBounds(items, options = {}) {
     return { start: minStart, end: maxEnd, duration: Math.max(0, maxEnd - minStart) };
 }
 
+/**
+ * Somma la durata di tutti gli intervalli normalizzabili.
+ */
 export function getTotalDuration(items, options = {}) {
     return ensureArray(items).reduce((total, item) => {
         try {
@@ -958,6 +1198,9 @@ export function getTotalDuration(items, options = {}) {
     }, 0);
 }
 
+/**
+ * Individua i vuoti temporali compresi nei bounds della timeline.
+ */
 export function findGaps(items, options = {}) {
     const bounds = options.boundsRange
         ? normalizeTimeRange(options.boundsRange, { ...options, allowPointLikeRange: true })
@@ -983,21 +1226,33 @@ export function findGaps(items, options = {}) {
     return gaps;
 }
 
+/**
+ * Calcola la durata coperta dagli intervalli dopo il merge delle overlap.
+ */
 export function getCoveredDuration(items, options = {}) {
     return mergeOverlappingRanges(items, options)
         .reduce((total, item) => total + item.duration, 0);
 }
 
+/**
+ * Somma la durata totale di tutti i gap rilevati.
+ */
 export function getGapDuration(items, options = {}) {
     return findGaps(items, options).reduce((total, gap) => total + gap.duration, 0);
 }
 
+/**
+ * Calcola il gap medio della timeline.
+ */
 export function getAverageGap(items, options = {}) {
     const gaps = findGaps(items, options);
     if (gaps.length === 0) return 0;
     return getGapDuration(items, options) / gaps.length;
 }
 
+/**
+ * Produce un riepilogo statistico essenziale di una timeline.
+ */
 export function summarizeTimeline(items, options = {}) {
     const bounds = getTimelineBounds(items, options);
     const gaps = findGaps(items, options);
@@ -1022,6 +1277,9 @@ export function summarizeTimeline(items, options = {}) {
     };
 }
 
+/**
+ * Suddivide la timeline in bucket consecutivi di ampiezza fissa.
+ */
 export function bucketize(items, bucketSize, options = {}) {
     const normalizedBucketSize = Math.abs(normalizeTimeValue(bucketSize, options));
     if (normalizedBucketSize === 0) {
@@ -1048,6 +1306,9 @@ export function bucketize(items, bucketSize, options = {}) {
     return buckets;
 }
 
+/**
+ * Calcola un valore aggregato per ciascun bucket della timeline.
+ */
 export function aggregateByBucket(items, bucketSize, reducer, options = {}) {
     if (typeof reducer !== "function") {
         throw new TypeError("aggregateByBucket(items, bucketSize, reducer) expects a reducer function");
@@ -1059,10 +1320,16 @@ export function aggregateByBucket(items, bucketSize, reducer, options = {}) {
     }));
 }
 
+/**
+ * Alias semantico di bucketize per timeline spezzate in chunk fissi.
+ */
 export function chunkTimeline(items, windowSize, options = {}) {
     return bucketize(items, windowSize, options);
 }
 
+/**
+ * Costruisce finestre scorrevoli sulla timeline usando dimensione e passo indipendenti.
+ */
 export function windowTimeline(items, windowSize, step = windowSize, options = {}) {
     const normalizedWindowSize = Math.abs(normalizeTimeValue(windowSize, options));
     const normalizedStep = Math.abs(normalizeTimeValue(step, options));
@@ -1090,6 +1357,9 @@ export function windowTimeline(items, windowSize, step = windowSize, options = {
     return windows;
 }
 
+/**
+ * Raggruppa gli item per track mantenendo i valori originali.
+ */
 export function groupIntoTracks(items, options = {}) {
     return ensureArray(items).reduce((tracks, item) => {
         const key = resolveTrack(item, options) ?? options.defaultTrack ?? "default";
@@ -1099,6 +1369,9 @@ export function groupIntoTracks(items, options = {}) {
     }, {});
 }
 
+/**
+ * Appiattisce una struttura multi track in una lista lineare di item.
+ */
 export function flattenTracks(tracks, options = {}) {
     if (Array.isArray(tracks)) {
         return tracks.flatMap((track) => track?.items ?? []);
@@ -1109,12 +1382,18 @@ export function flattenTracks(tracks, options = {}) {
     );
 }
 
+/**
+ * Calcola i bounds temporali per ogni track individuata.
+ */
 export function getTrackBounds(items, options = {}) {
     return Object.fromEntries(
         Object.entries(groupIntoTracks(items, options)).map(([track, trackItems]) => [track, getTimelineBounds(trackItems, options)])
     );
 }
 
+/**
+ * Rileva overlap interni alle singole track ordinate per start.
+ */
 export function detectTrackConflicts(items, options = {}) {
     const conflicts = [];
     const tracks = groupIntoTracks(items, options);
@@ -1131,12 +1410,18 @@ export function detectTrackConflicts(items, options = {}) {
     return conflicts;
 }
 
+/**
+ * Calcola la latenza tra due eventi o riferimenti temporali.
+ */
 export function computeLatency(startEvent, endEvent, options = {}) {
     const startTime = typeof startEvent === "object" ? getItemReferenceTime(startEvent, options) : normalizeTimeValue(startEvent, options);
     const endTime = typeof endEvent === "object" ? getItemReferenceTime(endEvent, options) : normalizeTimeValue(endEvent, options);
     return endTime - startTime;
 }
 
+/**
+ * Abbina eventi start end correlati e ne ricava intervalli con durata.
+ */
 export function pairStartEndEvents(events, options = {}) {
     const typeKey = options.typeKey ?? "phase";
     const startValues = new Set(ensureArray(options.startValues ?? ["start", "begin", "open"]));
@@ -1171,6 +1456,9 @@ export function pairStartEndEvents(events, options = {}) {
     return pairs;
 }
 
+/**
+ * Trasforma una sequenza di eventi di stato in intervalli consecutivi.
+ */
 export function extractStateRanges(events, options = {}) {
     const sorted = sortByTime(events, options);
     const stateKey = options.stateKey ?? "state";
@@ -1191,6 +1479,9 @@ export function extractStateRanges(events, options = {}) {
     return ranges;
 }
 
+/**
+ * Converte il contenuto testuale di un file SRT in item temporali.
+ */
 export function parseSrt(content, options = {}) {
     const normalizedText = String(content ?? "").replace(/\r/g, "").trim();
     if (!normalizedText) return [];
@@ -1219,6 +1510,9 @@ export function parseSrt(content, options = {}) {
     });
 }
 
+/**
+ * Serializza una lista di caption temporizzate nel formato SRT.
+ */
 export function formatSrt(items) {
     return sortByStart(items).map((item, index) => {
         const range = normalizeTimeRange(item, { allowPointLikeRange: true });
@@ -1231,6 +1525,9 @@ export function formatSrt(items) {
     }).join("\n\n");
 }
 
+/**
+ * Normalizza un control point source target per il mapping tra timeline.
+ */
 function normalizeControlPoint(point, options = {}) {
     if (Array.isArray(point) && point.length >= 2) {
         return {
@@ -1247,6 +1544,9 @@ function normalizeControlPoint(point, options = {}) {
     };
 }
 
+/**
+ * Costruisce un modello lineare di mapping a partire da control point ordinati.
+ */
 export function buildTimeMap(controlPoints, options = {}) {
     const points = ensureArray(controlPoints)
         .map((point) => normalizeControlPoint(point, options))
@@ -1271,6 +1571,9 @@ export function buildTimeMap(controlPoints, options = {}) {
     return { points, offset, scale };
 }
 
+/**
+ * Mappa un tempo da una timeline sorgente a una timeline target.
+ */
 export function mapTimeBetweenTimelines(value, mapping, options = {}) {
     const numericValue = normalizeTimeValue(value, options);
     const timeMap = Array.isArray(mapping) ? buildTimeMap(mapping, options) : mapping;
@@ -1301,6 +1604,9 @@ export function mapTimeBetweenTimelines(value, mapping, options = {}) {
     return (timeMap.scale ?? 1) * numericValue + (timeMap.offset ?? 0);
 }
 
+/**
+ * Stima l offset medio tra due sequenze temporali correlate.
+ */
 export function estimateOffset(left, right, options = {}) {
     const leftItems = ensureArray(left);
     const rightItems = ensureArray(right);
@@ -1315,6 +1621,9 @@ export function estimateOffset(left, right, options = {}) {
     return total / sampleCount;
 }
 
+/**
+ * Stima drift lineare e offset tra due timeline campionate.
+ */
 export function estimateDrift(left, right, options = {}) {
     const leftItems = ensureArray(left);
     const rightItems = ensureArray(right);
@@ -1330,16 +1639,25 @@ export function estimateDrift(left, right, options = {}) {
     return { scale, offset };
 }
 
+/**
+ * Applica un offset a una collezione come alias semantico di shiftItems.
+ */
 export function applyOffset(items, offset, options = {}) {
     return shiftItems(items, offset, options);
 }
 
+/**
+ * Corregge una timeline applicando prima scala e poi offset.
+ */
 export function applyDriftCorrection(items, driftModel, options = {}) {
     const scale = driftModel?.scale ?? 1;
     const offset = driftModel?.offset ?? 0;
     return shiftItems(scaleItems(items, scale, options), offset, options);
 }
 
+/**
+ * Produce offset drift e time map per riallineare due timeline correlate.
+ */
 export function alignTimelines(left, right, options = {}) {
     const offset = estimateOffset(left, right, options);
     const drift = estimateDrift(left, right, options);

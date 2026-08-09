@@ -42,7 +42,7 @@ export class TreeNode {
       }
     }
 
-    constructor(identifier,value, driver={}) {
+    constructor(identifier, value, driver={}) {
       Object.assign(this, value);
       this._parent = null;
       this.identifier = identifier ?? randomUUID();

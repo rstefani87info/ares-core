@@ -82,21 +82,29 @@ export function convertArrayToObject(this_array, keys) {
  * Determines if the provided data is iterable.
  *
  * @param {any} data - The data to be checked for iterability.
- * @return {function} - A function that checks if a value is non-null
- *                      and has a valid iterator function.
+ * @return {boolean} - Returns true if the value is non-null and
+ *                     exposes a valid iterator function.
  */
 
 export function isIterable(data) {
-  return valore => valore != null && typeof valore[Symbol.iterator] === 'function';
+  return data != null && typeof data[Symbol.iterator] === 'function';
+}
+
+export const dynamicArraySignature = Symbol.for('@ares/core/DynamicArray');
+
+export function isDynamicArray(value) {
+  return Boolean(value?.[dynamicArraySignature]);
 }
 
 
 export class DynamicArray {
   
   constructor(...sources) {
+    this[dynamicArraySignature] = true;
     this.sources = sources;
     this.arrayOperations = [];
     this.params = [];
+    this.lastResolvedArray = [];
   }
 
   setParam(...params) {
@@ -261,17 +269,7 @@ export class DynamicArray {
   }
 
   [Symbol.iterator]() {
-    let promise = this.toArray();
-    let i = 0;
-    return {
-      next:  () => {
-        const arr =  promise;
-        if (i < arr.length) {
-          return { value: arr[i++], done: false };
-        }
-        return { done: true };
-      }
-    };
+    return (this.lastResolvedArray ?? [])[Symbol.iterator]();
   }
 
   // use for await (const item of dynamicArray)
@@ -291,7 +289,7 @@ export class DynamicArray {
 
   async toArray() {
     let ret = await Promise.all(this.sources.map( x=> {
-      if(x instanceof DynamicArray) return x.toArray();
+      if(isDynamicArray(x)) return x.toArray();
       if(typeof x === "function"){
         debug("FUNCTION::::::", x.toString()); 
         return x(...(this.params??[]))
@@ -307,6 +305,7 @@ export class DynamicArray {
       if(Array.isArray(res)) ret = res;
     }
     debug("------------ret:", ret);
+    this.lastResolvedArray = Array.isArray(ret) ? [...ret] : [];
 
     return ret;
   }

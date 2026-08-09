@@ -1,47 +1,47 @@
+import {whenOrException} from "./flow.js";
 import { format } from "./dataDescriptors.js";
 import { cloneWithMethods } from "./objects.js";
 import * as advancedConsole from "./console.js";
 import { ValidationError } from "./datasource-errors.js";
+
 
 const mapRequestOrResult = function (request) {
   return request;
 };
 
 export async function executeDatasourceRequestMapper(mapper, request) {
-  advancedConsole.log(`[DEBUG] execute: start - ${mapper.name}`);
+  advancedConsole.debug(`[DEBUG] execute: start - ${mapper.name}`);
   const params = await prepareParams(mapper, request);
 
   request = cloneWithMethods(request);
   request.parameters = params;
-  advancedConsole.log("in query");
+  advancedConsole.debug("in query");
 
   const response = await runQuery(mapper, request);
 
   await processResponse(mapper, response, request);
 
   if (mapper.postExecute && mapper.postExecute instanceof Function) {
-    advancedConsole.log(`[DEBUG] execute: postExecute - ${mapper.name}`);
+    advancedConsole.debug(`[DEBUG] execute: postExecute - ${mapper.name}`);
     mapper.postExecute(request, mapper.datasource, response);
   }
 
   addDebugInfo(mapper, response);
   attachHelpers(mapper, response);
 
-  advancedConsole.log("Mapped results:", response);
-  advancedConsole.log(`[DEBUG] execute: end - ${mapper.name}`);
+  advancedConsole.debug(`[DEBUG] execute: end - ${mapper.name}`);
 
   return response;
 }
 
 async function prepareParams(mapper, request) {
-  advancedConsole.log(`[DEBUG] _prepareParams: start - ${mapper.name}`);
   const validationRoles =
     mapper.parametersValidationRoles instanceof Function
       ? await mapper.parametersValidationRoles(request, mapper.aReS)
       : {};
 
   const params = await format(request, validationRoles, mapper.datasource);
-  advancedConsole.log(`[DEBUG] _prepareParams: format - ${mapper.name}`, params);
+  advancedConsole.debug(`[DEBUG] _prepareParams: format - ${mapper.name}`, params);
   if (params["€rror"]) {
     advancedConsole.error("aReS Error:", params["€rror"], request.query);
     throw new ValidationError(
@@ -49,33 +49,35 @@ async function prepareParams(mapper, request) {
       params["€rror"]
     );
   }
-  advancedConsole.log(`[DEBUG] _prepareParams: end - ${mapper.name}`, params);
   return params;
 }
 
 async function runQuery(mapper, request) {
-  advancedConsole.log(`[DEBUG] _runQuery: start - ${mapper.name}`);
+  advancedConsole.debug(`[DEBUG] _runQuery: start - ${mapper.name}`);
   let response = { results: [] };
-  if (typeof mapper.query === "string") {
-    response = await mapper.datasource.query(request, mapper.query, mapper);
-  } else if (typeof mapper.query === "function") {
-    response = await mapper.datasource.query(
-      request,
-      await mapper.query(request, mapper),
-      mapper
-    );
+  let query = mapper.query;
+  if (typeof query === "function") {
+    query = query(request, mapper);
+    if(query instanceof Promise){
+      query = await query;
+    }
   }
-  if (!response) {
-    throw new Error("Query returned no response");
-  }
-  advancedConsole.log(`[DEBUG] _runQuery: end - ${mapper.name}`, response);
+
+  response = await whenOrException( 
+    () => mapper.datasource.query(request, query, mapper), 
+    null , 
+    "query_returned_no_response", 
+    null,
+    advancedConsole);
+    
+    advancedConsole.debug(`[DEBUG] _runQuery: end - ${mapper.name}`, response);
   return response;
 }
 
 async function processResponse(mapper, response, request) {
-  advancedConsole.log(`[DEBUG] _processResponse: start - ${mapper.name}`);
+  advancedConsole.debug(`[DEBUG] _processResponse: start - ${mapper.name}`);
   if (response["€rror"]) {
-    advancedConsole.log(`[DEBUG] _processResponse: error found - ${mapper.name}`);
+    advancedConsole.debug(`[DEBUG] _processResponse: error found - ${mapper.name}`);
     return;
   }
 
@@ -83,13 +85,13 @@ async function processResponse(mapper, response, request) {
     !response.results ||
     (Array.isArray(response.results) && response.results.length === 0)
   ) {
-    advancedConsole.log(`[DEBUG] _processResponse: empty result - ${mapper.name}`);
+    advancedConsole.debug(`[DEBUG] _processResponse: empty result - ${mapper.name}`);
     mapper.onEmptyResult?.(response, request, mapper.aReS);
     return;
   }
 
   if (Array.isArray(response.results)) {
-    advancedConsole.log(
+    advancedConsole.debug(
       `[DEBUG] _processResponse: mapping array (${response.results.length}) - ${mapper.name}`
     );
     for (let i = 0; i < response.results.length; i++) {
@@ -101,16 +103,16 @@ async function processResponse(mapper, response, request) {
       );
     }
   } else {
-    advancedConsole.log(
+    advancedConsole.debug(
       `[DEBUG] _processResponse: mapping single object - ${mapper.name}`
     );
     response.results = await mapSingleResult(mapper, response.results, 0, request);
   }
-  advancedConsole.log(`[DEBUG] _processResponse: end - ${mapper.name}`);
+  advancedConsole.debug(`[DEBUG] _processResponse: end - ${mapper.name}`);
 }
 
 async function mapSingleResult(mapper, item, index, request) {
-  advancedConsole.log(`[DEBUG] _mapSingleResult: start - ${mapper.name} [${index}]`);
+  advancedConsole.debug(`[DEBUG] _mapSingleResult: start - ${mapper.name} [${index}]`);
   let result = item;
   if (mapper.mapResult && mapper.mapResult instanceof Function) {
     result = await mapper.mapResult(result, index, request, mapper.aReS);
@@ -142,4 +144,3 @@ function attachHelpers(mapper, response) {
     return response.results;
   };
 }
-

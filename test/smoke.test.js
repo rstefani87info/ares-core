@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import axios from "axios";
 
 import aReSInitialize, { ARES } from "@ares/core";
+import { DynamicArray, isIterable } from "@ares/core/arrays.js";
 import { asyncConsole, resetLoggingConfig } from "@ares/core/console.js";
 import { format, regexMap } from "@ares/core/dataDescriptors.js";
 import { Datasource } from "@ares/core/datasources.js";
@@ -428,6 +429,35 @@ test("minimal host app can bootstrap and include core modules", () => {
   const aReS = createApp();
   assert.equal(typeof aReS.loadDatasource, "function");
   assert.equal(typeof aReS.isResourceAllowed, "function");
+});
+
+test("DynamicArray resolves static iterables and nested dynamic sources with current params", async () => {
+  const nested = new DynamicArray(["rome", "milan"]);
+  const dynamic = new DynamicArray(
+    nested,
+    (selectedValue, searchText) => searchText ? [{ value: selectedValue, text: searchText }] : []
+  );
+
+  dynamic.setParam("city[1]", "Torino");
+  const resolved = await dynamic.toArray();
+
+  assert.equal(isIterable(["a", "b"]), true);
+  assert.equal(isIterable({ plain: true }), false);
+  assert.deepEqual(resolved, [
+    "rome",
+    "milan",
+    { value: "city[1]", text: "Torino" },
+  ]);
+});
+
+test("DynamicArray sync iterator exposes the last resolved snapshot", async () => {
+  const dynamic = new DynamicArray([1, 2], async () => [3]);
+
+  assert.deepEqual(Array.from(dynamic), []);
+
+  await dynamic.toArray();
+
+  assert.deepEqual(Array.from(dynamic), [1, 2, 3]);
 });
 
 test("tryToDo executes function actions regardless of onError presence", () => {

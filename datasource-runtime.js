@@ -1,3 +1,4 @@
+import {replaceAllPlaceholder} from "./text.js";
 import * as advancedConsole from "./console.js";
 import {
   resolveRequestRuntimeContext,
@@ -134,14 +135,29 @@ async function executeQuery(datasource, req, command, mapper, connection) {
     request.params,
     request.parameters
   );
-  const params = mapper.mapParameters
-    ? await mapper.mapParameters(request, datasource.aReS, connection)
-    : {};
-  advancedConsole.debug("executing query with params:", params);
+  let params = mapper.mapParameters;
+  if(params instanceof Function) {
+    params = mapper.mapParameters(request, datasource.aReS, connection);
+  }
+  if(params instanceof Promise) {
+    params = await params;
+  }
+
+  console.debug("executing query with params:", params);
+
+  const replacerNormalizer = (value) => {
+      if( value === undefined ) return value;
+      if( value === null ) return '';
+      if( value === '' ) return value;
+      if(mapper.datasource?.driver?.avoidInjection) return mapper.datasource.driver.avoidInjection(value);
+      return value;
+  };
+
+  command = replaceAllPlaceholder(command, params, null, true, replacerNormalizer);
   const ret = await connection._executeNativeQueryAsync(command, params, mapper, request);
-  advancedConsole.debug("query results", ret);
   return ret;
 }
+
 
 function commitTransaction(datasource, req, connection, transactionName) {
   const { sessionId } = resolveRequestRuntimeContext(req);

@@ -7,10 +7,7 @@
  *
  * Find property key by alias
  */
-export function findPropKeyByAlias(
-  this_object,
-  alias,
-) {
+export function findPropKeyByAlias(this_object, alias) {
   if (!this_object || alias == null) return undefined;
 
   const toMatcherFromKey = (key) => {
@@ -98,10 +95,7 @@ export function findPropKeyByAlias(
  *
  * Find property value by alias
  */
-export function findPropValueByAlias(
-  this_object,
-  alias
-) {
+export function findPropValueByAlias(this_object, alias) {
   const key = findPropKeyByAlias(this_object, alias);
   return key !== undefined ? this_object?.[key] : undefined;
 }
@@ -134,8 +128,6 @@ export function setupPropertyAlias(this_object, alias) {
   return this_object;
 }
 
-
-
 /**
  * Creates a deep clone of an object, including all its methods.
  *
@@ -147,7 +139,7 @@ export function cloneWithMethods(obj) {
   const newObj = Object.create(Object.getPrototypeOf(obj));
   for (const key in obj) {
     if (Object.prototype.hasOwnProperty.call(obj, key)) {
-      if (typeof obj[key] === 'function') {
+      if (typeof obj[key] === "function") {
         newObj[key] = obj[key].bind(newObj);
       } else {
         newObj[key] = obj[key];
@@ -166,7 +158,7 @@ export function cloneWithMethods(obj) {
  * @prototype {Object}
  */
 export function fieldsMatch(this_object, other) {
-  return Object.keys(this_object).every(k => this_object[k] === other[k]);
+  return Object.keys(this_object).every((k) => this_object[k] === other[k]);
 }
 
 export function onPropertyChange(this_object, key, callback) {
@@ -174,7 +166,8 @@ export function onPropertyChange(this_object, key, callback) {
   const descriptor = Object.getOwnPropertyDescriptor(this_object, key);
   const originalGetter = descriptor?.get;
   const originalSetter = descriptor?.set;
-  let currentValue = descriptor && "value" in descriptor ? descriptor.value : this_object[key];
+  let currentValue =
+    descriptor && "value" in descriptor ? descriptor.value : this_object[key];
 
   Object.defineProperty(this_object, key, {
     configurable: true,
@@ -183,7 +176,9 @@ export function onPropertyChange(this_object, key, callback) {
       return originalGetter ? originalGetter.call(this) : currentValue;
     },
     set(value) {
-      const previousValue = originalGetter ? originalGetter.call(this) : currentValue;
+      const previousValue = originalGetter
+        ? originalGetter.call(this)
+        : currentValue;
       if (originalSetter) {
         originalSetter.call(this, value);
       } else {
@@ -205,31 +200,59 @@ export function onPropertyChange(this_object, key, callback) {
  * @return {Object} The fused object
  * @prototype {Object}
  */
-export function fuseObjects(this_object, other, ...others){
+export function fuseObjects(this_object, other, ...others) {
   const doIt = () => {
-    if(!this_object && !other) return null;
-    if(!this_object && Array.isArray(other)) return [...other];
-    if(!other && Array.isArray(this_object)) return [...this_object];
-    if(!this_object && other) return {...other};
-    if(!other && this_object) return {...this_object};
+    if (!this_object && !other) return null;
+    if (!this_object && Array.isArray(other)) return [...other];
+    if (!other && Array.isArray(this_object)) return [...this_object];
+    if (!this_object && other) return { ...other };
+    if (!other && this_object) return { ...this_object };
     let ret = {};
-    if(Array.isArray(this_object) && Array.isArray(other)) return [...this_object,...other];
-    if(this_object instanceof Object && other instanceof Object){
-      (new Set([...Object.keys(this_object),...Object.keys(other)])).forEach((key) => {
-        if( this_object[key]  && this_object[key]  instanceof Object && other[key] && other[key] instanceof Object ){
-          ret[key] = fuseObjects(this_object[key] , other[key] );
-        }
-        else {
-          if(this_object.hasOwnProperty(key))ret[key] = this_object[key];
-          if(other.hasOwnProperty(key))ret[key] = other[key];
-        }
-      });
+    if (Array.isArray(this_object) && Array.isArray(other))
+      return [...this_object, ...other];
+    if (this_object instanceof Object && other instanceof Object) {
+      new Set([...Object.keys(this_object), ...Object.keys(other)]).forEach(
+        (key) => {
+          if (
+            this_object[key] &&
+            this_object[key] instanceof Object &&
+            other[key] &&
+            other[key] instanceof Object
+          ) {
+            ret[key] = fuseObjects(this_object[key], other[key]);
+          } else {
+            if (this_object.hasOwnProperty(key)) ret[key] = this_object[key];
+            if (other.hasOwnProperty(key)) ret[key] = other[key];
+          }
+        },
+      );
       return ret;
-    } 
+    }
     return null;
-  }
+  };
 
   const results = doIt();
-  if(!others || !others.length) return results;
+  if (!others || !others.length) return results;
   return fuseObjects(results, ...others);
+}
+
+/**
+ * Map the children of an object to a new object.
+ * @param {Object} this_object - The object to map.
+ * @param {Object} childrenMapper - The mapping function to apply to each child.
+ * @return {Object} The mapped object.
+ * @prototype {Object}
+ */
+
+export function mapObject(this_object, childrenMapper) {
+  if (!this_object) return this_object;
+  if(typeof this_object === "string") return mapObject(JSON.parse(this_object), childrenMapper);
+  if(typeof this_object !== "object") throw new Error("mapObject expects an object as input");
+  if(!childrenMapper) return childrenMapper;
+  if(typeof childrenMapper !== "object") return {};
+  const initialized ={};
+  Object.entries(childrenMapper).forEach(([key, value]) => {
+    initialized[key] = typeof value === "function" ? value(this_object) : value;
+  });
+  return initialized;
 }
